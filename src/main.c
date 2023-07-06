@@ -92,13 +92,17 @@ void activatePowerup(Powerup Type) {
     case RapidFire: {
         maxPlayerBullets = MAX_PLAYER_BULLETS;
         powerupTimer = POWERUP_DURATION;
-        PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf8300),DMA);
+        PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83100),DMA);
+        break;
     }
     default:
         return;
     }
 };
-void deactivatePowerup(){};
+void deactivatePowerup(){
+    maxPlayerBullets = MAX_PLAYER_BULLETS;
+    PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83800), DMA);
+};
 
 /* powerup related END */
 
@@ -218,6 +222,9 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
         }
         if (state & BUTTON_B & changed) {
             shootBullet(player);
+        }
+        if (state & BUTTON_A & changed) {
+            activatePowerup(RapidFire);
         }
     }
 }
