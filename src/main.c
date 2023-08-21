@@ -92,7 +92,7 @@ void activatePowerup(Powerup Type) {
     case RapidFire: {
         maxPlayerBullets = MAX_PLAYER_BULLETS;
         powerupTimer = POWERUP_DURATION;
-        PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83100),DMA);
+        PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83000),DMA);
         break;
     }
     default:
@@ -189,7 +189,7 @@ void shootBullet(GameEntity shooter) {
                     bullet->vely = -3;
                     shotByPlayer++;
                 } else {
-                    bullet->vely = 4;
+                    bullet->vely = 5;
                 }
                 SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
                 bulletsOnScreen++;
@@ -365,7 +365,7 @@ int main(bool hard)
         positionEnemies();
         handleCollitions();
         SPR_update();
-        //this should be the last line called?
+        //should this be the last line called?
         SYS_doVBlankProcess();
     }
 

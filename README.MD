@@ -30,7 +30,7 @@ CODER:
 INITIAL_DATE: 
 *   07/16/2021
 LAST_MODIFY_DATE:
-*   23/06/2023
+*   06/07/2023
 
 HISTORY:
 *       16/07/21 - Created template and helloworld type code.
@@ -40,6 +40,8 @@ HISTORY:
 *       23/06/23 - Added collision detection routines and collition result as such.
 *       28/06/23 - Added enemy fire, collision for both enemy and player
 *       30/06/23 - Added sounds -- btw not working *, also changed emulator
+*       06/07/23 - Added code to trigger powerup code, still on the works, checking working funcionallity and 
+                VDP to PAL code translation.
 
 TODO:
 *       Maybe organize and clean code
@@ -49,3 +51,4 @@ TODO:
         - Change sprites, use a different one for enemies, maybe 2
         - Add an explosion sprite for the player when hit by enemy fire.
         - Can two enemies fire at once?
+        - More powerups: ship speed up? a bomb?
