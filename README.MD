@@ -43,6 +43,7 @@ HISTORY:
 *       06/07/23 - Added code to trigger powerup code, still on the works, checking working funcionallity and 
                 VDP to PAL code translation.
 *       21/08/23 - Added code for an intro song, still trying to debug why sfx won't play
+*       22/08/23 - Changed rom header information to show gamename
 
 TODO:
 *       Maybe organize and clean code
