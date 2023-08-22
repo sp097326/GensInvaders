@@ -3,6 +3,7 @@
 
 extern const u8 laser[2560];
 extern const u8 xplosion[6656];
+extern const u8 intro[430592];
 extern const Palette bg_palette;
 extern const Image background;
 extern const SpriteDefinition ship;

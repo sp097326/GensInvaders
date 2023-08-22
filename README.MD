@@ -42,6 +42,7 @@ HISTORY:
 *       30/06/23 - Added sounds -- btw not working *, also changed emulator
 *       06/07/23 - Added code to trigger powerup code, still on the works, checking working funcionallity and 
                 VDP to PAL code translation.
+*       21/08/23 - Added code for an intro song, still trying to debug why sfx won't play
 
 TODO:
 *       Maybe organize and clean code

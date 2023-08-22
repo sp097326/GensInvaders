@@ -5,3 +5,4 @@ SPRITE ship "tiles/imgship.bmp" 2 2 FAST 6
 SPRITE bullet "tiles/imgbullet.bmp" 1 1 FAST 0
 WAV laser "sounds/laser.wav" 5
 WAV xplosion "sounds/explosion.wav" 5
+WAV intro "music/Intro.wav" 5

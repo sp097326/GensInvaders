@@ -35,6 +35,7 @@ typedef struct
 #define MAX_PLAYER_BULLETS 3
 #define BOTTOM_EDGE 224
 #define SHOT_INTERVAL 120
+#define INTRO_MUSIC 66
 #define SFX_LASER 64
 #define SFX_XPLOSION 65
 #define POWERUP_DURATION 100
@@ -187,13 +188,13 @@ void shootBullet(GameEntity shooter) {
                 //this is used to determine velocity according to who shoot the bullet
                 if (fromPlayer) {
                     bullet->vely = -3;
+                    XGM_startPlayPCM(SFX_LASER,9,SOUND_PCM_CH3);
                     shotByPlayer++;
                 } else {
                     bullet->vely = 5;
                 }
                 SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
                 bulletsOnScreen++;
-                XGM_startPlayPCM(SFX_LASER,1,SOUND_PCM_CH2);
                 break;
             }     
         }
@@ -269,7 +270,7 @@ void handleCollitions() {
                 if (collideEntities(b,&player)) {
                     killGameEntity(&player);
                     //present the xplosion sprite instead....
-                    XGM_startPlayPCM(SFX_XPLOSION,1,SOUND_PCM_CH2);
+                    XGM_startPlayPCM(SFX_XPLOSION,9,SOUND_PCM_CH3);
                 }
             }
             
@@ -315,6 +316,10 @@ int main(bool hard)
 {
     JOY_init();
     JOY_setEventHandler(&myJoyHandler);
+
+    //can I place here an initial sound Pac-Man style?
+    XGM_setPCM(INTRO_MUSIC,intro, sizeof(intro));
+    XGM_startPlayPCM(INTRO_MUSIC,12,SOUND_PCM_CH1);
     //handle sound
     XGM_setPCM(SFX_LASER, laser, sizeof(laser));
     XGM_setPCM(SFX_XPLOSION, xplosion, sizeof(xplosion));
