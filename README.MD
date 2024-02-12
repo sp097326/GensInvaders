@@ -24,6 +24,9 @@ NOTES SECTION
     excersice on futility. Fixed at least one problem though....
 -- Moving along with more code, for some reason it's really slow. I don't know if it's my code
     or something to do with the computer setup.
+-- Once again my time is not proportional to the speed of the SDGK development and alas here
+    we are in version 2.0 for the SGDK. Code seems to work as it is, still haven't unraveled
+    the sound problem and the sprite animation issues.
 
 CODER: 
 *   AMH - MANZANAS
