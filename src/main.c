@@ -39,6 +39,7 @@ typedef struct
 #define SFX_LASER 64
 #define SFX_XPLOSION 65
 #define POWERUP_DURATION 100
+#define POWER_ON 1
 
 // on screen entities
 GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, "PLAYER" };
@@ -53,6 +54,7 @@ u16 maxPlayerBullets = MAX_PLAYER_BULLETS;
 u16 powerupTimer = 0;
 int score = 0;
 char hud_string[40] = "";
+bool powerOn = 0;
 
 typedef enum MyEnum
 {
@@ -94,6 +96,7 @@ void activatePowerup(Powerup Type) {
         maxPlayerBullets = MAX_PLAYER_BULLETS;
         powerupTimer = POWERUP_DURATION;
         PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83000),DMA);
+        powerOn = POWER_ON;
         break;
     }
     default:
