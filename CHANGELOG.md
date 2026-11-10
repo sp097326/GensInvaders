@@ -3,6 +3,24 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-10 (noche) - Vidas, fondo de estrellas y formación (AMH + Bimo)
+
+### Agregado
+- **3 vidas** (`MAX_LIVES`). Al recibir un disparo la nave desaparece ~1.5 s
+  (`RESPAWN_DELAY`), reaparece en su lugar y parpadea ~2 s sin poder ser
+  golpeada (`INVULN_FRAMES`). GAME OVER solo cuando se acaban las naves.
+  El HUD muestra `SHIPS`. Nuevas funciones: `placePlayer()`, `updatePlayerLife()`, `playerHit()`.
+- **Fondo de estrellas** (`drawStarfield()`): el plano B se llena UNA vez al
+  iniciar con tiles aleatorios de `space.bmp` y solo se mueve el scroll vertical.
+  El código viejo lo hacía dentro del loop (1,280 escrituras por cuadro), por eso
+  era lento y estaba comentado.
+
+### Corregido
+- **Enemigos encimados:** cada enemigo rebotaba por su cuenta en la orilla y
+  chocaba con los que venían detrás. Ahora se mueven en formación (`enemyDir`):
+  si cualquiera toca una orilla, todo el grupo da la vuelta junto.
+- Sin control del jugador mientras espera reaparecer; el powerup se apaga al morir.
+
 ## 2026-11-10 (tarde) - Sonido, encabezado y script para correr (AMH + Bimo)
 
 Probado en BlastEm 0.6.2: la intro y el láser se escuchan; la explosión se cortaba.

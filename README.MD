@@ -36,6 +36,7 @@ does not affect the ROM.
 * B: shoot.
 * A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
 * START: restart after GAME OVER or YOU WIN.
+* You get 3 ships; after a hit the ship respawns and blinks for ~2 s (can't be hit).
 
 ## Change log
 Detailed changes live in `CHANGELOG.md`. The June 2026 repair session is documented in
@@ -82,7 +83,8 @@ HISTORY:
                 with START, fixed enemy bullet not freed on player hit, interrupts never re-enabled,
                 player name overflow; removed global i, renamed handleCollisions. Added CHANGELOG.md.
                 Later: intro trimmed to 5 s, explosion on its own PCM channel, ROM header renamed to
-                GENS INVADERS, run.bat to launch BlastEm.
+                GENS INVADERS, run.bat to launch BlastEm. Then: 3 lives with respawn and blinking
+                invulnerability, starfield background drawn once, enemies move as a formation.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -92,4 +94,4 @@ TODO:
         - Add an explosion sprite for the player when hit by enemy fire.
         - Can two enemies fire at once?
         - More powerups: ship speed up? a bomb?
-        - Lives instead of instant GAME OVER.
+        - Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.

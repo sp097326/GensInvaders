@@ -44,6 +44,11 @@ typedef struct
 #define POWER_OFF 0
 #define PLAYER_START_X 152
 #define PLAYER_START_Y 192
+#define MAX_LIVES 3             // ships per game
+#define RESPAWN_DELAY 90        // frames the player stays gone after being hit (~1.5 s)
+#define INVULN_FRAMES 120       // frames of blinking invulnerability after respawn (~2 s)
+#define BG_TILES_W 40           // visible width of the plane in tiles (320 px / 8)
+#define BG_TILES_H 32           // plane height in tiles (256 px, matches the scroll wrap)
 
 /* Game states: the main loop only moves things while PLAYING.
  * GAME_OVER and WIN freeze the action and wait for START to restart. */
@@ -71,6 +76,10 @@ int score = 0;
 char hud_string[40] = "";
 bool powerOn = 0;
 GameState gameState = STATE_PLAYING;
+u16 lives = MAX_LIVES;
+u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
+u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
+s16 enemyDir = 1;       // the whole formation moves together: +1 right, -1 left
 
 typedef enum
 {
@@ -91,7 +100,7 @@ void resetGame();
 /* Auxiliary functions for game processing */
 
 void updateScoreDisplay() {
-    sprintf(hud_string, "SCORE: %d - LEFT: %d", score, enemiesLeft);
+    sprintf(hud_string, "SCORE: %d - LEFT: %d - SHIPS: %d", score, enemiesLeft, lives);
     VDP_clearText(0,0,40);
     VDP_drawText(hud_string, 0,0);
 }
@@ -187,17 +196,27 @@ void updatePowerup() {
 void positionEnemies() {
     shotTicker++;
     u16 i = 0;
-    u16 absHPos = 0;
+    GameEntity* enemy;
+
+    /* Formation movement (classic Space Invaders): if ANY living enemy reaches
+     * an edge, the whole group turns around together. Before, each enemy
+     * bounced on its own, so the first one to hit the wall turned back and
+     * ran into the ones still coming, which is why they overlapped. */
     for (i = 0; i < MAX_ENEMIES; i++) {
-        GameEntity* enemy = &enemies[i];
-        absHPos = enemy->x+enemy->w;
+        enemy = &enemies[i];
         if (enemy->health > 0) {
-            if (absHPos>RIGHT_EDGE){
-                enemy->velx = -1;
-            } else if ( enemy->x < LEFT_EDGE) {
-                enemy->velx = 1;
+            if ((enemyDir > 0 && enemy->x + enemy->w >= RIGHT_EDGE) ||
+                (enemyDir < 0 && enemy->x <= LEFT_EDGE)) {
+                enemyDir = -enemyDir;
+                break;
             }
-            enemy->x += enemy->velx;
+        }
+    }
+
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        enemy = &enemies[i];
+        if (enemy->health > 0) {
+            enemy->x += enemyDir;
             SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
             //let's give enemies a chance to shoot!!
             if (shotTicker >= SHOT_INTERVAL) {
@@ -211,6 +230,7 @@ void positionEnemies() {
 }
 
 void positionPlayer() {
+    if (player.health == 0) return;   // waiting to respawn
     //handling velocity, adding it to position
     player.x += player.velx;
 
@@ -220,6 +240,52 @@ void positionPlayer() {
 
     //positioning the sprite using the Sprite Engine in SGDK
     SPR_setPosition(player.sprite, player.x, player.y);
+}
+
+/* Puts the ship back at its starting spot, facing straight. */
+void placePlayer() {
+    player.x = PLAYER_START_X;
+    player.y = PLAYER_START_Y;
+    player.velx = 0;
+    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
+    SPR_setHFlip(player.sprite, FALSE);
+    SPR_setPosition(player.sprite, player.x, player.y);
+}
+
+/* Called once per frame: brings the ship back after RESPAWN_DELAY frames and
+ * makes it blink (and immune) for INVULN_FRAMES so it isn't killed on arrival. */
+void updatePlayerLife() {
+    if (respawnTimer > 0) {
+        respawnTimer--;
+        if (respawnTimer == 0) {
+            placePlayer();
+            reviveGameEntity(&player);
+            invulnTimer = INVULN_FRAMES;
+        }
+        return;
+    }
+    if (invulnTimer > 0) {
+        invulnTimer--;
+        // Toggle visibility every 4 frames for the blink effect.
+        SPR_setVisibility(player.sprite, ((invulnTimer & 4) && invulnTimer > 0) ? HIDDEN : VISIBLE);
+    }
+}
+
+/* The ship was hit: lose a life, then either respawn or end the game. */
+void playerHit() {
+    killGameEntity(&player);
+    player.velx = 0;
+    if (powerOn) deactivatePowerup();
+    //present the xplosion sprite instead....
+    // Own channel (CH2) and top priority (15) so nothing can cut the explosion.
+    XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
+    lives--;
+    updateScoreDisplay();
+    if (lives == 0) {
+        showEndScreen(STATE_GAME_OVER);
+    } else {
+        respawnTimer = RESPAWN_DELAY;
+    }
 }
 
 void positionBullets() {
@@ -291,6 +357,9 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
         return;
     }
 
+    // No control while the ship is gone (waiting to respawn).
+    if (player.health == 0) return;
+
     if (state & BUTTON_RIGHT) {
         player.velx = 2;
         SPR_setAnim(player.sprite, ANIM_MOVE);
@@ -361,16 +430,12 @@ void handleCollisions() {
                     }
                 }
             } else if (player.health > 0) {
-                if (collideEntities(b,&player)) {
-                    killGameEntity(&player);
+                if (invulnTimer == 0 && collideEntities(b,&player)) {
                     // The enemy bullet is consumed too, so it doesn't keep
                     // occupying a slot of the shared pool.
                     killGameEntity(b);
                     bulletsOnScreen--;
-                    //present the xplosion sprite instead....
-                    // Own channel (CH2) and top priority (15) so nothing can cut the explosion.
-                    XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
-                    showEndScreen(STATE_GAME_OVER);
+                    playerHit();
                     return;
                 }
             }
@@ -386,7 +451,6 @@ void placeEnemies() {
     for (i = 0; i < MAX_ENEMIES; i++) {
         enem->x = i*32;
         enem->y = 32;
-        enem->velx = 1;
         reviveGameEntity(enem);
         SPR_setPosition(enem->sprite, enem->x, enem->y);
         enemiesLeft++;
@@ -440,18 +504,34 @@ void resetGame() {
     if (powerOn) deactivatePowerup();
     powerupTimer = 0;
 
-    player.x = PLAYER_START_X;
-    player.y = PLAYER_START_Y;
-    player.velx = 0;
+    placePlayer();
     reviveGameEntity(&player);
-    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
-    SPR_setPosition(player.sprite, player.x, player.y);
+    lives = MAX_LIVES;
+    respawnTimer = 0;
+    invulnTimer = 0;
 
+    enemyDir = 1;
     placeEnemies();
     score = 0;
     clearEndScreen();
     updateScoreDisplay();
     gameState = STATE_PLAYING;
+}
+
+/* Starfield: fills plane B ONCE with random tiles from space.bmp (tiles 1..3,
+ * loaded at VRAM index 1). The old code did this inside the main loop, i.e.
+ * 1280 tile writes every frame, which is why it was too slow and got commented
+ * out. Drawing it once and only moving the vertical scroll is enough: the plane
+ * wraps around, so the stars scroll forever for free. */
+void drawStarfield() {
+    u16 x, y, val;
+    for (y = 0; y < BG_TILES_H; y++) {
+        for (x = 0; x < BG_TILES_W; x++) {
+            val = (random() % 10) + 1;     // 1..10
+            if (val > 3) val = 1;          // ~80% tile 1 (empty space), rest are stars
+            VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL1, 0, 0, 0, val), x, y);
+        }
+    }
 }
 
 /* END Auxiliary functions */
@@ -474,6 +554,7 @@ int main(bool hard)
     PAL_setPalette(PAL1, background.palette->data, DMA); //changed from VDP_setPalette
     PAL_setPalette(PAL2, background.palette->data, DMA); //changed from VDP_setPalette
     VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
+    drawStarfield();
     SPR_init();
 
     /* adding the player to the screen, can this be moved to a function?*/
@@ -500,6 +581,7 @@ int main(bool hard)
         // pregenerating the values once would be the way to bring it back.
 
         if (gameState == STATE_PLAYING) {
+            updatePlayerLife();
             positionPlayer();
             positionBullets();
             positionEnemies();
