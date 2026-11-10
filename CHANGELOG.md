@@ -3,6 +3,26 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-10 (tarde) - Sonido, encabezado y script para correr (AMH + Bimo)
+
+Probado en BlastEm 0.6.2: la intro y el láser se escuchan; la explosión se cortaba.
+
+### Agregado
+- `run.bat` en la raíz: `run.bat` abre `out\rom.bin` en BlastEm
+  (`C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`); `run.bat build` compila antes.
+- `res/music/intro_short.wav`: la intro recortada a 5 s con desvanecido final
+  (mono, 16 bits, 22 kHz). El `Intro.wav` original de 30 s se conserva en el repo.
+
+### Cambiado
+- La explosión del jugador suena en su propio canal (`SOUND_PCM_CH2`) con prioridad 15;
+  el láser sigue en `SOUND_PCM_CH3`, así ya no se pisan.
+- `resources.res` usa `intro_short.wav`. El sample bajó de 430,592 a 70,144 bytes
+  y la ROM de 512 KB a 256 KB.
+- Encabezado de la ROM (`src/boot/rom_head.c`): nombre "GENS INVADERS",
+  copyright "(C)AMH  2026.NOV" (antes "SAMPLE PROGRAM").
+- `.gitignore`: ahora solo ignora `src/boot/sega.s` y los `.bak`, para que
+  `rom_head.c` (que tiene el nombre del juego) quede en el repo.
+
 ## 2026-11-10 - Fin de juego y limpieza (AMH + Bimo)
 
 Toolchain: SGDK 2.11 en `C:\tools\SGDK`, Java 21 (Temurin) para rescomp.
@@ -34,9 +54,7 @@ Build: `make -f %GDK%\makefile.gen` compila sin warnings; ROM de 524,288 bytes.
 - Typos en comentarios y comentarios viejos de depuración ("aquí truena").
 
 ### Pendiente
-- Confirmar en emulador que se escuchan intro, láser (B) y explosión.
-- Láser y explosión comparten `SOUND_PCM_CH3` y se cortan entre sí.
-- Intro como pista XGM real en lugar de un PCM de ~430 KB.
+- (Resuelto en la sesión de la tarde: sonido confirmado, canales separados e intro recortada.)
 - Sprite de explosión para el jugador y animaciones.
 
 ## 2026-06-26 - Sesión de reparación (AMH + Oz/Warp)

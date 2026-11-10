@@ -368,7 +368,8 @@ void handleCollisions() {
                     killGameEntity(b);
                     bulletsOnScreen--;
                     //present the xplosion sprite instead....
-                    XGM_startPlayPCM(SFX_XPLOSION,9,SOUND_PCM_CH3);
+                    // Own channel (CH2) and top priority (15) so nothing can cut the explosion.
+                    XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
                     showEndScreen(STATE_GAME_OVER);
                     return;
                 }

@@ -23,7 +23,11 @@ From the project folder:
 
     %GDK%\bin\make -f %GDK%\makefile.gen
 
-The ROM ends up in `out/rom.bin` (512 KB). Load it in BlastEm, GensKMod or any Genesis emulator.
+The ROM ends up in `out/rom.bin` (256 KB).
+
+To play it, run `run.bat` from the project root (or `run.bat build` to compile first).
+It opens the ROM in BlastEm 0.6.2, installed at `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
+BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (powerup), Enter = START.
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
 does not affect the ROM.
 
@@ -77,11 +81,11 @@ HISTORY:
 *       10/11/26 - SGDK 2.11 + Java 21 toolchain. Added game states (GAME OVER / YOU WIN) and restart
                 with START, fixed enemy bullet not freed on player hit, interrupts never re-enabled,
                 player name overflow; removed global i, renamed handleCollisions. Added CHANGELOG.md.
+                Later: intro trimmed to 5 s, explosion on its own PCM channel, ROM header renamed to
+                GENS INVADERS, run.bat to launch BlastEm.
 
 TODO:
-*       Confirm in an emulator that intro, laser and explosion sounds play
-*       Use separate PCM channels for laser and explosion so they don't cut each other off
-*       Turn the intro into a real XGM track instead of a ~430 KB PCM sample
+*       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
 *       Start a list of where to take the base "game" to make something better, here's some ideas:
         - Add more enemies, control a second row.
         - Change sprites, use a different one for enemies, maybe 2

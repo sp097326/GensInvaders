@@ -1,2 +1,3 @@
 out/
-src/boot/
+src/boot/sega.s
+src/boot/*.bak
