@@ -14,6 +14,29 @@ initial portion of the main.c file.
 So, Gens Invaders is a simple clone of the space invaders formula with a 16-Bit Genesis
 graphics flavour.
 
+## How to build
+Requirements (Windows):
+* SGDK 2.11 installed at `C:\tools\SGDK` with the `GDK` environment variable pointing to it.
+* Java 21 (Eclipse Temurin) on the PATH; SGDK's `rescomp.jar` and `sizebnd.jar` need it.
+
+From the project folder:
+
+    %GDK%\bin\make -f %GDK%\makefile.gen
+
+The ROM ends up in `out/rom.bin` (512 KB). Load it in BlastEm, GensKMod or any Genesis emulator.
+Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
+does not affect the ROM.
+
+## Controls
+* D-pad left/right: move the ship.
+* B: shoot.
+* A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
+* START: restart after GAME OVER or YOU WIN.
+
+## Change log
+Detailed changes live in `CHANGELOG.md`. The June 2026 repair session is documented in
+`gensinvaders-session-log.html`.
+
 NOTES SECTION
 -- OK, I really abandoned this for quite a while, I'll try to get something done before the
     en of the month, can't promise to much, guess I bit a little more than I can chew...
@@ -27,13 +50,15 @@ NOTES SECTION
 -- Once again my time is not proportional to the speed of the SDGK development and alas here
     we are in version 2.0 for the SGDK. Code seems to work as it is, still haven't unraveled
     the sound problem and the sprite animation issues.
+-- Nov 2026: back at it with help from Bimo. Updated to SGDK 2.11, the game builds cleanly
+    again and now has an actual ending (GAME OVER / YOU WIN) with restart.
 
 CODER: 
 *   AMH - MANZANAS
 INITIAL_DATE: 
 *   07/16/2021
 LAST_MODIFY_DATE:
-*   06/07/2023
+*   11/10/2026
 
 HISTORY:
 *       16/07/21 - Created template and helloworld type code.
@@ -47,13 +72,20 @@ HISTORY:
                 VDP to PAL code translation.
 *       21/08/23 - Added code for an intro song, still trying to debug why sfx won't play
 *       22/08/23 - Changed rom header information to show gamename
+*       26/06/26 - Repair session: fixed powerup toggle/RapidFire/palette crash, powerup auto-expire,
+                updated sega.s boot stub, WAV driver changed to XGM. Builds again.
+*       10/11/26 - SGDK 2.11 + Java 21 toolchain. Added game states (GAME OVER / YOU WIN) and restart
+                with START, fixed enemy bullet not freed on player hit, interrupts never re-enabled,
+                player name overflow; removed global i, renamed handleCollisions. Added CHANGELOG.md.
 
 TODO:
-*       Maybe organize and clean code
-*       Check why the sound is not working
+*       Confirm in an emulator that intro, laser and explosion sounds play
+*       Use separate PCM channels for laser and explosion so they don't cut each other off
+*       Turn the intro into a real XGM track instead of a ~430 KB PCM sample
 *       Start a list of where to take the base "game" to make something better, here's some ideas:
         - Add more enemies, control a second row.
         - Change sprites, use a different one for enemies, maybe 2
         - Add an explosion sprite for the player when hit by enemy fire.
         - Can two enemies fire at once?
         - More powerups: ship speed up? a bomb?
+        - Lives instead of instant GAME OVER.

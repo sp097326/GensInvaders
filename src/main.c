@@ -1,11 +1,12 @@
 /**
  * Gens Invaders
  * Created With Genesis-Code extension for Visual Studio Code
- * Based on ohsat (https://www.ohsat.com/) awesome tutotial.
- * Assets by: taken from ohsat page, 
+ * Based on ohsat (https://www.ohsat.com/) awesome tutorial.
+ * Assets by: taken from ohsat page,
  * Code by: AMH
- * Last mod by: AMH - 22 / 06/ 2023
- * 
+ * Last mod by: AMH (with Bimo) - 10 / 11 / 2026
+ *
+ * Change history lives in CHANGELOG.md; design notes in README.MD.
  **/
 #include <genesis.h>
 #include <resources.h>
@@ -27,11 +28,11 @@ typedef struct
 
 // Enemy control definitions
 #define MAX_ENEMIES 7       // maximum enemies on screen
-#define LEFT_EDGE 0         // setting the screen boundries
-#define RIGHT_EDGE 320      // in order to control enemie movement-boundries
+#define LEFT_EDGE 0         // setting the screen boundaries
+#define RIGHT_EDGE 320      // in order to control enemy movement boundaries
 #define ANIM_STRAIGHT 0
 #define ANIM_MOVE 1
-#define MAX_BULLETS 6       // maybe we can use this for a turbo power up?
+#define MAX_BULLETS 6       // size of the shared bullet pool (also the RapidFire cap)
 #define MAX_PLAYER_BULLETS 3
 #define BOTTOM_EDGE 224
 #define SHOT_INTERVAL 120
@@ -41,12 +42,25 @@ typedef struct
 #define POWERUP_DURATION 100
 #define POWER_ON 1
 #define POWER_OFF 0
+#define PLAYER_START_X 152
+#define PLAYER_START_Y 192
+
+/* Game states: the main loop only moves things while PLAYING.
+ * GAME_OVER and WIN freeze the action and wait for START to restart. */
+typedef enum
+{
+    STATE_PLAYING,
+    STATE_GAME_OVER,
+    STATE_WIN
+} GameState;
 
 // on screen entities
-GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, "PLAYER" };
+// name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit.
+GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, "PLYR" };
 GameEntity enemies[MAX_ENEMIES];
 GameEntity bullets[MAX_BULLETS];
-GameEntity powerup = {0,0,8,8,0,0,0, NULL};
+// Every field initialized (the empty name "" silences -Wmissing-field-initializers).
+GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, ""};
 u16 enemiesLeft = 0;
 u16 bulletsOnScreen = 0;
 u16 shotTicker = 0;
@@ -56,17 +70,14 @@ u16 powerupTimer = 0;
 int score = 0;
 char hud_string[40] = "";
 bool powerOn = 0;
+GameState gameState = STATE_PLAYING;
 
-typedef enum MyEnum
+typedef enum
 {
     RapidFire
 } Powerup;
 
-// variables for space bkg.
-int i=0;
-int thex = 0;
-int they = 0;
-int val = 1;
+// background scroll offset
 int offset = 0;
 
 /* Function prototypes
@@ -75,6 +86,7 @@ int offset = 0;
  * triggers an implicit-declaration warning/error on modern SGDK toolchains.
  * Declaring the prototype here tells the compiler its signature in advance. */
 void shootBullet(GameEntity shooter);
+void resetGame();
 
 /* Auxiliary functions for game processing */
 
@@ -92,6 +104,30 @@ void killGameEntity(GameEntity* e) {
 void reviveGameEntity(GameEntity* e) {
     e -> health = 1;
     SPR_setVisibility(e -> sprite, VISIBLE);
+}
+
+/* Game state helpers ------------------------------------------------------ */
+
+/* Draws a message centered on the 40-column text plane, on row y. */
+void drawCenteredText(const char* text, u16 y) {
+    u16 len = strlen(text);
+    VDP_drawText(text, (40 - len) / 2, y);
+}
+
+void showEndScreen(GameState newState) {
+    gameState = newState;
+    player.velx = 0;
+    if (newState == STATE_WIN) {
+        drawCenteredText("YOU WIN!", 12);
+    } else {
+        drawCenteredText("GAME OVER", 12);
+    }
+    drawCenteredText("PRESS START", 14);
+}
+
+void clearEndScreen() {
+    VDP_clearText(0, 12, 40);
+    VDP_clearText(0, 14, 40);
 }
 
 /* powerup Related */
@@ -175,14 +211,14 @@ void positionEnemies() {
 }
 
 void positionPlayer() {
-    //handling veolicity, adding it to position
+    //handling velocity, adding it to position
     player.x += player.velx;
 
-    /* checking to keep the player in the boundries of the screen */
+    /* checking to keep the player in the boundaries of the screen */
     if (player.x < LEFT_EDGE) player.x = LEFT_EDGE;
     if (player.x + player.w > RIGHT_EDGE) player.x = RIGHT_EDGE - player.w;
 
-    //positioning the srprite using the Sprite Engine in SGDK
+    //positioning the sprite using the Sprite Engine in SGDK
     SPR_setPosition(player.sprite, player.x, player.y);
 }
 
@@ -237,54 +273,60 @@ void shootBullet(GameEntity shooter) {
                 SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
                 bulletsOnScreen++;
                 break;
-            }     
+            }
         }
     }
 }
 
-/* Handler function for the joystick movement, Interrupts are alredy implemented in SGDK */
+/* Handler function for the joystick movement, Interrupts are already implemented in SGDK */
 void myJoyHandler(u16 joy, u16 changed, u16 state) {
     // Control movement for player 1 (can we just add an If for player 2?)
-    if (joy == JOY_1){
-        if (state & BUTTON_RIGHT) {
-            player.velx = 2;
-            SPR_setAnim(player.sprite, ANIM_MOVE);
-            SPR_setHFlip(player.sprite, TRUE);
+    if (joy != JOY_1) return;
+
+    // On the end screens only START matters: it restarts the game.
+    if (gameState != STATE_PLAYING) {
+        if (state & BUTTON_START & changed) {
+            resetGame();
         }
-        else if (state & BUTTON_LEFT) {
-            player.velx = -2;
-            SPR_setAnim(player.sprite, ANIM_MOVE);
-            SPR_setHFlip(player.sprite, FALSE);
+        return;
+    }
+
+    if (state & BUTTON_RIGHT) {
+        player.velx = 2;
+        SPR_setAnim(player.sprite, ANIM_MOVE);
+        SPR_setHFlip(player.sprite, TRUE);
+    }
+    else if (state & BUTTON_LEFT) {
+        player.velx = -2;
+        SPR_setAnim(player.sprite, ANIM_MOVE);
+        SPR_setHFlip(player.sprite, FALSE);
+    }
+    else {
+        if ( (changed & BUTTON_RIGHT) | (changed & BUTTON_LEFT) ) {
+            player.velx = 0;
+            SPR_setAnim(player.sprite, ANIM_STRAIGHT);
         }
-        else {
-            if ( (changed & BUTTON_RIGHT) | (changed & BUTTON_LEFT) ) {
-                player.velx = 0;
-                SPR_setAnim(player.sprite, ANIM_STRAIGHT);
-            }
-        }
-        if (state & BUTTON_B & changed) {
-            shootBullet(player);
-        }
-        if (state & BUTTON_A & changed) {
-            if (powerOn) {
-                //aquí truena...
-                deactivatePowerup();
-            } else {
-                //aquí entra bien
-                activatePowerup(RapidFire);
-            }
+    }
+    if (state & BUTTON_B & changed) {
+        shootBullet(player);
+    }
+    if (state & BUTTON_A & changed) {
+        if (powerOn) {
+            deactivatePowerup();
+        } else {
+            activatePowerup(RapidFire);
         }
     }
 }
 
 int collideEntities(GameEntity* a, GameEntity* b) {
-    return (a->x < b->x + b->w && 
-    a->x + a->w > b->x && 
+    return (a->x < b->x + b->w &&
+    a->x + a->w > b->x &&
     a->y < b->y + b->h &&
     a->y + a->h >= b->y);
 }
 
-void handleCollitions() {
+void handleCollisions() {
     GameEntity* b;
     GameEntity* e;
     int i = 0;
@@ -300,7 +342,7 @@ void handleCollitions() {
                     e = &enemies[j];
                     if (e->health > 0) {
                         if (collideEntities(b,e)) {
-                            //should we shift the animation to an explosion animation and disapear?
+                            //should we shift the animation to an explosion animation and disappear?
                             killGameEntity(e);
                             killGameEntity(b);
                             //place sound of xplosion here for enemy, diff. sound?
@@ -309,24 +351,51 @@ void handleCollitions() {
                             shotByPlayer--;
                             score += 10;
                             updateScoreDisplay();
-                            break;                        
+                            // Last enemy down: the player wins.
+                            if (enemiesLeft == 0) {
+                                showEndScreen(STATE_WIN);
+                                return;
+                            }
+                            break;
                         }
                     }
                 }
-            } else {
+            } else if (player.health > 0) {
                 if (collideEntities(b,&player)) {
                     killGameEntity(&player);
+                    // The enemy bullet is consumed too, so it doesn't keep
+                    // occupying a slot of the shared pool.
+                    killGameEntity(b);
+                    bulletsOnScreen--;
                     //present the xplosion sprite instead....
                     XGM_startPlayPCM(SFX_XPLOSION,9,SOUND_PCM_CH3);
+                    showEndScreen(STATE_GAME_OVER);
+                    return;
                 }
             }
-            
         }
-    }   
+    }
+}
+
+/* Puts every enemy back in its starting slot (used at boot and on restart). */
+void placeEnemies() {
+    u16 i;
+    GameEntity* enem = enemies;
+    enemiesLeft = 0;
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        enem->x = i*32;
+        enem->y = 32;
+        enem->velx = 1;
+        reviveGameEntity(enem);
+        SPR_setPosition(enem->sprite, enem->x, enem->y);
+        enemiesLeft++;
+        enem++;
+    }
 }
 
 void generateEnemies() {
     /* Creating Enemy Sprites*/
+    u16 i;
     GameEntity* enem = enemies;
     for (i = 0; i < MAX_ENEMIES; i++) {
         enem->x = i*32;
@@ -343,6 +412,7 @@ void generateEnemies() {
 }
 
 void generateBullets() {
+    u16 i;
     GameEntity* bullt = bullets;
     for (i = 0; i < MAX_BULLETS; i++)
     {
@@ -354,6 +424,33 @@ void generateBullets() {
         sprintf(bullt->name, "Bu%d",i);
         bullt++;
     }
+}
+
+/* Restart after GAME OVER / YOU WIN: reuse the sprites already allocated,
+ * just reset positions, counters and flags. */
+void resetGame() {
+    u16 i;
+    for (i = 0; i < MAX_BULLETS; i++) {
+        killGameEntity(&bullets[i]);
+    }
+    bulletsOnScreen = 0;
+    shotByPlayer = 0;
+    shotTicker = 0;
+    if (powerOn) deactivatePowerup();
+    powerupTimer = 0;
+
+    player.x = PLAYER_START_X;
+    player.y = PLAYER_START_Y;
+    player.velx = 0;
+    reviveGameEntity(&player);
+    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
+    SPR_setPosition(player.sprite, player.x, player.y);
+
+    placeEnemies();
+    score = 0;
+    clearEndScreen();
+    updateScoreDisplay();
+    gameState = STATE_PLAYING;
 }
 
 /* END Auxiliary functions */
@@ -379,8 +476,8 @@ int main(bool hard)
     SPR_init();
 
     /* adding the player to the screen, can this be moved to a function?*/
-    player.x = 152;
-    player.y = 192;
+    player.x = PLAYER_START_X;
+    player.y = PLAYER_START_Y;
     player.health = 1;
     player.sprite = SPR_addSprite(&ship, player.x, player.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 
@@ -389,39 +486,28 @@ int main(bool hard)
     updateScoreDisplay();
     SPR_update();
     PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
-    
+    SYS_enableInts();
+
     /* Actual main loop for the game, this loops while the game is alive */
     while(1)
     {
-        //For versions prior to SGDK 1.60 use VDP_waitVSync instead.
+        // The starfield keeps scrolling on every screen, even GAME OVER.
         VDP_setVerticalScroll(BG_B,offset -= 2);
-        if (offset <= -256) offset = 0; 
+        if (offset <= -256) offset = 0;
 
-        // commented out for performance issues.... pregenerate the random values and load?
-        /*
-        int half = 0;
-        for (i=0; i < 1280; i++) {
-            half = i%4;
-            if (half != 0) {
-                thex = i % 40;
-                they = i / 40;
+        // Old idea: random starfield tiles every frame. Removed for performance;
+        // pregenerating the values once would be the way to bring it back.
 
-                val = (random() % (10-1+1)) + 1;
-                if (val > 3) val = 1;
-                VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL1,0,0,0,val), thex,they);
-            }
-        } */
-
-        positionPlayer();
-        positionBullets();
-        positionEnemies();
-        handleCollitions();
-        updatePowerup();    // tick RapidFire down so it auto-expires
+        if (gameState == STATE_PLAYING) {
+            positionPlayer();
+            positionBullets();
+            positionEnemies();
+            handleCollisions();
+            updatePowerup();    // tick RapidFire down so it auto-expires
+        }
         SPR_update();
-        //should this be the last line called?
         SYS_doVBlankProcess();
     }
 
-    SYS_enableInts();
     return (0);
 }
