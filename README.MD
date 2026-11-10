@@ -26,6 +26,8 @@ From the project folder:
 The ROM ends up in `out/rom.bin` (256 KB).
 
 To play it, run `run.bat` from the project root (or `run.bat build` to compile first).
+`run.bat build` also writes `src/version.h` with the version `V0.1.xx`, where xx is the
+number of git commits; build after committing so the version matches GitHub.
 It opens the ROM in BlastEm 0.6.2, installed at `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
 BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (powerup), Enter = START.
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
@@ -35,7 +37,7 @@ does not affect the ROM.
 * D-pad left/right: move the ship.
 * B: shoot.
 * A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
-* START: restart after GAME OVER or YOU WIN.
+* START: pause / resume (the pause screen shows the game version). Restarts after GAME OVER or YOU WIN.
 * You get 3 ships; after a hit the ship respawns and blinks for ~2 s (can't be hit).
 
 ## Change log
@@ -85,6 +87,7 @@ HISTORY:
                 Later: intro trimmed to 5 s, explosion on its own PCM channel, ROM header renamed to
                 GENS INVADERS, run.bat to launch BlastEm. Then: 3 lives with respawn and blinking
                 invulnerability, starfield background drawn once, enemies move as a formation.
+                Pause screen on START showing the game version (V0.1.xx = git commit count).
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder

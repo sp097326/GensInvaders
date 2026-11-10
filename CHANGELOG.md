@@ -3,6 +3,17 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-10 (noche 2) - Pausa con versión (AMH + Bimo)
+
+### Agregado
+- **Pausa:** START durante el juego congela la acción y muestra "PAUSED",
+  "GENS INVADERS V0.1.xx" y "PRESS START"; START de nuevo continúa.
+  Nuevo estado `STATE_PAUSED` y funciones `pauseGame()` / `resumeGame()`.
+- **Versión del juego:** `V0.1.xx`, donde xx es el número de commits del repo
+  (`git rev-list --count HEAD`). `run.bat build` genera `src/version.h` antes
+  de compilar; ese archivo está en `.gitignore`. Si no existe, el juego muestra `V0.1.DEV`.
+  Para que la versión coincida con lo que está en GitHub, compilar después de hacer commit.
+
 ## 2026-11-10 (noche) - Vidas, fondo de estrellas y formación (AMH + Bimo)
 
 ### Agregado

@@ -11,6 +11,15 @@
 #include <genesis.h>
 #include <resources.h>
 
+/* Game version. run.bat writes src/version.h before each build with
+ * V0.1.xx, where xx = number of commits in the git repo (git rev-list --count HEAD).
+ * version.h is git-ignored; if it doesn't exist we fall back to a dev label. */
+#if __has_include("version.h")
+#include "version.h"
+#else
+#define GAME_VERSION "V0.1.DEV"
+#endif
+
 //player related vars
 typedef struct
 {
@@ -55,6 +64,7 @@ typedef struct
 typedef enum
 {
     STATE_PLAYING,
+    STATE_PAUSED,
     STATE_GAME_OVER,
     STATE_WIN
 } GameState;
@@ -137,6 +147,22 @@ void showEndScreen(GameState newState) {
 void clearEndScreen() {
     VDP_clearText(0, 12, 40);
     VDP_clearText(0, 14, 40);
+    VDP_clearText(0, 16, 40);
+}
+
+/* Pause screen: START freezes the action and shows the game version. */
+void pauseGame() {
+    gameState = STATE_PAUSED;
+    player.velx = 0;
+    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
+    drawCenteredText("PAUSED", 12);
+    drawCenteredText("GENS INVADERS " GAME_VERSION, 14);
+    drawCenteredText("PRESS START", 16);
+}
+
+void resumeGame() {
+    clearEndScreen();
+    gameState = STATE_PLAYING;
 }
 
 /* powerup Related */
@@ -348,6 +374,18 @@ void shootBullet(GameEntity shooter) {
 void myJoyHandler(u16 joy, u16 changed, u16 state) {
     // Control movement for player 1 (can we just add an If for player 2?)
     if (joy != JOY_1) return;
+
+    // START pauses / resumes while playing.
+    if (gameState == STATE_PAUSED) {
+        if (state & BUTTON_START & changed) {
+            resumeGame();
+        }
+        return;
+    }
+    if (gameState == STATE_PLAYING && (state & BUTTON_START & changed)) {
+        pauseGame();
+        return;
+    }
 
     // On the end screens only START matters: it restarts the game.
     if (gameState != STATE_PLAYING) {
