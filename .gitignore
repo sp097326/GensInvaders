@@ -1,3 +1,4 @@
 out/
 src/boot/sega.s
-src/boot/*.baksrc/version.h
+src/boot/*.bak
+src/version.h
