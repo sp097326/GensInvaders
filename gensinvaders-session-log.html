@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gens Invaders — Oz Session Log</title>
+<style>
+  :root{
+    --ink:#1b1f24; --muted:#5b6470; --line:#e3e8ee; --bg:#f5f7fa; --card:#ffffff;
+    --blue:#0b5fff; --blue-d:#0a3aa0; --red:#e0203a; --green:#1a7f37; --amber:#9a6700;
+    --code-bg:#0d1117; --code-ink:#e6edf3;
+    --add-bg:#e6ffec; --add-ink:#0a5121; --del-bg:#ffebe9; --del-ink:#8b1a1a;
+    --chip:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px 80px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,pre,.mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
+  code.inline{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:.9em}
+
+  /* Hero */
+  .hero{background:linear-gradient(120deg,#0a3aa0,#0b5fff 55%,#e0203a);
+    color:#fff;border-radius:0 0 16px 16px;padding:34px 28px;margin-bottom:26px;
+    box-shadow:0 10px 30px rgba(11,95,255,.18)}
+  .hero h1{margin:0 0 6px;font-size:30px;letter-spacing:.2px}
+  .hero p{margin:0;opacity:.92}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:10px;margin-top:18px}
+  .meta div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+    padding:8px 12px;border-radius:8px;font-size:13px}
+  .meta b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;opacity:.8}
+
+  /* Cards & sections */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:20px 22px;margin:18px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  h2{font-size:21px;margin:2px 0 4px;display:flex;align-items:center;gap:10px}
+  h3{font-size:15px;margin:20px 0 8px;color:var(--blue-d);text-transform:uppercase;
+    letter-spacing:.5px;font-weight:700}
+  .turnnum{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;
+    background:var(--blue);color:#fff;font-size:15px;font-weight:700;flex:none}
+
+  /* TOC */
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 22px}
+  nav.toc ol{margin:8px 0 0;padding-left:20px}
+  nav.toc li{margin:3px 0}
+
+  /* User message */
+  .user{border-left:4px solid var(--blue);background:#f0f5ff;border-radius:0 8px 8px 0;
+    padding:10px 14px;margin:6px 0 14px;color:#173a7a}
+  .user b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--blue-d);margin-bottom:2px}
+
+  /* Tables */
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#11243f;color:#fff;font-weight:600;letter-spacing:.2px}
+  tbody tr:nth-child(even){background:#f7f9fc}
+  td.mono,th.mono{font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px}
+
+  /* Badges */
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;
+    font-weight:700;letter-spacing:.3px;white-space:nowrap}
+  .b-ok{background:#dcfce4;color:var(--green);border:1px solid #a7e3b6}
+  .b-warn{background:#fff4d6;color:var(--amber);border:1px solid #f0d384}
+  .b-err{background:#ffe0e3;color:var(--red);border:1px solid #f3b5bc}
+  .b-info{background:#e0ecff;color:var(--blue-d);border:1px solid #b6d0ff}
+  .b-neutral{background:var(--chip);color:var(--muted);border:1px solid var(--line)}
+
+  /* Code + diff */
+  pre.code{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:10px;
+    overflow:auto;font-size:12.8px;line-height:1.5}
+  pre.diff{background:#0d1117;border-radius:10px;padding:12px 0;overflow:auto;font-size:12.8px;line-height:1.5}
+  pre.diff .ln{display:block;padding:0 16px;white-space:pre}
+  pre.diff .add{background:rgba(46,160,67,.18);color:#7ee787}
+  pre.diff .del{background:rgba(248,81,73,.16);color:#ffa198}
+  pre.diff .ctx{color:#8b949e}
+  pre.diff .hdr{color:#d2a8ff}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .note{background:#fffdf2;border:1px solid #f0e3a8;border-radius:8px;padding:10px 14px;margin:10px 0}
+  .note.blue{background:#f1f6ff;border-color:#bcd5ff}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:3px 0}
+  .small{font-size:12.5px;color:var(--muted)}
+  footer{text-align:center;color:var(--muted);font-size:12.5px;margin-top:30px}
+  hr.sep{border:none;border-top:1px dashed var(--line);margin:18px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Gens Invaders — Session Log</h1>
+    <p>A full transcript of the assisted debugging &amp; fix session, including intermediate steps, diagnoses, diffs, and build results.</p>
+    <div class="meta">
+      <div><b>Project</b>Gens Invaders (SGDK / Sega Genesis)</div>
+      <div><b>Repo</b>C:\githubcodes\gensInvaders</div>
+      <div><b>Toolchain</b>SGDK @ C:\tools\SGDK (rescomp 3.95)</div>
+      <div><b>Generated</b>2026-06-26</div>
+    </div>
+  </header>
+
+  <!-- LEGEND -->
+  <section class="card">
+    <h3 style="margin-top:0">Legend</h3>
+    <div class="legend">
+      <span class="badge b-ok">SUCCESS</span> build/link passed
+      &nbsp;<span class="badge b-warn">WARNING</span> compiled with warnings
+      &nbsp;<span class="badge b-err">FAILED</span> link/compile failed
+      &nbsp;<span class="badge b-info">INFO</span> finding / diagnosis
+      &nbsp;<span class="badge b-neutral">UNCHANGED</span> noted, not modified
+    </div>
+    <p class="small" style="margin-bottom:0">Diff blocks use <span style="color:#1a7f37">green = added</span> /
+    <span style="color:#b31d28">red = removed</span>. All builds were run with
+    <code class="inline">&amp; "$env:GDK\bin\make" -f "$env:GDK\makefile.gen"</code>.</p>
+  </section>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <h3 style="margin-top:0">Contents</h3>
+    <ol>
+      <li><a href="#overview">Session overview &amp; outcomes</a></li>
+      <li><a href="#t1">Turn 1 — Analyze the folder</a></li>
+      <li><a href="#t2">Turn 2 — Fix powerup toggle &amp; missing <code class="inline">shootBullet</code></a></li>
+      <li><a href="#t3">Turn 3 — Fix the stale <code class="inline">sega.s</code> reference</a></li>
+      <li><a href="#t4">Turn 4 — Powerup auto-expire &amp; the sound issue</a></li>
+      <li><a href="#files">Net file changes</a></li>
+      <li><a href="#builds">Build timeline</a></li>
+    </ol>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <section class="card" id="overview">
+    <h2>Session overview &amp; outcomes</h2>
+    <p>Gens Invaders is a Space Invaders–style game for the Sega Genesis built with SGDK, based on the
+       ohsat tutorial. The project had drifted out of sync with a newer SGDK and had several latent bugs.
+       Over four turns the game was analyzed, repaired, and made to build cleanly again.</p>
+    <table>
+      <thead><tr><th style="width:34%">Issue</th><th style="width:46%">Resolution</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Missing <code class="inline">shootBullet</code> forward declaration</td><td>Added prototype before first use</td><td><span class="badge b-ok">FIXED</span></td></tr>
+        <tr><td>Powerup toggle stuck on (<code class="inline">powerOn</code> never reset)</td><td>Reset <code class="inline">powerOn = POWER_OFF</code> on deactivate</td><td><span class="badge b-ok">FIXED</span></td></tr>
+        <tr><td>RapidFire had no effect</td><td><code class="inline">maxPlayerBullets = MAX_BULLETS</code></td><td><span class="badge b-ok">FIXED</span></td></tr>
+        <tr><td>Palette index mismatch (18 vs 34)</td><td>Unified to index 34 in both functions</td><td><span class="badge b-ok">FIXED</span></td></tr>
+        <tr><td><code class="inline">PAL_setPaletteColors</code> misuse (the “aquí truena” crash)</td><td>Switched to <code class="inline">PAL_setColor</code></td><td><span class="badge b-ok">FIXED</span></td></tr>
+        <tr><td>Powerup never auto-expired</td><td>Added <code class="inline">updatePowerup()</code> countdown in main loop</td><td><span class="badge b-ok">FIXED</span></td></tr>
+        <tr><td>Stale <code class="inline">src/boot/sega.s</code> → link failure</td><td>Replaced with current SGDK boot stub</td><td><span class="badge b-ok">FIXED</span></td></tr>
+        <tr><td>Sound: deprecated WAV driver id <code class="inline">5</code></td><td>Changed to <code class="inline">XGM</code>; rescomp regenerates samples</td><td><span class="badge b-ok">BUILD FIXED</span> <span class="small">(audio not audibly verified)</span></td></tr>
+        <tr><td>No game-over / win state</td><td>Noted only</td><td><span class="badge b-neutral">NOT ADDRESSED</span></td></tr>
+        <tr><td>Cosmetic (global <code class="inline">i</code>, typos, <code class="inline">name</code> initializer warning, 430&nbsp;KB intro WAV)</td><td>Noted only</td><td><span class="badge b-neutral">NOT ADDRESSED</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- TURN 1 -->
+  <section class="card" id="t1">
+    <h2><span class="turnnum">1</span> Analyze the folder</h2>
+    <div class="user"><b>User</b>“I want you to analyze this folder and tell me what you find.”</div>
+
+    <h3>Intermediate steps</h3>
+    <table>
+      <thead><tr><th style="width:42%">Action</th><th>Purpose / result</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">ls</td><td>Top level: <code class="inline">.vscode</code>, <code class="inline">inc</code>, <code class="inline">out</code>, <code class="inline">res</code>, <code class="inline">src</code>, <code class="inline">.gitignore</code>, <code class="inline">README.MD</code>, <code class="inline">WARP.md</code></td></tr>
+        <tr><td class="mono">Get-ChildItem -Recurse -File (excl. out\)</td><td>Full source inventory (see below)</td></tr>
+        <tr><td class="mono">read_files ×7</td><td><code class="inline">main.c</code>, <code class="inline">README.MD</code>, <code class="inline">resources.res</code>, <code class="inline">resources.h</code>, <code class="inline">.gitignore</code>, <code class="inline">launch.json</code>, <code class="inline">settings.json</code></td></tr>
+        <tr><td class="mono">git log / status / out listing</td><td>master, in sync; uncommitted edits; ROM last built Nov 2024</td></tr>
+        <tr><td class="mono">git diff</td><td>Inspected in-progress edits to <code class="inline">main.c</code> &amp; <code class="inline">settings.json</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>File inventory</h3>
+    <table>
+      <thead><tr><th>File</th><th>Bytes</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">src/main.c</td><td>11,748</td><td>All game logic &amp; loop</td></tr>
+        <tr><td class="mono">src/boot/sega.s</td><td>13,853</td><td>68000 boot / vector table (git-ignored)</td></tr>
+        <tr><td class="mono">src/boot/rom_head.c</td><td>730</td><td>ROM header (customized w/ game name)</td></tr>
+        <tr><td class="mono">res/resources.res</td><td>276</td><td>Asset manifest (palette, image, sprites, WAVs)</td></tr>
+        <tr><td class="mono">res/music/Intro.wav</td><td>8,857,980</td><td>Intro audio (~8.8 MB source)</td></tr>
+        <tr><td class="mono">res/sounds/{laser,explosion}.wav</td><td>15,080 / 41,310</td><td>SFX</td></tr>
+        <tr><td class="mono">res/tiles/*.bmp</td><td>—</td><td>Ship, bullet, space background</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Findings — notable bugs</h3>
+    <table>
+      <thead><tr><th style="width:30px">#</th><th>Finding</th><th>Location</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Missing forward declaration — <code class="inline">shootBullet</code> called before defined</td><td class="mono">main.c:133 / 175</td></tr>
+        <tr><td>2</td><td>Powerup toggle broken — <code class="inline">powerOn</code> never reset</td><td class="mono">deactivatePowerup()</td></tr>
+        <tr><td>3</td><td>RapidFire no-op — <code class="inline">maxPlayerBullets = MAX_PLAYER_BULLETS</code> (== default)</td><td class="mono">activatePowerup()</td></tr>
+        <tr><td>4</td><td>Palette index mismatch — activate=18, deactivate=34</td><td class="mono">main.c</td></tr>
+        <tr><td>5</td><td>Powerup timer set but never counted down</td><td class="mono">powerupTimer</td></tr>
+        <tr><td>6</td><td>No game-over / win condition</td><td class="mono">main loop</td></tr>
+        <tr><td>7</td><td>Sound effects don’t play (long-standing)</td><td class="mono">XGM_* calls</td></tr>
+        <tr><td>8</td><td>Cosmetic: global <code class="inline">i</code> reuse, typos, huge intro WAV</td><td class="mono">various</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><span class="badge b-info">INFO</span> Git state: branch <code class="inline">master</code>, synced with origin; uncommitted edits to <code class="inline">src/main.c</code> &amp; <code class="inline">.vscode/settings.json</code>; <code class="inline">WARP.md</code> untracked; <code class="inline">src/boot/</code> and <code class="inline">out/</code> git-ignored.</p>
+  </section>
+
+  <!-- TURN 2 -->
+  <section class="card" id="t2">
+    <h2><span class="turnnum">2</span> Fix powerup toggle &amp; missing <code class="inline">shootBullet</code></h2>
+    <div class="user"><b>User</b>“fix the powerup toggle and the missing shootbullet, but please document what you did, I want to learn about it since this is a hobby project of mine to learn the SGDK toolkit.”</div>
+
+    <h3>Change A — forward declaration</h3>
+    <pre class="diff"><span class="ln ctx"> int offset = 0;</span>
+<span class="ln add">+/* Function prototypes — shootBullet() is called by positionEnemies() before</span>
+<span class="ln add">+   it is defined; modern SGDK GCC treats implicit declarations as errors. */</span>
+<span class="ln add">+void shootBullet(GameEntity shooter);</span>
+<span class="ln ctx"> /* Auxiliary functions for game processing */</span></pre>
+
+    <h3>Change B — <code class="inline">activatePowerup()</code></h3>
+    <pre class="diff"><span class="ln del">-        maxPlayerBullets = MAX_PLAYER_BULLETS;   // == default, did nothing</span>
+<span class="ln add">+        maxPlayerBullets = MAX_BULLETS;          // actually raise the cap (6)</span>
+<span class="ln ctx">         powerupTimer = POWERUP_DURATION;</span>
+<span class="ln del">-        PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83000), DMA);</span>
+<span class="ln add">+        PAL_setColor(34, RGB24_TO_VDPCOLOR(0xf83000));</span>
+<span class="ln ctx">         powerOn = POWER_ON;</span></pre>
+
+    <h3>Change C — <code class="inline">deactivatePowerup()</code></h3>
+    <pre class="diff"><span class="ln del">-    PAL_setPaletteColors(34, RGB24_TO_VDPCOLOR(0x0078f8), DMA);</span>
+<span class="ln add">+    PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));</span>
+<span class="ln add">+    powerOn = POWER_OFF;   // <-- the actual toggle fix (was missing)</span></pre>
+
+    <h3>Why these matter (the learning notes)</h3>
+    <ul class="tight">
+      <li><b>Prototype:</b> C compiles top-to-bottom; calling a function the compiler hasn’t seen triggers an implicit-declaration error on SGDK’s newer GCC.</li>
+      <li><b>Toggle:</b> the A-button does <code class="inline">if (powerOn) deactivate(); else activate();</code> — without resetting <code class="inline">powerOn</code> it stuck at 1 after the first press.</li>
+      <li><b>RapidFire:</b> setting the cap to the default value (3) meant the powerup did nothing; <code class="inline">MAX_BULLETS</code> (6) makes it real.</li>
+      <li><b>Palette API:</b> <code class="inline">PAL_setPaletteColors</code> expects a <code class="inline">u16*</code> array; passing a single color value triggered an <code class="inline">int → pointer</code> warning and the runtime crash you’d marked “aquí truena”. <code class="inline">PAL_setColor(index, value)</code> is the correct single-entry call (matches <code class="inline">main.c:355</code>).</li>
+    </ul>
+
+    <h3>Builds</h3>
+    <table>
+      <thead><tr><th>Build</th><th><code class="inline">main.c</code></th><th>Link</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>#1 (after A–C)</td><td><span class="badge b-warn">WARNING</span></td><td><span class="badge b-err">FAILED</span></td><td><code class="inline">-Wint-conversion</code> on the palette call; link failed on <code class="inline">sega.o</code> undefined refs (pre-existing)</td></tr>
+        <tr><td>#2 (after PAL_setColor)</td><td><span class="badge b-ok">CLEAN*</span></td><td><span class="badge b-err">FAILED</span></td><td>int-conversion warning gone; link still failing on <code class="inline">sega.o</code> → handed to Turn 3</td></tr>
+      </tbody>
+    </table>
+    <p class="small">*Except a pre-existing <code class="inline">-Wmissing-field-initializers</code> on <code class="inline">GameEntity powerup = {…}</code> at <code class="inline">main.c:49</code> (harmless).</p>
+  </section>
+
+  <!-- TURN 3 -->
+  <section class="card" id="t3">
+    <h2><span class="turnnum">3</span> Fix the stale <code class="inline">sega.s</code> reference</h2>
+    <div class="user"><b>User</b>“yes please, fix the stale sega.s reference.”</div>
+
+    <h3>Investigation</h3>
+    <table>
+      <thead><tr><th style="width:42%">Step</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">read makefile.gen</td><td>Boot is order-only: <code class="inline">$(SRC)/boot/sega.s : | $(SRC_LIB)/boot/sega.s</code> → copied only if missing, never refreshed</td></tr>
+        <tr><td class="mono">read common.mk</td><td><code class="inline">SRC_LIB := $(GDK)/src</code></td></tr>
+        <tr><td class="mono">diff project vs SGDK sega.s</td><td>Project = <b>487 lines</b> (defines exception handlers); current SGDK = <b>367 lines</b> (leaner)</td></tr>
+        <tr><td class="mono">grep src for symbols</td><td>Handlers now live in <code class="inline">src/snd?</code> → <code class="inline">src/error_a.s</code> + <code class="inline">src/sys.c</code> (in <code class="inline">libmd.a</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note blue"><b>Root cause.</b> Across SGDK versions the CPU exception/interrupt handling was moved out of <code class="inline">sega.s</code> into the library. The old stub still <i>referenced</i> state symbols the new <code class="inline">libmd.a</code> no longer exports, so the linker reported them as undefined:</div>
+    <pre class="code">undefined reference to `registerState' / `ext1State' / `addrState' / `ext2State'
+                        `srState' / `pcState' / `busErrorCB' / `addressErrorCB'
+                        `illegalInstCB' / `zeroDivideCB' / `trapvInstCB' / ...
+ld: out/sega.o: in function `registersDump' ...      [make] *** [out/rom.out] Error 1</pre>
+
+    <h3>Fix applied</h3>
+    <ul class="tight">
+      <li>Backed up the old stub → <code class="inline">src/boot/sega.s.bak</code></li>
+      <li>Copied the current <code class="inline">C:\tools\SGDK\src\boot\sega.s</code> over the project’s (487 → 367 lines; hash-identical to SGDK source)</li>
+      <li><b>Left <code class="inline">rom_head.c</code> untouched</b> — it holds your custom ROM/game-name header and produced no link errors</li>
+    </ul>
+
+    <table>
+      <thead><tr><th>Rebuild</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">sega.o</code> reassembled, linked against <code class="inline">libmd.a</code></td>
+            <td><span class="badge b-ok">SUCCESS</span> exit 0 — <code class="inline">out/rom.bin</code> (524,288 bytes) produced</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><span class="badge b-info">INFO</span> <code class="inline">src/boot/</code> is git-ignored, so the old file, the new one, and <code class="inline">sega.s.bak</code> never appear in git. A fresh clone auto-seeds the correct current <code class="inline">sega.s</code>, so this won’t recur elsewhere.</p>
+  </section>
+
+  <!-- TURN 4 -->
+  <section class="card" id="t4">
+    <h2><span class="turnnum">4</span> Powerup auto-expire &amp; the sound issue</h2>
+    <div class="user"><b>User</b>“first wire up the powerup auto-expire, and then please look at the long-standing sound issue.”</div>
+
+    <h3>Part 1 — auto-expire</h3>
+    <pre class="diff"><span class="ln hdr">// new function, after deactivatePowerup()</span>
+<span class="ln add">+void updatePowerup() {</span>
+<span class="ln add">+    if (powerOn) {</span>
+<span class="ln add">+        if (powerupTimer &gt; 0) {   // guard: u16 underflow would wrap to 65535</span>
+<span class="ln add">+            powerupTimer--;</span>
+<span class="ln add">+        }</span>
+<span class="ln add">+        if (powerupTimer == 0) {</span>
+<span class="ln add">+            deactivatePowerup();</span>
+<span class="ln add">+        }</span>
+<span class="ln add">+    }</span>
+<span class="ln add">+}</span>
+<span class="ln ctx"> ...</span>
+<span class="ln ctx">         positionEnemies();</span>
+<span class="ln ctx">         handleCollitions();</span>
+<span class="ln add">+        updatePowerup();    // tick RapidFire down so it auto-expires</span>
+<span class="ln ctx">         SPR_update();</span></pre>
+    <p class="small"><b>Learning note:</b> <code class="inline">powerupTimer</code> is unsigned (<code class="inline">u16</code>) — decrementing 0 wraps to 65535, so the <code class="inline">&gt; 0</code> guard prevents the powerup getting stuck on for ~18 minutes. Lasts ~1.6 s at 100 frames (NTSC); raise <code class="inline">POWERUP_DURATION</code> to extend.</p>
+    <p><span class="badge b-ok">SUCCESS</span> Build exit 0; <code class="inline">rom.bin</code> rebuilt (only the pre-existing <code class="inline">name</code>-initializer warning).</p>
+
+    <hr class="sep">
+
+    <h3>Part 2 — the sound investigation</h3>
+    <table>
+      <thead><tr><th style="width:40%">Step</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">read bin/rescomp.txt (WAV section)</td><td>WAV driver must now be a <b>name</b>; doc states “XGM (4 and 5 are <b>not anymore accepted</b>)”</td></tr>
+        <tr><td class="mono">read inc/snd/xgm.h</td><td>XGM driver = 4 PCM channels @ 14 kHz; <code class="inline">XGM_setPCM</code> / <code class="inline">XGM_startPlayPCM</code> are the PCM-SFX API</td></tr>
+        <tr><td class="mono">read sound samples</td><td><code class="inline">xgm-player</code> comment “<i>force to load XGM driver</i>” hinted the driver must be triggered</td></tr>
+        <tr><td class="mono">read src/snd/xgm.c (236–435)</td><td><b>Key:</b> <code class="inline">XGM_setPCM</code> and <code class="inline">XGM_startPlayPCM</code> call <code class="inline">Z80_loadDriver(Z80_DRIVER_XGM, TRUE)</code> internally</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note blue"><b>Diagnosis (revised after reading the source).</b>
+      My first hypothesis — “the XGM driver is never loaded” — was <b>disproved</b>: current SGDK auto-loads it inside the PCM calls (so that was likely the original 2023 cause, silently fixed by the toolchain upgrade). The real remaining defect is in <code class="inline">res/resources.res</code>: the WAVs used the deprecated numeric driver id <code class="inline">5</code>, which rescomp 3.95 rejects. The existing <code class="inline">out/res/resources.o</code> was a stale artifact from an older rescomp.</div>
+
+    <pre class="code">// src/snd/xgm.c
+void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
+    ...
+    Z80_loadDriver(Z80_DRIVER_XGM, TRUE);   // <- driver auto-loads here
+    ...
+}</pre>
+
+    <h3>Fix — <code class="inline">res/resources.res</code></h3>
+    <pre class="diff"><span class="ln del">-WAV laser    "sounds/laser.wav"     5</span>
+<span class="ln del">-WAV xplosion "sounds/explosion.wav" 5</span>
+<span class="ln del">-WAV intro    "music/Intro.wav"      5</span>
+<span class="ln add">+WAV laser    "sounds/laser.wav"     XGM</span>
+<span class="ln add">+WAV xplosion "sounds/explosion.wav" XGM</span>
+<span class="ln add">+WAV intro    "music/Intro.wav"      XGM</span></pre>
+
+    <table>
+      <thead><tr><th>Rebuild</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>rescomp re-ran on the corrected manifest</td>
+            <td><span class="badge b-ok">SUCCESS</span> accepted <code class="inline">XGM</code>; regenerated 14 kHz, 256-byte-aligned samples (<code class="inline">laser[2560]</code>, <code class="inline">xplosion[6656]</code>, <code class="inline">intro[430592]</code>) + <code class="inline">resources.h</code>; ROM linked (524,288 bytes)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><b>Honest caveat:</b> there’s no emulator/audio in this environment, so the <i>pipeline</i> is verified (valid driver → correctly formatted samples → code that auto-loads the driver and issues play commands → clean build), but the audio output itself was not heard. Load <code class="inline">out/rom.bin</code> in GensKMod/BlastEm to confirm intro-on-boot, laser on B, explosion on player hit.</div>
+
+    <h3>Optional follow-ups (design choices, left unchanged)</h3>
+    <ul class="tight">
+      <li><span class="badge b-neutral">UNCHANGED</span> Intro is a ~430 KB PCM sample on <code class="inline">SOUND_PCM_CH1</code> — a real XGM track via <code class="inline">XGM_startPlay()</code> would be far smaller.</li>
+      <li><span class="badge b-neutral">UNCHANGED</span> Laser &amp; explosion both use <code class="inline">SOUND_PCM_CH3</code>, so they cut each other off — separate channels allow overlap.</li>
+    </ul>
+  </section>
+
+  <!-- FILES -->
+  <section class="card" id="files">
+    <h2>Net file changes</h2>
+    <table>
+      <thead><tr><th>File</th><th>Change</th><th>Tracked in git?</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">src/main.c</td><td>Prototype, powerup toggle/RapidFire/palette fixes, <code class="inline">updatePowerup()</code> + loop call</td><td>Yes</td></tr>
+        <tr><td class="mono">res/resources.res</td><td>WAV driver <code class="inline">5</code> → <code class="inline">XGM</code> (×3)</td><td>Yes</td></tr>
+        <tr><td class="mono">res/resources.h</td><td>Regenerated by rescomp (adds <code class="inline">#include &lt;genesis.h&gt;</code>)</td><td>Yes</td></tr>
+        <tr><td class="mono">src/boot/sega.s</td><td>Replaced with current SGDK stub (487 → 367 lines)</td><td>No (git-ignored)</td></tr>
+        <tr><td class="mono">src/boot/sega.s.bak</td><td>Backup of old stub (safe to delete)</td><td>No (git-ignored)</td></tr>
+        <tr><td class="mono">out/rom.bin</td><td>Rebuilt — now links cleanly (524,288 bytes)</td><td>No (git-ignored)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Not committed — committing was never requested. <code class="inline">.vscode/settings.json</code> retains its earlier uncommitted edit; <code class="inline">WARP.md</code> remains untracked.</p>
+  </section>
+
+  <!-- BUILDS -->
+  <section class="card" id="builds">
+    <h2>Build timeline</h2>
+    <table>
+      <thead><tr><th>#</th><th>After</th><th>Compile</th><th>Link</th><th>ROM</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Turn 2 toggle/prototype edits</td><td><span class="badge b-warn">WARN</span></td><td><span class="badge b-err">FAIL</span></td><td>—</td></tr>
+        <tr><td>2</td><td>Turn 2 <code class="inline">PAL_setColor</code> fix</td><td><span class="badge b-ok">OK</span></td><td><span class="badge b-err">FAIL</span> <span class="small">(sega.o)</span></td><td>—</td></tr>
+        <tr><td>3</td><td>Turn 3 <code class="inline">sega.s</code> replacement</td><td><span class="badge b-ok">OK</span></td><td><span class="badge b-ok">OK</span></td><td>524,288 B</td></tr>
+        <tr><td>4</td><td>Turn 4 auto-expire</td><td><span class="badge b-ok">OK</span></td><td><span class="badge b-ok">OK</span></td><td>524,288 B</td></tr>
+        <tr><td>5</td><td>Turn 4 <code class="inline">resources.res</code> (XGM)</td><td><span class="badge b-ok">OK</span></td><td><span class="badge b-ok">OK</span></td><td>524,288 B</td></tr>
+      </tbody>
+    </table>
+    <p class="small">A single warning persists across all passing builds: <code class="inline">-Wmissing-field-initializers</code> on <code class="inline">GameEntity powerup = {0,0,8,8,0,0,0, NULL}</code> at <code class="inline">main.c:49</code> (the <code class="inline">name</code> field is simply zero-filled — harmless, out of scope).</p>
+  </section>
+
+  <footer>
+    Generated by Oz (Warp) · Gens Invaders session · 2026-06-26 · This file is git-ignored only if you add it to <code class="inline">.gitignore</code>; otherwise it will show as untracked.
+  </footer>
+
+</div>
+</body>
+</html>
