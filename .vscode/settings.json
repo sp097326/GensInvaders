@@ -3,5 +3,6 @@
     "${env:GDK}\\res",
     "res",
     "inc"
-]
+],
+"cmake.configureOnOpen": false
 }

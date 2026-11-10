@@ -40,6 +40,7 @@ typedef struct
 #define SFX_XPLOSION 65
 #define POWERUP_DURATION 100
 #define POWER_ON 1
+#define POWER_OFF 0
 
 // on screen entities
 GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, "PLAYER" };
@@ -68,6 +69,13 @@ int they = 0;
 int val = 1;
 int offset = 0;
 
+/* Function prototypes
+ * shootBullet() is called by positionEnemies() (below) BEFORE it is defined
+ * further down the file. In C, calling a function the compiler hasn't seen yet
+ * triggers an implicit-declaration warning/error on modern SGDK toolchains.
+ * Declaring the prototype here tells the compiler its signature in advance. */
+void shootBullet(GameEntity shooter);
+
 /* Auxiliary functions for game processing */
 
 void updateScoreDisplay() {
@@ -93,9 +101,17 @@ void activatePowerup(Powerup Type) {
     switch (Type)
     {
     case RapidFire: {
-        maxPlayerBullets = MAX_PLAYER_BULLETS;
+        // RapidFire = let the player keep more bullets on screen at once.
+        // Was MAX_PLAYER_BULLETS (3), i.e. identical to the default, so the
+        // powerup did nothing. MAX_BULLETS (6) is the size of the shared pool.
+        maxPlayerBullets = MAX_BULLETS;
         powerupTimer = POWERUP_DURATION;
-        PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83000),DMA);
+        // Tint the powerup color RED while active, using the SAME palette index
+        // (34) that deactivatePowerup() restores so the toggle is symmetric;
+        // it used to be index 18 here, which is why the color never reset.
+        // Use PAL_setColor (one u16 color). The old PAL_setPaletteColors call
+        // wanted a u16* array, so passing a color value was the "aqui truena" bug.
+        PAL_setColor(34, RGB24_TO_VDPCOLOR(0xf83000));
         powerOn = POWER_ON;
         break;
     }
@@ -105,8 +121,30 @@ void activatePowerup(Powerup Type) {
 };
 void deactivatePowerup(){
     maxPlayerBullets = MAX_PLAYER_BULLETS;
-    PAL_setPaletteColors(18, RGB24_TO_VDPCOLOR(0xf83800), DMA);
+    // Restore the original color. PAL_setColor takes a single u16 color value;
+    // PAL_setPaletteColors expects a u16* array, hence the previous warning/crash.
+    PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
+    // Clear the flag so the A button toggles the powerup back ON next time.
+    // This line was missing, so powerOn was stuck at 1 after the first press.
+    powerOn = POWER_OFF;
 };
+
+/* Called once per frame from the main loop: ticks the active powerup down and
+ * turns it off automatically once POWERUP_DURATION frames have elapsed.
+ * Before this existed, powerupTimer was set on activate but never counted, so
+ * RapidFire only ever ended on a manual A press. */
+void updatePowerup() {
+    if (powerOn) {
+        // Guard against u16 underflow: decrementing 0 would wrap to 65535,
+        // leaving the powerup stuck on for ~18 minutes (65535 frames).
+        if (powerupTimer > 0) {
+            powerupTimer--;
+        }
+        if (powerupTimer == 0) {
+            deactivatePowerup();
+        }
+    }
+}
 
 /* powerup related END */
 
@@ -190,8 +228,8 @@ void shootBullet(GameEntity shooter) {
                 reviveGameEntity(bullet);
                 //this is used to determine velocity according to who shoot the bullet
                 if (fromPlayer) {
-                    bullet->vely = -3;
                     XGM_startPlayPCM(SFX_LASER,9,SOUND_PCM_CH3);
+                    bullet->vely = -3;
                     shotByPlayer++;
                 } else {
                     bullet->vely = 5;
@@ -228,7 +266,13 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
             shootBullet(player);
         }
         if (state & BUTTON_A & changed) {
-            activatePowerup(RapidFire);
+            if (powerOn) {
+                //aquí truena...
+                deactivatePowerup();
+            } else {
+                //aquí entra bien
+                activatePowerup(RapidFire);
+            }
         }
     }
 }
@@ -340,7 +384,7 @@ int main(bool hard)
     player.health = 1;
     player.sprite = SPR_addSprite(&ship, player.x, player.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 
-    generateEnemies();
+    generateEnemies(); //should we use the same method with parameters to determine how many lines of enemies?
     generateBullets();
     updateScoreDisplay();
     SPR_update();
@@ -372,6 +416,7 @@ int main(bool hard)
         positionBullets();
         positionEnemies();
         handleCollitions();
+        updatePowerup();    // tick RapidFire down so it auto-expires
         SPR_update();
         //should this be the last line called?
         SYS_doVBlankProcess();
