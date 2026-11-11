@@ -3,6 +3,13 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-10 (noche 3) - Corrige versión DEV en la pausa (AMH + Bimo)
+
+### Corregido
+- La pausa mostraba `V0.1.DEV` aunque `src/version.h` existía: make no sabe que
+  `main.c` depende de `version.h` y reutilizaba un `main.o` viejo. Ahora
+  `run.bat build` borra `out\src\main.o` antes de compilar.
+
 ## 2026-11-10 (noche 2) - Pausa con versión (AMH + Bimo)
 
 ### Agregado

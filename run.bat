@@ -8,6 +8,8 @@ if "%GDK%"=="" set GDK=C:\tools\SGDK
 cd /d "%~dp0"
 if /i "%~1"=="build" (
     call :version
+    rem main.c depende de version.h; borra su objeto para que siempre tome la version nueva.
+    if exist "out\src\main.o" del /q "out\src\main.o"
     "%GDK%\bin\make.exe" -f "%GDK%\makefile.gen" || exit /b 1
 )
 if not exist "out\rom.bin" (
