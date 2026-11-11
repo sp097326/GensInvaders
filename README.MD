@@ -100,7 +100,7 @@ TODO:
         - Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
 
 ## Work log - 10/11/2026 (with Bimo)
-Everything below was done on Nov 10, 2026 (V0.1.08 to V0.1.16). Details per change are in `CHANGELOG.md`.
+Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
 
 **Toolchain and build**
 * Moved to SGDK 2.11 and installed Java 21 (Eclipse Temurin), needed by `rescomp`; the project compiles with no warnings.
