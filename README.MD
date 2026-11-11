@@ -98,3 +98,29 @@ TODO:
         - Can two enemies fire at once?
         - More powerups: ship speed up? a bomb?
         - Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
+
+## Work log - 10/11/2026 (with Bimo)
+Everything below was done on Nov 10, 2026 (V0.1.08 to V0.1.16). Details per change are in `CHANGELOG.md`.
+
+**Toolchain and build**
+* Moved to SGDK 2.11 and installed Java 21 (Eclipse Temurin), needed by `rescomp`; the project compiles with no warnings.
+* `run.bat` launches the ROM in BlastEm 0.6.2; `run.bat build` writes `src/version.h` (V0.1.xx, xx = git commit count), compiles and launches.
+* Fixed `run.bat build` reusing a stale `main.o`, which made the pause screen show `V0.1.DEV`.
+* `.gitignore` now ignores `out/`, `src/boot/sega.s`, `src/boot/*.bak` and `src/version.h`; `src/boot/rom_head.c` is tracked.
+
+**Gameplay**
+* Game states: playing, paused, GAME OVER and YOU WIN; START restarts after the game ends.
+* 3 ships: after a hit the ship respawns and blinks for about 2 seconds, without taking damage.
+* Enemies move as a formation: when one reaches an edge, all of them turn around together (they no longer overlap).
+* Pause screen on START showing "PAUSED", "GENS INVADERS V0.1.xx" and "PRESS START".
+* HUD shows score, enemies left and ships left.
+
+**Graphics and sound**
+* Starfield background (the commented-out code) now works; it is drawn once instead of every frame, which fixed the slowdown.
+* Intro trimmed to a 5 second placeholder with fade (`music/intro_short.wav`); the original `Intro.wav` is kept.
+* Player explosion plays on its own PCM channel so the laser no longer cuts it off.
+* ROM header shows "GENS INVADERS" instead of the SGDK "SAMPLE PROGRAM".
+
+**Bug fixes and cleanup**
+* Enemy bullet not freed when it hit the player; interrupts never re-enabled; player name buffer overflow.
+* Removed unused globals (`i`, `thex`, `they`, `val`) and renamed the collision routine to `handleCollisions`.
