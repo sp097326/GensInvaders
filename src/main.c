@@ -13,6 +13,7 @@
 #include "config.h"
 #include "game.h"
 #include "difficulty.h"
+#include "bullets.h"
 
 /* Per-row look and scoring. Swap spriteDef later for a different ship graphic;
  * for now both rows use &ship, with PAL3 (tinted) on the bottom row. */
@@ -38,16 +39,9 @@ static const EnemyRowType enemyRows[ENEMY_ROWS] = {
 // name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit.
 GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, 0, 0, "PLYR" };
 GameEntity enemies[MAX_ENEMIES];
-GameEntity bullets[MAX_BULLETS];
-GameEntity enemyBullets[MAX_ENEMY_BULLETS];
 // Every field initialized (the empty name "" silences -Wmissing-field-initializers).
 GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
 u16 enemiesLeft = 0;
-u16 bulletsOnScreen = 0;
-u16 enemyBulletsOnScreen = 0;
-u16 shotTicker = 0;
-u16 shotByPlayer = 0;
-u16 maxPlayerBullets = MAX_PLAYER_BULLETS;
 u16 powerupTimer = 0;
 int score = 0;
 char hud_string[40] = "";
@@ -72,8 +66,6 @@ int offset = 0;
 /* Function prototypes
  * Some of these are called before they are defined further down the file.
  * Declaring the prototypes here tells the compiler their signatures in advance. */
-void shootBullet(GameEntity shooter);
-void shootEnemyBullet(GameEntity* shooter);
 void enemiesTryShoot();
 void resetGame();
 void showTitleScreen();
@@ -149,15 +141,7 @@ void hideGameSprites() {
     for (i = 0; i < MAX_ENEMIES; i++) {
         killGameEntity(&enemies[i]);
     }
-    for (i = 0; i < MAX_BULLETS; i++) {
-        killGameEntity(&bullets[i]);
-    }
-    for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
-        killGameEntity(&enemyBullets[i]);
-    }
-    bulletsOnScreen = 0;
-    shotByPlayer = 0;
-    enemyBulletsOnScreen = 0;
+    bullets_hideAll();
 }
 
 /* Solid 8x8 block tiles for the title logo (palette index 1 = fill, 2 = shadow).
@@ -337,7 +321,7 @@ void activatePowerup(Powerup Type) {
         // RapidFire = let the player keep more bullets on screen at once.
         // Was MAX_PLAYER_BULLETS (3), i.e. identical to the default, so the
         // powerup did nothing. MAX_BULLETS (6) is the size of the player pool.
-        maxPlayerBullets = MAX_BULLETS;
+        bullets_setMaxPlayer(MAX_BULLETS);
         powerupTimer = POWERUP_DURATION;
         // Tint the powerup color RED while active, using the SAME palette index
         // (34) that deactivatePowerup() restores so the toggle is symmetric;
@@ -353,7 +337,7 @@ void activatePowerup(Powerup Type) {
     }
 };
 void deactivatePowerup(){
-    maxPlayerBullets = MAX_PLAYER_BULLETS;
+    bullets_setMaxPlayer(MAX_PLAYER_BULLETS);
     // Restore the original color. PAL_setColor takes a single u16 color value;
     // PAL_setPaletteColors expects a u16* array, hence the previous warning/crash.
     PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
@@ -389,11 +373,11 @@ void enemiesTryShoot() {
     u16 i, n, pick, shots, slots;
     GameEntity* enemy;
 
-    if (shotTicker < cfg->shotInterval) return;
+    if (bullets_shotTicker() < cfg->shotInterval) return;
 
     /* Consume the interval even if the roll misses or the pool is full,
      * so later frames don't retry every tick. */
-    shotTicker = 0;
+    bullets_clearShotTicker();
 
     if (cfg->fireChance < 10 && (random() % 10) >= cfg->fireChance) {
         return;
@@ -423,8 +407,8 @@ void enemiesTryShoot() {
     if (livingCount == 0) return;
 
     slots = 0;
-    if (cfg->maxEnemyBullets > enemyBulletsOnScreen) {
-        slots = cfg->maxEnemyBullets - enemyBulletsOnScreen;
+    if (cfg->maxEnemyBullets > bullets_enemyOnScreen()) {
+        slots = cfg->maxEnemyBullets - bullets_enemyOnScreen();
     }
     shots = cfg->shotsPerVolley;
     if (shots > slots) shots = slots;
@@ -433,7 +417,7 @@ void enemiesTryShoot() {
     for (n = 0; n < shots; n++) {
         pick = random() % livingCount;
         enemy = &enemies[living[pick]];
-        shootEnemyBullet(enemy);
+        bullets_shootEnemy(enemy);
         /* Remove this enemy so the same one cannot fire twice in the volley. */
         livingCount--;
         living[pick] = living[livingCount];
@@ -543,7 +527,7 @@ void positionEnemyRowsOpposite() {
 }
 
 void positionEnemies() {
-    shotTicker++;
+    bullets_tickShot();
 
     if ((*difficulty_config()).rowsOpposite) {
         positionEnemyRowsOpposite();
@@ -668,85 +652,6 @@ void playerHit() {
     }
 }
 
-void positionBullets() {
-    u16 i = 0;
-    GameEntity *bllt;
-    for (i = 0; i < MAX_BULLETS; i++)
-    {
-        bllt = &bullets[i];
-        if (bllt->health > 0) {
-            bllt->y += bllt->vely;
-            if (bllt->y + bllt->h < 0) {
-                killGameEntity(bllt);
-                bulletsOnScreen--;
-                shotByPlayer--;
-            } else {
-                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
-            }
-        }
-    }
-    for (i = 0; i < MAX_ENEMY_BULLETS; i++)
-    {
-        bllt = &enemyBullets[i];
-        if (bllt->health > 0) {
-            bllt->y += bllt->vely;
-            if (bllt->y > BOTTOM_EDGE) {
-                killGameEntity(bllt);
-                enemyBulletsOnScreen--;
-            } else {
-                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
-            }
-        }
-    }
-}
-
-void shootBullet(GameEntity shooter) {
-    GameEntity* bullet;
-    u16 i;
-
-    if (shotByPlayer >= maxPlayerBullets) {
-        return;
-    }
-    if (bulletsOnScreen >= MAX_BULLETS) {
-        return;
-    }
-    for (i = 0; i < MAX_BULLETS; i++) {
-        bullet = &bullets[i];
-        if (bullet->health == 0) {
-            bullet->x = shooter.x + 4;
-            bullet->y = shooter.y;
-            bullet->vely = -3;
-            reviveGameEntity(bullet);
-            XGM_startPlayPCM(SFX_LASER, 9, SOUND_PCM_CH3);
-            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
-            bulletsOnScreen++;
-            shotByPlayer++;
-            break;
-        }
-    }
-}
-
-void shootEnemyBullet(GameEntity* shooter) {
-    GameEntity* bullet;
-    u16 i;
-
-    if (enemyBulletsOnScreen >= (*difficulty_config()).maxEnemyBullets) {
-        return;
-    }
-    for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
-        bullet = &enemyBullets[i];
-        if (bullet->health == 0) {
-            bullet->x = shooter->x + 4;
-            bullet->y = shooter->y;
-            bullet->vely = (*difficulty_config()).bulletSpeed;
-            reviveGameEntity(bullet);
-            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
-            enemyBulletsOnScreen++;
-            break;
-        }
-    }
-}
-
 /* Handler function for the joystick movement, Interrupts are already implemented in SGDK */
 void myJoyHandler(u16 joy, u16 changed, u16 state) {
     // Control movement for player 1 (can we just add an If for player 2?)
@@ -823,7 +728,7 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
         }
     }
     if (state & BUTTON_B & changed) {
-        shootBullet(player);
+        bullets_shootPlayer(player);
     }
     if (state & BUTTON_A & changed) {
         if (powerOn) {
@@ -850,7 +755,7 @@ void handleCollisions() {
     /* Player bullets vs enemies. bullets[] is now the player-only pool. */
     for (i = 0; i < MAX_BULLETS; i++)
     {
-        b = &bullets[i];
+        b = bullets_playerAt(i);
         if (b->health > 0) {
             for (j = 0; j < MAX_ENEMIES; j++)
             {
@@ -858,10 +763,8 @@ void handleCollisions() {
                 if (e->health > 0) {
                     if (collideEntities(b,e)) {
                         killGameEntity(e);
-                        killGameEntity(b);
+                        bullets_despawnPlayer(b);
                         enemiesLeft--;
-                        bulletsOnScreen--;
-                        shotByPlayer--;
                         score += e->points;
                         updateScoreDisplay();
                         if (enemiesLeft == 0) {
@@ -878,11 +781,10 @@ void handleCollisions() {
     /* Each enemy bullet has its own collision against the player. */
     for (i = 0; i < MAX_ENEMY_BULLETS; i++)
     {
-        b = &enemyBullets[i];
+        b = bullets_enemyAt(i);
         if (b->health > 0 && player.health > 0) {
             if (invulnTimer == 0 && collideEntities(b, &player)) {
-                killGameEntity(b);
-                enemyBulletsOnScreen--;
+                bullets_despawnEnemy(b);
                 playerHit();
                 return;
             }
@@ -952,50 +854,10 @@ void setEnemyRowPalettes() {
     PAL_setColor(48 + 2, RGB24_TO_VDPCOLOR(0xF8F800)); /* yellow instead of orange */
 }
 
-void generateBullets() {
-    u16 i;
-    GameEntity* bullt = bullets;
-    for (i = 0; i < MAX_BULLETS; i++)
-    {
-        bullt->x = 0;
-        bullt->y = -10;
-        bullt->w = 8;
-        bullt->h = 8;
-        bullt->health = 0;
-        bullt->sprite = SPR_addSprite(&bullet, 0, -10, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-        SPR_setVisibility(bullt->sprite, HIDDEN);
-        sprintf(bullt->name, "Bu%d",i);
-        bullt++;
-    }
-    bullt = enemyBullets;
-    for (i = 0; i < MAX_ENEMY_BULLETS; i++)
-    {
-        bullt->x = 0;
-        bullt->y = -10;
-        bullt->w = 8;
-        bullt->h = 8;
-        bullt->health = 0;
-        bullt->sprite = SPR_addSprite(&bullet, 0, -10, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-        SPR_setVisibility(bullt->sprite, HIDDEN);
-        sprintf(bullt->name, "EB%d", i);
-        bullt++;
-    }
-}
-
 /* Restart after confirming a difficulty: reuse the sprites already allocated,
  * just reset positions, counters and flags. */
 void resetGame() {
-    u16 i;
-    for (i = 0; i < MAX_BULLETS; i++) {
-        killGameEntity(&bullets[i]);
-    }
-    for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
-        killGameEntity(&enemyBullets[i]);
-    }
-    bulletsOnScreen = 0;
-    shotByPlayer = 0;
-    enemyBulletsOnScreen = 0;
-    shotTicker = 0;
+    bullets_reset();
     if (powerOn) deactivatePowerup();
     powerupTimer = 0;
 
@@ -1070,7 +932,7 @@ int main(bool hard)
     player.sprite = SPR_addSprite(&ship, player.x, player.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 
     generateEnemies();
-    generateBullets();
+    bullets_init();
     PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
     SYS_enableInts();
     /* Intro is already playing; show the title screen before the first match. */
@@ -1092,7 +954,7 @@ int main(bool hard)
         } else if (gameState == STATE_PLAYING) {
             updatePlayerLife();
             positionPlayer();
-            positionBullets();
+            bullets_update();
             positionEnemies();
             handleCollisions();
             updatePowerup();    // tick RapidFire down so it auto-expires
