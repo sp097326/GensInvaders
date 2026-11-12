@@ -17,22 +17,17 @@
 #include "hud.h"
 #include "enemies.h"
 #include "powerups.h"
+#include "player.h"
 
 #define TITLE_OPT_START 0
 #define TITLE_OPT_DIFF  1
 #define TILE_TITLE_FILL   TILE_USER_INDEX
 #define TILE_TITLE_SHADOW (TILE_USER_INDEX + 1)
 
-// on screen entities
-// name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit.
-GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, 0, 0, "PLYR" };
 int score = 0;
 GameState gameState = STATE_TITLE;
 u16 titleCursor = TITLE_OPT_START;
 u16 titlePulseTick = 0;
-u16 lives = MAX_LIVES;
-u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
-u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
 
 // background scroll offset
 int offset = 0;
@@ -52,7 +47,7 @@ void updateTitlePulse();
 
 void showEndScreen(GameState newState) {
     gameState = newState;
-    player.velx = 0;
+    player_get()->velx = 0;
     if (newState == STATE_WIN) {
         hud_drawCentered("YOU WIN!", 12);
     } else {
@@ -70,8 +65,7 @@ void clearEndScreen() {
 void pauseGame() {
     char line[28];
     gameState = STATE_PAUSED;
-    player.velx = 0;
-    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
+    player_stop();
     hud_drawCentered("PAUSED", 12);
     hud_drawCentered("GENS INVADERS " GAME_VERSION, 14);
     sprintf(line, "DIFFICULTY: %s", difficulty_name());
@@ -86,7 +80,7 @@ void resumeGame() {
 
 /* Hide every game sprite and reset bullet counters. Used by the title screen. */
 void hideGameSprites() {
-    killGameEntity(&player);
+    player_hide();
     enemies_hideAll();
     bullets_hideAll();
 }
@@ -244,7 +238,7 @@ void updateTitlePulse() {
 void showTitleScreen() {
     gameState = STATE_TITLE;
     titleCursor = TITLE_OPT_START;
-    player.velx = 0;
+    player_get()->velx = 0;
     hideGameSprites();
     clearTitleScreen();
     loadTitleTiles();
@@ -256,65 +250,6 @@ void showTitleScreen() {
 void startGameFromMenu() {
     clearTitleScreen();
     resetGame();
-}
-
-void positionPlayer() {
-    if (player.health == 0) return;   // waiting to respawn
-    //handling velocity, adding it to position
-    player.x += player.velx;
-
-    /* checking to keep the player in the boundaries of the screen */
-    if (player.x < LEFT_EDGE) player.x = LEFT_EDGE;
-    if (player.x + player.w > RIGHT_EDGE) player.x = RIGHT_EDGE - player.w;
-
-    //positioning the sprite using the Sprite Engine in SGDK
-    SPR_setPosition(player.sprite, player.x, player.y);
-}
-
-/* Puts the ship back at its starting spot, facing straight. */
-void placePlayer() {
-    player.x = PLAYER_START_X;
-    player.y = PLAYER_START_Y;
-    player.velx = 0;
-    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
-    SPR_setHFlip(player.sprite, FALSE);
-    SPR_setPosition(player.sprite, player.x, player.y);
-}
-
-/* Called once per frame: brings the ship back after RESPAWN_DELAY frames and
- * makes it blink (and immune) for INVULN_FRAMES so it isn't killed on arrival. */
-void updatePlayerLife() {
-    if (respawnTimer > 0) {
-        respawnTimer--;
-        if (respawnTimer == 0) {
-            placePlayer();
-            reviveGameEntity(&player);
-            invulnTimer = INVULN_FRAMES;
-        }
-        return;
-    }
-    if (invulnTimer > 0) {
-        invulnTimer--;
-        // Toggle visibility every 4 frames for the blink effect.
-        SPR_setVisibility(player.sprite, ((invulnTimer & 4) && invulnTimer > 0) ? HIDDEN : VISIBLE);
-    }
-}
-
-/* The ship was hit: lose a life, then either respawn or end the game. */
-void playerHit() {
-    killGameEntity(&player);
-    player.velx = 0;
-    if (powerups_isOn()) powerups_deactivate();
-    //present the xplosion sprite instead....
-    // Own channel (CH2) and top priority (15) so nothing can cut the explosion.
-    XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
-    lives--;
-    hud_updateScore(score, enemies_left(), lives);
-    if (lives == 0) {
-        showEndScreen(STATE_GAME_OVER);
-    } else {
-        respawnTimer = RESPAWN_DELAY;
-    }
 }
 
 /* Handler function for the joystick movement, Interrupts are already implemented in SGDK */
@@ -374,26 +309,26 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
     }
 
     // No control while the ship is gone (waiting to respawn).
-    if (player.health == 0) return;
+    if (player_get()->health == 0) return;
 
     if (state & BUTTON_RIGHT) {
-        player.velx = 2;
-        SPR_setAnim(player.sprite, ANIM_MOVE);
-        SPR_setHFlip(player.sprite, TRUE);
+        player_get()->velx = 2;
+        SPR_setAnim(player_get()->sprite, ANIM_MOVE);
+        SPR_setHFlip(player_get()->sprite, TRUE);
     }
     else if (state & BUTTON_LEFT) {
-        player.velx = -2;
-        SPR_setAnim(player.sprite, ANIM_MOVE);
-        SPR_setHFlip(player.sprite, FALSE);
+        player_get()->velx = -2;
+        SPR_setAnim(player_get()->sprite, ANIM_MOVE);
+        SPR_setHFlip(player_get()->sprite, FALSE);
     }
     else {
         if ( (changed & BUTTON_RIGHT) | (changed & BUTTON_LEFT) ) {
-            player.velx = 0;
-            SPR_setAnim(player.sprite, ANIM_STRAIGHT);
+            player_get()->velx = 0;
+            SPR_setAnim(player_get()->sprite, ANIM_STRAIGHT);
         }
     }
     if (state & BUTTON_B & changed) {
-        bullets_shootPlayer(player);
+        bullets_shootPlayer(*player_get());
     }
     if (state & BUTTON_A & changed) {
         powerups_toggle();
@@ -427,7 +362,7 @@ void handleCollisions() {
                         bullets_despawnPlayer(b);
                         enemies_decLeft();
                         score += e->points;
-                        hud_updateScore(score, enemies_left(), lives);
+                        hud_updateScore(score, enemies_left(), player_lives());
                         if (enemies_left() == 0) {
                             showEndScreen(STATE_WIN);
                             return;
@@ -443,10 +378,12 @@ void handleCollisions() {
     for (i = 0; i < MAX_ENEMY_BULLETS; i++)
     {
         b = bullets_enemyAt(i);
-        if (b->health > 0 && player.health > 0) {
-            if (invulnTimer == 0 && collideEntities(b, &player)) {
+        if (b->health > 0 && player_get()->health > 0) {
+            if (player_invulnTimer() == 0 && collideEntities(b, player_get())) {
                 bullets_despawnEnemy(b);
-                playerHit();
+                if (player_hit(score)) {
+                    showEndScreen(STATE_GAME_OVER);
+                }
                 return;
             }
         }
@@ -459,16 +396,12 @@ void resetGame() {
     bullets_reset();
     powerups_reset();
 
-    placePlayer();
-    reviveGameEntity(&player);
-    lives = MAX_LIVES;
-    respawnTimer = 0;
-    invulnTimer = 0;
+    player_reset();
 
     enemies_reset();
     score = 0;
     clearEndScreen();
-    hud_updateScore(score, enemies_left(), lives);
+    hud_updateScore(score, enemies_left(), player_lives());
     gameState = STATE_PLAYING;
 }
 
@@ -512,11 +445,7 @@ int main(bool hard)
     drawStarfield();
     SPR_init();
 
-    /* adding the player to the screen, can this be moved to a function?*/
-    player.x = PLAYER_START_X;
-    player.y = PLAYER_START_Y;
-    player.health = 1;
-    player.sprite = SPR_addSprite(&ship, player.x, player.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    player_init();
 
     enemies_init();
     bullets_init();
@@ -539,8 +468,7 @@ int main(bool hard)
         if (gameState == STATE_TITLE) {
             updateTitlePulse();
         } else if (gameState == STATE_PLAYING) {
-            updatePlayerLife();
-            positionPlayer();
+            player_update();
             bullets_update();
             if (enemies_update()) {
                 showEndScreen(STATE_GAME_OVER);
