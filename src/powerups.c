@@ -18,7 +18,9 @@ static u16 shieldRecharge = 0;
 static u16 shieldDuration = 0;
 static u16 shieldRechargeMax = 0;
 static u16 shieldHudMode = 0xFFFF;
-static u16 shieldHudSecs = 0xFFFF;
+static u16 shieldHudLevel = 0xFFFF;
+static u16 shieldHudBlink = 0xFFFF;
+static u16 shieldReadyBlink = 0;
 
 static void applyShieldTimings(void) {
     const DifficultyConfig* cfg = difficulty_config();
@@ -61,35 +63,38 @@ static void followShieldSprite(void) {
 
 static void shieldRefreshHud(u16 force) {
     u16 mode;
-    u16 secs;
-    u16 rate;
+    u16 level;
     u16 frames;
-    char line[12];
+    u16 max;
+    u16 blink;
 
-    if (shieldActive) mode = 1;
-    else if (shieldRecharge > 0) mode = 2;
-    else mode = 0;
-
-    rate = IS_PAL_SYSTEM ? 50 : 60;
-    if (mode == 0) {
-        secs = 0;
+    if (shieldActive) {
+        mode = SHIELD_HUD_ACTIVE;
+        frames = shieldTimer;
+        max = shieldDuration;
+        /* Ceil so the last pixel stays until the timer actually hits 0. */
+        if (max == 0) level = 0;
+        else level = (u16)(((u32)frames * SHIELD_BAR_STEPS + max - 1) / max);
+    } else if (shieldRecharge > 0) {
+        mode = SHIELD_HUD_RECHARGE;
+        frames = shieldRecharge;
+        max = shieldRechargeMax;
+        if (max == 0) level = SHIELD_BAR_STEPS;
+        else level = (u16)(((u32)(max - frames) * SHIELD_BAR_STEPS) / max);
     } else {
-        frames = (mode == 1) ? shieldTimer : shieldRecharge;
-        secs = (u16)((frames + rate - 1) / rate);
+        mode = SHIELD_HUD_READY;
+        level = SHIELD_BAR_STEPS;
     }
+    if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
 
-    if (!force && mode == shieldHudMode && secs == shieldHudSecs) return;
+    blink = (u16)((mode == SHIELD_HUD_READY && shieldReadyBlink && (shieldReadyBlink & 4)) ? 1 : 0);
+
+    if (!force && mode == shieldHudMode && level == shieldHudLevel
+        && blink == shieldHudBlink) return;
     shieldHudMode = mode;
-    shieldHudSecs = secs;
-
-    if (mode == 1) {
-        sprintf(line, "ESC: ON %d", secs);
-    } else if (mode == 2) {
-        sprintf(line, "ESC: %ds", secs);
-    } else {
-        sprintf(line, "ESC: LISTO");
-    }
-    hud_updateShield(line);
+    shieldHudLevel = level;
+    shieldHudBlink = blink;
+    hud_updateShieldBar(mode, level, blink);
 }
 
 void powerups_init(void) {
@@ -161,8 +166,12 @@ void powerups_update(void) {
         shieldRecharge--;
         if (shieldRecharge == 0) {
             XGM_startPlayPCM(SFX_SHIELD_READY, 10, SOUND_PCM_CH1);
+            shieldReadyBlink = 32;
         }
         shieldRefreshHud(0);
+    } else if (shieldReadyBlink > 0) {
+        shieldReadyBlink--;
+        shieldRefreshHud(1);
     }
 }
 
@@ -173,6 +182,7 @@ void powerups_reset(void) {
     shieldActive = 0;
     shieldTimer = 0;
     shieldRecharge = 0;
+    shieldReadyBlink = 0;
     hideShieldSprite();
     shieldRefreshHud(1);
 }

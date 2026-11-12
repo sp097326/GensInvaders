@@ -3,8 +3,16 @@
 
 #include <genesis.h>
 
+#define SHIELD_HUD_READY     0
+#define SHIELD_HUD_ACTIVE    1
+#define SHIELD_HUD_RECHARGE  2
+#define SHIELD_BAR_STEPS     64  /* 8 tiles x 8 pixels */
+
+void hud_init(void);
 void hud_updateScore(int score, u16 enemiesLeft, u16 lives);
-void hud_updateShield(const char* text);
+/* level is 0..SHIELD_BAR_STEPS (0 = empty, 64 = full). blink != 0 flashes the
+ * ready bar (used for a short pulse when the recharge finishes). */
+void hud_updateShieldBar(u16 state, u16 level, u16 blink);
 void hud_clear(void);
 void hud_drawCentered(const char* text, u16 y);
 void hud_clearOverlay(void);

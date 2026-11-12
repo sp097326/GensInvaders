@@ -16,6 +16,7 @@
 #include "bullets.h"
 #include "enemies.h"
 #include "powerups.h"
+#include "hud.h"
 #include "player.h"
 #include "game_state.h"
 
@@ -68,6 +69,7 @@ int main(bool hard)
 
     enemies_init();
     bullets_init();
+    hud_init();
     powerups_init();
     SYS_enableInts();
     /* Intro is already playing; show the title screen before the first match. */

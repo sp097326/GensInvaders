@@ -43,7 +43,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when present, otherwise V0.2.DEV).
 * difficulty.c/.h — DifficultyConfig table, names, current difficulty, difficulty_config() / difficulty_cycle().
 * ullets.c/.h — player and enemy bullet pools, shooting, movement and despawn.
-* hud.c/.h — score / ships / difficulty lines, centered text, overlay clear.
+* hud.c/.h — score / ships / difficulty lines, shield bar (ESC + 8 tiles), centered text, overlay clear.
 * nemies.c/.h — two-row formation, 
 owsOpposite movement, volleys, palettes, win/lose descent flag.
 * player.c/.h — ship sprite, movement bounds, lives, respawn and invulnerability blink.
@@ -64,6 +64,8 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
         difficulty: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
         Starts ready at the beginning of a match. Not usable while exploding, dead,
         paused, or recharging. On BlastEm the default key for C is D.
+        The HUD shows ESC and a bar on the right of line 2: blue draining while
+        active, dark red filling while recharging, green (brief blue blink) when ready.
 * START: during play, pause / resume (the pause screen shows the game version and the
         current difficulty). After GAME OVER or YOU WIN, returns to the title screen
         with the last difficulty preselected.
@@ -163,6 +165,10 @@ HISTORY:
 *       12/11/26 - Version prefix raised to 0.2. The last number is still
                 the total git commit count (this release is V0.2.42).
                 Fallback label is V0.2.DEV. Tagged v0.2.42.
+*       12/11/26 - Shield HUD is now a short ESC label plus an 8-tile bar
+                (64 steps) on the right of line 2: blue emptying while
+                active, dark red filling while recharging, green when
+                ready (brief blue blink when the recharge finishes).
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -184,7 +190,7 @@ TODO:
           Large blocky GENS / INVADERS logo drawn with solid tiles on plane A.
         - [Done 12/11/26] Shield power-up (button C). Duration and recharge follow
           the difficulty table (EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s).
-          Ready at the start of a match. HUD shows LISTO or the remaining seconds.
+          Ready at the start of a match. HUD shows ESC plus a bar (blue / dark red / green).
         - More powerups: ship speed up? a bomb?
         - [Done 12/11/26] Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
 
@@ -284,3 +290,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **Version 0.2 (later still on Nov 12)**
 * The version prefix is now 0.2. The last number is still the total commit count (`git rev-list --count HEAD`), not a count from a 0.2 base tag, so this release is V0.2.42 (the next commit after V0.1.41). The fallback without `src/version.h` is `V0.2.DEV`. Annotated tag `v0.2.42`.
 * `run.bat build` writes `V0.2.xx` to `src/version.h` with Python so `echo` no longer leaves a trailing space, and it deletes every `out/src/*.o` before compiling because several modules include the version through `game.h`.
+
+**Shield HUD bar (later still on Nov 12)**
+* Replaced the numeric shield HUD (`ESC: LISTO` / `ESC: ON n` / `ESC: ns`) with a short `ESC` label and an 8-tile bar (64 levels, eighth-block tiles) on the right of line 2, leaving SCORE and DIFF untouched.
+* While the shield is up the bar is blue (PAL1) and drains with the time left. During recharge it fills in dark red (PAL1). When it is ready it is full and green (PAL3 color 1, the same green as the bottom enemy row) and flashes blue for about half a second when the recharge finishes, along with the existing ready SFX.
+* Plane A is only rewritten when the level, state or blink phase changes. The tiles are generated in code and loaded at `TILE_USER_INDEX + 2` (title still uses the first two user tiles). No new palette or BMP; fill colors already exist in PAL1 / PAL3. The empty part of the bar is a black track (palette index 4).

@@ -3,6 +3,21 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 14) - Barra de escudo en el HUD (AMH + Bimo)
+
+### Cambiado
+- El indicador numérico del escudo (`ESC: LISTO` / `ESC: ON n` / `ESC: ns`)
+  se sustituye por la etiqueta `ESC` y una barra de 8 teselas (64 niveles,
+  octavos de bloque) a la derecha de la línea 2, sin tocar SCORE ni DIFF.
+- En uso la barra azul (PAL1) se vacía con el tiempo que queda; en recarga
+  se llena en rojo oscuro (PAL1); cuando está lista se ve llena y verde
+  (color 1 de PAL3, el mismo verde de la fila inferior) y parpadea en azul
+  un instante al terminar la recarga, junto con el SFX de siempre.
+- El plano A solo se actualiza cuando cambia el nivel, el estado o el
+  parpadeo. Las teselas se generan en código y se cargan a partir de
+  `TILE_USER_INDEX + 2` (las dos primeras siguen siendo las del título).
+  Usa colores ya presentes en PAL1/PAL3, sin paleta ni BMP nuevos.
+
 ## 2026-11-12 (tarde 13) - Salto a la versión 0.2 (AMH + Bimo)
 
 ### Cambiado

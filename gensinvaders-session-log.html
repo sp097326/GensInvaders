@@ -143,6 +143,7 @@
       <li><a href="#nov12-shield">12/11/2026 - Shield power-up</a></li>
       <li><a href="#nov12-shield-times">12/11/2026 - Shield times by difficulty</a></li>
       <li><a href="#nov12-v02">12/11/2026 - Version prefix 0.2</a></li>
+      <li><a href="#nov12-shield-bar">12/11/2026 - Shield HUD bar</a></li>
     </ol>
   </nav>
 
@@ -626,6 +627,27 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        compiling because several modules include the version through
        <code class="inline">game.h</code>. The title and pause screens show
        the new label.</p>
+  </section>
+
+  <section class="card" id="nov12-shield-bar">
+    <h2>12/11/2026 (with Bimo) - Shield HUD bar</h2>
+    <p>The numeric shield HUD (<code class="inline">ESC: LISTO</code> /
+       <code class="inline">ESC: ON n</code> /
+       <code class="inline">ESC: ns</code>) is now a short
+       <code class="inline">ESC</code> label and an 8-tile bar (64 levels,
+       eighth-block tiles) on the right of line 2. SCORE and DIFF are
+       unchanged.</p>
+    <p>While the shield is up the bar is blue (PAL1) and drains with the
+       time left. During recharge it fills in dark red (PAL1). When it is
+       ready it is full and green (PAL3 color 1, the same green as the
+       bottom enemy row) and flashes blue for about half a second when
+       the recharge finishes, along with the existing ready SFX.</p>
+    <p>Plane A is only rewritten when the level, state or blink phase
+       changes. The tiles are generated in code and loaded at
+       <code class="inline">TILE_USER_INDEX + 2</code> (the title still uses
+       the first two user tiles). No new palette or BMP; fill colors already
+       exist in PAL1 / PAL3. The empty part of the bar is a black track
+       (palette index 4).</p>
   </section>
 
   <footer>
