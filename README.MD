@@ -34,13 +34,15 @@ Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on
 does not affect the ROM.
 
 ## Controls
-* D-pad left/right: move the ship.
+* Title screen: UP/DOWN move the cursor between START GAME (INICIAR) and DIFFICULTY.
+        LEFT/RIGHT (or START / A on DIFFICULTY) cycle EASY / NORMAL / HARD.
+        START on START GAME begins the match with the chosen difficulty (default NORMAL).
+* D-pad left/right: move the ship (during play).
 * B: shoot.
 * A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
-* UP/DOWN: on the difficulty menu, choose EASY / NORMAL / HARD.
-* START: on the difficulty menu, confirm and start (default NORMAL). During play, pause / resume
-        (the pause screen shows the game version and the current difficulty). After GAME OVER
-        or YOU WIN, returns to the difficulty menu with the last choice preselected.
+* START: during play, pause / resume (the pause screen shows the game version and the
+        current difficulty). After GAME OVER or YOU WIN, returns to the title screen
+        with the last difficulty preselected.
 * You get 3 ships; after a hit the ship respawns and blinks for ~2 s (can't be hit).
 
 ## Change log
@@ -99,6 +101,9 @@ HISTORY:
 *       12/11/26 - Retuned difficulties: the table now also has shotInterval, enemySpeed
                 and bulletSpeed. EASY fires regularly every 90 frames; NORMAL is unchanged;
                 HARD moves and fires twice as fast (step 16, interval 60, speed 2).
+*       12/11/26 - Title screen with a large blocky GENS / INVADERS logo (solid tiles on
+                plane A, with shadow and a gold color pulse) and a 2-option menu:
+                START GAME (INICIAR) and DIFFICULTY. The version is shown under the logo.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -110,8 +115,8 @@ TODO:
         - Difficulty values are data-driven (difficultyTable in main.c): step down, max
           enemy bullets, shots per volley, fire chance, shot interval, enemy speed and
           bullet speed can be tuned there without changing the movement or fire code.
-        - Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
-          For now the simple pre-game difficulty selection is enough.
+        - [Done 12/11/26] Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
+          Large blocky GENS / INVADERS logo drawn with solid tiles on plane A.
         - More powerups: ship speed up? a bomb?
         - [Done 12/11/26] Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
 
@@ -154,9 +159,14 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Data-driven difficulty table (`DifficultyConfig difficultyTable`): EASY (no descent, 1 enemy bullet), NORMAL (8 px step, up to 2 bullets, two enemies fire together), HARD (16 px step, two fire together, up to 4 bullets on screen). `fireChance` is in the table for later tuning.
 * Dedicated enemy bullet pool (`enemyBullets`, 4 sprites). Each bullet collides with the player on its own and is freed on hit, off-screen, or reset. Player bullets stay in their own pool. Lives, respawn and invulnerability are unchanged.
 * Pre-game menu "SELECT DIFFICULTY": UP/DOWN to choose, START to confirm (default NORMAL). After GAME OVER or YOU WIN, START returns to that menu with the last choice preselected. Current difficulty is shown on the HUD (`DIFF:`) and on the pause screen.
-* Pending (not in this build): a later title screen with a 2-option menu, START GAME and DIFFICULTY (EASY / NORMAL / HARD).
+* The standalone SELECT DIFFICULTY menu was later replaced by the title screen (see below).
 
 **Difficulty retune (later still on Nov 12)**
 * Root cause of HARD feeling like NORMAL: `currentDiff` was applied correctly, but HARD shared the 120-frame fire interval and 1 px horizontal speed, and the 4-bullet cap almost never filled because bullets left the screen in ~38 frames. No frame-drop evidence.
 * The table now also has `shotInterval`, `enemySpeed` and `bulletSpeed`.
 * EASY: fires every 90 frames with `fireChance` 10 (1 bullet). NORMAL: unchanged (120, 2 shots, cap 2, step 8, speed 1, bullet 5). HARD: interval 60, cap 4, step 16, horizontal speed 2, bullet speed 6.
+
+**Title screen (later still on Nov 12)**
+* Replaced the standalone SELECT DIFFICULTY menu with a title screen (`STATE_TITLE`).
+* Large two-row logo, GENS (5x5 blocks) over INVADERS (4x5 blocks), drawn as solid 8x8 tiles on plane A with a drop shadow, so it stays within the 20-sprites-per-scanline limit. The fill color pulses gold/orange. `V0.1.xx` is shown under the logo. The starfield keeps scrolling on plane B; game sprites are hidden.
+* Menu: START GAME (INICIAR) and DIFFICULTY: EASY/NORMAL/HARD. UP/DOWN move the cursor; LEFT/RIGHT (and START or A on DIFFICULTY) cycle the level; START on START GAME begins the match. After GAME OVER / YOU WIN, START returns here with the last difficulty preselected.

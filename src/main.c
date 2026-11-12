@@ -98,16 +98,21 @@ static const char* difficultyNames[DIFF_COUNT] = {
 };
 
 /* Game states: the main loop only moves things while PLAYING.
- * STATE_DIFFICULTY is the pre-game (and post-game) selection menu.
- * GAME_OVER and WIN freeze the action and wait for START to return to the menu. */
+ * STATE_TITLE is the boot (and post-game) title screen with START / difficulty.
+ * GAME_OVER and WIN freeze the action and wait for START to return to the title. */
 typedef enum
 {
-    STATE_DIFFICULTY,
+    STATE_TITLE,
     STATE_PLAYING,
     STATE_PAUSED,
     STATE_GAME_OVER,
     STATE_WIN
 } GameState;
+
+#define TITLE_OPT_START 0
+#define TITLE_OPT_DIFF  1
+#define TILE_TITLE_FILL   TILE_USER_INDEX
+#define TILE_TITLE_SHADOW (TILE_USER_INDEX + 1)
 
 // on screen entities
 // name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit.
@@ -127,9 +132,10 @@ u16 powerupTimer = 0;
 int score = 0;
 char hud_string[40] = "";
 bool powerOn = 0;
-GameState gameState = STATE_DIFFICULTY;
+GameState gameState = STATE_TITLE;
 Difficulty currentDiff = DIFF_NORMAL;
-Difficulty menuDiff = DIFF_NORMAL;
+u16 titleCursor = TITLE_OPT_START;
+u16 titlePulseTick = 0;
 u16 lives = MAX_LIVES;
 u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
 u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
@@ -150,9 +156,10 @@ void shootBullet(GameEntity shooter);
 void shootEnemyBullet(GameEntity* shooter);
 void enemiesTryShoot();
 void resetGame();
-void showDifficultyMenu();
-void drawDifficultyMenu();
+void showTitleScreen();
+void drawTitleMenu();
 void startGameFromMenu();
+void updateTitlePulse();
 
 /* Auxiliary functions for game processing */
 
@@ -225,7 +232,7 @@ void resumeGame() {
     gameState = STATE_PLAYING;
 }
 
-/* Hide every game sprite and reset bullet counters. Used by the difficulty menu. */
+/* Hide every game sprite and reset bullet counters. Used by the title screen. */
 void hideGameSprites() {
     u16 i;
     killGameEntity(&player);
@@ -243,30 +250,173 @@ void hideGameSprites() {
     enemyBulletsOnScreen = 0;
 }
 
-void drawDifficultyMenu() {
-    u16 i;
-    char line[16];
-    clearEndScreen();
-    clearHud();
-    drawCenteredText("SELECT DIFFICULTY", 10);
-    for (i = 0; i < DIFF_COUNT; i++) {
-        sprintf(line, "%c %s", (i == (u16)menuDiff) ? '>' : ' ', difficultyNames[i]);
-        VDP_drawText(line, 14, 12 + i);
+/* Solid 8x8 block tiles for the title logo (palette index 1 = fill, 2 = shadow).
+ * Drawn on plane A so a wide word like INVADERS does not hit the 20-sprites-per-
+ * scanline limit. The starfield stays on plane B. */
+static const u32 TITLE_TILE_FILL[8] = {
+    0x11111111, 0x11111111, 0x11111111, 0x11111111,
+    0x11111111, 0x11111111, 0x11111111, 0x11111111
+};
+static const u32 TITLE_TILE_SHADOW[8] = {
+    0x22222222, 0x22222222, 0x22222222, 0x22222222,
+    0x22222222, 0x22222222, 0x22222222, 0x22222222
+};
+
+/* 5x5 glyphs for the short top word GENS (bit 4 = leftmost). */
+static const u8 GLYPH5_G[5] = { 0x0E, 0x10, 0x16, 0x11, 0x0E };
+static const u8 GLYPH5_E[5] = { 0x1F, 0x10, 0x1E, 0x10, 0x1F };
+static const u8 GLYPH5_N[5] = { 0x11, 0x19, 0x15, 0x13, 0x11 };
+static const u8 GLYPH5_S[5] = { 0x0F, 0x10, 0x0E, 0x01, 0x1E };
+
+/* 4x5 glyphs for INVADERS (bit 3 = leftmost). */
+static const u8 GLYPH4_A[5] = { 0x6, 0x9, 0xF, 0x9, 0x9 };
+static const u8 GLYPH4_D[5] = { 0xE, 0x9, 0x9, 0x9, 0xE };
+static const u8 GLYPH4_E[5] = { 0xF, 0x8, 0xE, 0x8, 0xF };
+static const u8 GLYPH4_I[5] = { 0xF, 0x6, 0x6, 0x6, 0xF };
+static const u8 GLYPH4_N[5] = { 0x9, 0xD, 0xB, 0x9, 0x9 };
+static const u8 GLYPH4_R[5] = { 0xE, 0x9, 0xE, 0xA, 0x9 };
+static const u8 GLYPH4_S[5] = { 0xE, 0x8, 0x6, 0x1, 0x7 };
+static const u8 GLYPH4_V[5] = { 0x9, 0x9, 0x9, 0x9, 0x6 };
+
+static const u8* titleGlyph(char c, u16 width) {
+    if (width == 5) {
+        switch (c) {
+            case 'G': return GLYPH5_G;
+            case 'E': return GLYPH5_E;
+            case 'N': return GLYPH5_N;
+            case 'S': return GLYPH5_S;
+            default:  return NULL;
+        }
     }
-    drawCenteredText("PRESS START", 16);
+    switch (c) {
+        case 'A': return GLYPH4_A;
+        case 'D': return GLYPH4_D;
+        case 'E': return GLYPH4_E;
+        case 'I': return GLYPH4_I;
+        case 'N': return GLYPH4_N;
+        case 'R': return GLYPH4_R;
+        case 'S': return GLYPH4_S;
+        case 'V': return GLYPH4_V;
+        default:  return NULL;
+    }
 }
 
-void showDifficultyMenu() {
-    gameState = STATE_DIFFICULTY;
-    menuDiff = currentDiff;
+void loadTitleTiles() {
+    VDP_loadTileData(TITLE_TILE_FILL, TILE_TITLE_FILL, 1, CPU);
+    VDP_loadTileData(TITLE_TILE_SHADOW, TILE_TITLE_SHADOW, 1, CPU);
+}
+
+void setTitlePalette() {
+    /* PAL3 is reserved for the logo: color 1 pulses, color 2 is the shadow. */
+    PAL_setColor(49, RGB24_TO_VDPCOLOR(0xF8F800));
+    PAL_setColor(50, RGB24_TO_VDPCOLOR(0x000068));
+}
+
+void stampGlyph(const u8* rows, u16 width, u16 x, u16 y, u16 tileIndex) {
+    u16 r, b, bit;
+    u16 attr = TILE_ATTR_FULL(PAL3, 1, 0, 0, tileIndex);
+    for (r = 0; r < 5; r++) {
+        for (b = 0; b < width; b++) {
+            bit = width - 1 - b;
+            if (rows[r] & (1 << bit)) {
+                VDP_setTileMapXY(BG_A, attr, x + b, y + r);
+            }
+        }
+    }
+}
+
+/* Draw a word in solid blocks, with a 1-tile drop shadow, then the fill on top. */
+void drawTitleWord(const char* word, u16 x, u16 y, u16 width) {
+    u16 i;
+    u16 col;
+    const u8* g;
+    u16 step = width + 1;
+
+    col = x;
+    for (i = 0; word[i] != 0; i++) {
+        g = titleGlyph(word[i], width);
+        if (g != NULL) {
+            stampGlyph(g, width, col + 1, y + 1, TILE_TITLE_SHADOW);
+        }
+        col += step;
+    }
+    col = x;
+    for (i = 0; word[i] != 0; i++) {
+        g = titleGlyph(word[i], width);
+        if (g != NULL) {
+            stampGlyph(g, width, col, y, TILE_TITLE_FILL);
+        }
+        col += step;
+    }
+}
+
+void drawTitleLogo() {
+    /* Two-row logo so 12 letters stay large but fit in 320 px:
+     * GENS is 5x5 (23 tiles, centered), INVADERS is 4x5 (39 tiles, full width). */
+    drawTitleWord("GENS", 8, 2, 5);
+    drawTitleWord("INVADERS", 0, 8, 4);
+}
+
+void clearTitleScreen() {
+    u16 row;
+    VDP_clearTileMapRect(BG_A, 0, 0, 40, 28);
+    for (row = 0; row < 28; row++) {
+        VDP_clearText(0, row, 40);
+    }
+}
+
+void drawTitleMenu() {
+    char line[32];
+    VDP_clearText(0, 15, 40);
+    VDP_clearText(0, 17, 40);
+    VDP_clearText(0, 19, 40);
+    drawCenteredText(GAME_VERSION, 15);
+    sprintf(line, "%c START GAME (INICIAR)", (titleCursor == TITLE_OPT_START) ? '>' : ' ');
+    drawCenteredText(line, 17);
+    sprintf(line, "%c DIFFICULTY: %s", (titleCursor == TITLE_OPT_DIFF) ? '>' : ' ', difficultyNames[currentDiff]);
+    drawCenteredText(line, 19);
+}
+
+void cycleDifficulty(s16 dir) {
+    s16 d = (s16)currentDiff + dir;
+    if (d < 0) d = DIFF_COUNT - 1;
+    if (d >= (s16)DIFF_COUNT) d = 0;
+    currentDiff = (Difficulty)d;
+    drawTitleMenu();
+}
+
+void updateTitlePulse() {
+    /* Gold / orange ping-pong so the block logo feels alive. */
+    static const u16 colors[8] = {
+        RGB24_TO_VDPCOLOR(0xF8F800),
+        RGB24_TO_VDPCOLOR(0xF8D000),
+        RGB24_TO_VDPCOLOR(0xF8A000),
+        RGB24_TO_VDPCOLOR(0xF87800),
+        RGB24_TO_VDPCOLOR(0xF85000),
+        RGB24_TO_VDPCOLOR(0xF87800),
+        RGB24_TO_VDPCOLOR(0xF8A000),
+        RGB24_TO_VDPCOLOR(0xF8D000)
+    };
+    titlePulseTick++;
+    if ((titlePulseTick & 7) == 0) {
+        PAL_setColor(49, colors[(titlePulseTick >> 3) & 7]);
+    }
+}
+
+void showTitleScreen() {
+    gameState = STATE_TITLE;
+    titleCursor = TITLE_OPT_START;
     player.velx = 0;
     hideGameSprites();
-    drawDifficultyMenu();
+    clearTitleScreen();
+    loadTitleTiles();
+    setTitlePalette();
+    drawTitleLogo();
+    drawTitleMenu();
 }
 
 void startGameFromMenu() {
-    currentDiff = menuDiff;
-    clearEndScreen();
+    clearTitleScreen();
     resetGame();
 }
 
@@ -568,20 +718,33 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
     // Control movement for player 1 (can we just add an If for player 2?)
     if (joy != JOY_1) return;
 
-    if (gameState == STATE_DIFFICULTY) {
+    if (gameState == STATE_TITLE) {
         if (state & BUTTON_UP & changed) {
-            if (menuDiff > DIFF_EASY) {
-                menuDiff--;
-                drawDifficultyMenu();
+            if (titleCursor > TITLE_OPT_START) {
+                titleCursor = TITLE_OPT_START;
+                drawTitleMenu();
             }
         } else if (state & BUTTON_DOWN & changed) {
-            if ((u16)menuDiff + 1 < DIFF_COUNT) {
-                menuDiff++;
-                drawDifficultyMenu();
+            if (titleCursor < TITLE_OPT_DIFF) {
+                titleCursor = TITLE_OPT_DIFF;
+                drawTitleMenu();
+            }
+        }
+        if (titleCursor == TITLE_OPT_DIFF) {
+            if (state & BUTTON_LEFT & changed) {
+                cycleDifficulty(-1);
+            } else if (state & BUTTON_RIGHT & changed) {
+                cycleDifficulty(1);
+            } else if (state & BUTTON_A & changed) {
+                cycleDifficulty(1);
             }
         }
         if (state & BUTTON_START & changed) {
-            startGameFromMenu();
+            if (titleCursor == TITLE_OPT_START) {
+                startGameFromMenu();
+            } else {
+                cycleDifficulty(1);
+            }
         }
         return;
     }
@@ -598,10 +761,10 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
         return;
     }
 
-    // On the end screens only START matters: it returns to the difficulty menu.
+    // On the end screens only START matters: it returns to the title screen.
     if (gameState != STATE_PLAYING) {
         if (state & BUTTON_START & changed) {
-            showDifficultyMenu();
+            showTitleScreen();
         }
         return;
     }
@@ -836,8 +999,8 @@ int main(bool hard)
     generateBullets();
     PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
     SYS_enableInts();
-    /* Intro is already playing; show the difficulty menu before the first match. */
-    showDifficultyMenu();
+    /* Intro is already playing; show the title screen before the first match. */
+    showTitleScreen();
     SPR_update();
 
     /* Actual main loop for the game, this loops while the game is alive */
@@ -850,7 +1013,9 @@ int main(bool hard)
         // Old idea: random starfield tiles every frame. Removed for performance;
         // pregenerating the values once would be the way to bring it back.
 
-        if (gameState == STATE_PLAYING) {
+        if (gameState == STATE_TITLE) {
+            updateTitlePulse();
+        } else if (gameState == STATE_PLAYING) {
             updatePlayerLife();
             positionPlayer();
             positionBullets();

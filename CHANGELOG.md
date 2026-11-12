@@ -3,6 +3,26 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 3) - Pantalla de título (AMH + Bimo)
+
+### Agregado
+- **Pantalla de título** al arrancar (y al volver de GAME OVER / YOU WIN).
+  El logo **GENSINVADERS** se dibuja grande en dos renglones (GENS / INVADERS)
+  con letras de bloques sólidos 8x8 en el plano A, más una sombra. Se usaron
+  tiles del fondo y no sprites para no rebasar el límite de 20 sprites por
+  línea de barrido (INVADERS en una sola fila no cabría). El color del logo
+  pulsa en tonos dorados. La versión `V0.1.xx` aparece bajo el título.
+- Menú de 2 opciones: **START GAME (INICIAR)** y **DIFFICULTY: EASY/NORMAL/HARD**.
+  ARRIBA/ABAJO mueve el cursor; IZQUIERDA/DERECHA (y START o A sobre
+  Dificultad) cambian el nivel; START en INICIAR comienza la partida con
+  la dificultad elegida (se conserva la última al volver al título).
+  Los sprites del juego se ocultan en esta pantalla; el fondo de estrellas
+  sigue en el plano B.
+
+### Cambiado
+- El menú suelto "SELECT DIFFICULTY" se reemplazó por esta pantalla
+  (`STATE_TITLE`).
+
 ## 2026-11-12 (tarde 2) - Ajuste de cadencia y velocidad por dificultad (AMH + Bimo)
 
 ### Corregido

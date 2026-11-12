@@ -132,6 +132,7 @@
       <li><a href="#nov12">12/11/2026 - Formation steps down</a></li>
       <li><a href="#nov12-diff">12/11/2026 - Difficulty and simultaneous enemy fire</a></li>
       <li><a href="#nov12-tune">12/11/2026 - Difficulty retune (interval and speed)</a></li>
+      <li><a href="#nov12-title">12/11/2026 - Title screen</a></li>
     </ol>
   </nav>
 
@@ -426,6 +427,20 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
     <p>The table now also has <code class="inline">shotInterval</code>, <code class="inline">enemySpeed</code> and
        <code class="inline">bulletSpeed</code>. EASY fires every 90 frames (chance 10, 1 bullet).
        NORMAL is unchanged. HARD uses interval 60, step 16, horizontal speed 2 and bullet speed 6.</p>
+  </section>
+
+  <section class="card" id="nov12-title">
+    <h2>12/11/2026 (with Bimo) - Title screen</h2>
+    <p>Replaced the standalone SELECT DIFFICULTY menu with a title screen (<code class="inline">STATE_TITLE</code>).
+       The logo is a two-row blocky <b>GENS / INVADERS</b> wordmark made of solid 8x8 tiles on plane A
+       (5x5 glyphs for GENS, 4x5 for INVADERS) plus a drop shadow, with a gold/orange color pulse.
+       Tiles were used instead of sprites so INVADERS can sit on one scanline without hitting the
+       20-sprites-per-line limit. The version <code class="inline">V0.1.xx</code> is shown under the logo.
+       Game sprites are hidden; the starfield keeps scrolling on plane B.</p>
+    <p>Menu: START GAME (INICIAR) and DIFFICULTY: EASY/NORMAL/HARD.
+       UP/DOWN move the cursor; LEFT/RIGHT (and START or A on DIFFICULTY) cycle the level;
+       START on START GAME begins the match. After GAME OVER / YOU WIN, START returns here
+       with the last difficulty preselected.</p>
   </section>
 
   <footer>
