@@ -3,6 +3,15 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 8) - Normal dispara siempre en cada andanada (AMH + Bimo)
+
+### Cambiado
+- En NORMAL, `fireChance` pasa de 8 a 10: cada andanada (cada 120 cuadros,
+  ~2 s) dispara de verdad, con 2 balas y tope 2, igual que antes. El 20% de
+  fallos hacía que a veces pasaran 4 o 6 segundos sin disparos y se sintiera
+  que casi no disparaban. No fue una regresión del refactor: la lógica y la
+  tabla eran las mismas que en V0.1.25. EASY y HARD no se tocan.
+
 ## 2026-11-12 (tarde 7) - Refactor en módulos (AMH + Bimo)
 
 ### Cambiado

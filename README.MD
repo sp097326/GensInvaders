@@ -134,6 +134,8 @@ HISTORY:
                 difficulty, bullets, hud, enemies, player, collision, title,
                 powerups, game_state). No gameplay changes. main.c is init
                 and dispatch; the starfield stays there.
+*       12/11/26 - NORMAL fireChance set to 10 so every 120-frame volley
+                actually fires (2 shots, cap 2). EASY and HARD unchanged.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -145,7 +147,7 @@ TODO:
           row already uses a different palette as a stand-in.
         - Add an explosion sprite for the player when hit by enemy fire.
         - [Done 12/11/26] Can two enemies fire at once?
-        - Difficulty values are data-driven (difficultyTable in main.c): step down, max
+        - Difficulty values are data-driven (difficultyTable in difficulty.c): step down, max
           enemy bullets, shots per volley, fire chance, shot interval, enemy speed,
           bullet speed and rowsOpposite can be tuned there without changing the
           movement or fire code. On in NORMAL and HARD; set EASY's rowsOpposite to 1 to enable it there too.
@@ -219,6 +221,10 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 
 **Modular refactor (later still on Nov 12)**
 * Split src/main.c (1226 lines at V0.1.25) into modules with no behavior change. Public headers in inc/; SGDK already compiles every src/*.c and includes -Iinc.
-* New modules: config.h / game.h, difficulty, ullets, hud, nemies, player, collision, 	itle, powerups, game_state. main.c is now init + starfield + loop dispatch (~91 lines).
+* New modules: `config.h` / `game.h`, `difficulty`, `bullets`, `hud`, `enemies`, `player`, `collision`, `title`, `powerups`, `game_state`. `main.c` is now init + starfield + loop dispatch (~91 lines).
 * GAME_VERSION is included from game.h so title and pause still show V0.1.xx. After header changes, delete out/src/*.o before rebuilding.
 * Not moved: starfield (drawStarfield and offset scroll) stays in main.c (no background module was planned).
+
+**NORMAL always fires its volley (later still on Nov 12)**
+* After the refactor Alberto noticed that on NORMAL the ships barely seemed to shoot. A diff against V0.1.25 showed no regression: same ticker, pool, getters and table. NORMAL had `fireChance` 8, so about 1 in 5 volleys was skipped and two misses in a row meant 4-6 seconds with no bullets (EASY and HARD already fire every attempt).
+* `fireChance` on NORMAL is now 10: every 120-frame volley (~2 s) fires two shots, still capped at 2. Interval, speed, step, cap and `rowsOpposite` are unchanged. EASY and HARD are unchanged.

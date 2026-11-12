@@ -137,6 +137,7 @@
       <li><a href="#nov12-opposite">12/11/2026 - Opposite rows on HARD</a></li>
       <li><a href="#nov12-opposite-n">12/11/2026 - Opposite rows on NORMAL too</a></li>
       <li><a href="#nov12-refactor">12/11/2026 - Refactor into modules</a></li>
+      <li><a href="#nov12-normal-fire">12/11/2026 - NORMAL always fires its volley</a></li>
     </ol>
   </nav>
 
@@ -500,6 +501,19 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
     <p>Not moved: the starfield (<code class="inline">drawStarfield</code> and the vertical scroll of
        <code class="inline">offset</code>) stays in <code class="inline">main.c</code>; no background module
        was in the plan. After header changes, delete <code class="inline">out/src/*.o</code> before rebuilding.</p>
+  </section>
+
+  <section class="card" id="nov12-normal-fire">
+    <h2>12/11/2026 (with Bimo) - NORMAL always fires its volley</h2>
+    <p>After the modular refactor Alberto reported that enemy ships on NORMAL barely seemed
+       to shoot. A comparison with V0.1.25 (<code class="inline">37ba68e</code>) found
+       <strong>no regression</strong>: the volley ticker, bullet pool, difficulty getters
+       and table values were unchanged. NORMAL still had <code class="inline">fireChance</code> 8,
+       so about one in five volleys was skipped; two misses in a row left 4&ndash;6 seconds
+       with no enemy bullets. EASY and HARD already fire on every attempt.</p>
+    <p><code class="inline">fireChance</code> on NORMAL is now 10. Every 120-frame volley
+       (~2 s) fires two shots, still capped at 2. Interval, speed, step, cap and
+       <code class="inline">rowsOpposite</code> are unchanged. EASY and HARD are unchanged.</p>
   </section>
 
   <footer>
