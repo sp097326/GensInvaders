@@ -16,6 +16,7 @@
 #include "bullets.h"
 #include "hud.h"
 #include "enemies.h"
+#include "powerups.h"
 
 #define TITLE_OPT_START 0
 #define TITLE_OPT_DIFF  1
@@ -25,22 +26,13 @@
 // on screen entities
 // name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit.
 GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, 0, 0, "PLYR" };
-// Every field initialized (the empty name "" silences -Wmissing-field-initializers).
-GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
-u16 powerupTimer = 0;
 int score = 0;
-bool powerOn = 0;
 GameState gameState = STATE_TITLE;
 u16 titleCursor = TITLE_OPT_START;
 u16 titlePulseTick = 0;
 u16 lives = MAX_LIVES;
 u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
 u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
-
-typedef enum
-{
-    RapidFire
-} Powerup;
 
 // background scroll offset
 int offset = 0;
@@ -266,60 +258,6 @@ void startGameFromMenu() {
     resetGame();
 }
 
-/* powerup Related */
-void spawnPowerupAt(u16 X, u16 Y) {};
-void positionPowerup(){};
-void activatePowerup(Powerup Type) {
-    switch (Type)
-    {
-    case RapidFire: {
-        // RapidFire = let the player keep more bullets on screen at once.
-        // Was MAX_PLAYER_BULLETS (3), i.e. identical to the default, so the
-        // powerup did nothing. MAX_BULLETS (6) is the size of the player pool.
-        bullets_setMaxPlayer(MAX_BULLETS);
-        powerupTimer = POWERUP_DURATION;
-        // Tint the powerup color RED while active, using the SAME palette index
-        // (34) that deactivatePowerup() restores so the toggle is symmetric;
-        // it used to be index 18 here, which is why the color never reset.
-        // Use PAL_setColor (one u16 color). The old PAL_setPaletteColors call
-        // wanted a u16* array, so passing a color value was the "aqui truena" bug.
-        PAL_setColor(34, RGB24_TO_VDPCOLOR(0xf83000));
-        powerOn = POWER_ON;
-        break;
-    }
-    default:
-        return;
-    }
-};
-void deactivatePowerup(){
-    bullets_setMaxPlayer(MAX_PLAYER_BULLETS);
-    // Restore the original color. PAL_setColor takes a single u16 color value;
-    // PAL_setPaletteColors expects a u16* array, hence the previous warning/crash.
-    PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
-    // Clear the flag so the A button toggles the powerup back ON next time.
-    // This line was missing, so powerOn was stuck at 1 after the first press.
-    powerOn = POWER_OFF;
-};
-
-/* Called once per frame from the main loop: ticks the active powerup down and
- * turns it off automatically once POWERUP_DURATION frames have elapsed.
- * Before this existed, powerupTimer was set on activate but never counted, so
- * RapidFire only ever ended on a manual A press. */
-void updatePowerup() {
-    if (powerOn) {
-        // Guard against u16 underflow: decrementing 0 would wrap to 65535,
-        // leaving the powerup stuck on for ~18 minutes (65535 frames).
-        if (powerupTimer > 0) {
-            powerupTimer--;
-        }
-        if (powerupTimer == 0) {
-            deactivatePowerup();
-        }
-    }
-}
-
-/* powerup related END */
-
 void positionPlayer() {
     if (player.health == 0) return;   // waiting to respawn
     //handling velocity, adding it to position
@@ -366,7 +304,7 @@ void updatePlayerLife() {
 void playerHit() {
     killGameEntity(&player);
     player.velx = 0;
-    if (powerOn) deactivatePowerup();
+    if (powerups_isOn()) powerups_deactivate();
     //present the xplosion sprite instead....
     // Own channel (CH2) and top priority (15) so nothing can cut the explosion.
     XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
@@ -458,11 +396,7 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
         bullets_shootPlayer(player);
     }
     if (state & BUTTON_A & changed) {
-        if (powerOn) {
-            deactivatePowerup();
-        } else {
-            activatePowerup(RapidFire);
-        }
+        powerups_toggle();
     }
 }
 
@@ -523,8 +457,7 @@ void handleCollisions() {
  * just reset positions, counters and flags. */
 void resetGame() {
     bullets_reset();
-    if (powerOn) deactivatePowerup();
-    powerupTimer = 0;
+    powerups_reset();
 
     placePlayer();
     reviveGameEntity(&player);
@@ -587,7 +520,7 @@ int main(bool hard)
 
     enemies_init();
     bullets_init();
-    PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
+    powerups_init();
     SYS_enableInts();
     /* Intro is already playing; show the title screen before the first match. */
     showTitleScreen();
@@ -613,7 +546,7 @@ int main(bool hard)
                 showEndScreen(STATE_GAME_OVER);
             }
             handleCollisions();
-            updatePowerup();    // tick RapidFire down so it auto-expires
+            powerups_update();
         }
         SPR_update();
         SYS_doVBlankProcess();
