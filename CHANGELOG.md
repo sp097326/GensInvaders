@@ -3,6 +3,37 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 7) - Refactor en módulos (AMH + Bimo)
+
+### Cambiado
+- `src/main.c` (1226 líneas en V0.1.25) se partió en módulos **sin cambiar
+  el comportamiento** del juego. El `main` queda en inicialización, el
+  campo de estrellas y el despacho del bucle; cada módulo tiene init/update/draw
+  cuando aplica, y sus datos viven como `static` en su `.c`.
+- Las cabeceras públicas están en `inc/`. El `makefile.gen` de SGDK ya toma
+  todos los `src/*.c` (salvo `boot/rom_head.c`) e incluye `-Iinc -Isrc`.
+- `GAME_VERSION` se incluye desde `game.h` (`#if __has_include("version.h")`,
+  si no existe usa `V0.1.DEV`). `src/version.h` sigue siendo generado y
+  git-ignorado. Tras un cambio de cabeceras hay que borrar `out/src/*.o`
+  antes de recompilar, porque ahora varios módulos pueden incluir la versión.
+
+### Agregado
+- `inc/config.h`: constantes compartidas (formación, bordes, balas, vidas, etc.).
+- `inc/game.h`: `GameEntity`, `GameState`, `killGameEntity` / `reviveGameEntity`.
+- `difficulty.c/.h`: tabla de dificultad, nombres y getters (`difficulty_config()`, etc.).
+- `bullets.c/.h`: pools de balas del jugador y de los enemigos.
+- `hud.c/.h`: puntuación, texto centrado y limpieza de overlays.
+- `enemies.c/.h`: formación, movimiento (incluido `rowsOpposite`), disparos y paletas.
+- `player.c/.h`: nave, vidas, respawn e invulnerabilidad.
+- `collision.c/.h`: choques bala-enemigo y bala-jugador.
+- `title.c/.h`: logo de bloques, menú y pulso de color.
+- `powerups.c/.h`: RapidFire (el pickup en pantalla sigue como reserva).
+- `game_state.c/.h`: estados, mando, pausa, GAME OVER / YOU WIN y `reset`.
+
+### Sin mover
+- El campo de estrellas (`drawStarfield` y el scroll vertical de `offset`)
+  se queda en `main.c`: no había un módulo de fondo en el plan.
+
 ## 2026-11-12 (tarde 6) - Filas en sentido contrario también en Normal (AMH + Bimo)
 
 ### Cambiado

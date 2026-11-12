@@ -33,6 +33,24 @@ BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (powerup), Enter = ST
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
 does not affect the ROM.
 
+## Estructura del código
+Public headers live in inc/; implementation in src/. SGDK's makefile.gen already compiles every src/*.c (except oot/rom_head.c) and adds -Iinc -Isrc. Module data is static inside each .c; only shared types and accessors are exported. src/main.c is init, the starfield, and the main-loop dispatch.
+
+* inc/config.h — shared gameplay constants (formation size, edges, bullet caps, lives, SFX ids). Tunables that change by difficulty stay in the difficulty table.
+* inc/game.h — GameEntity, GameState, killGameEntity / 
+eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when present, otherwise V0.1.DEV).
+* difficulty.c/.h — DifficultyConfig table, names, current difficulty, difficulty_config() / difficulty_cycle().
+* ullets.c/.h — player and enemy bullet pools, shooting, movement and despawn.
+* hud.c/.h — score / ships / difficulty lines, centered text, overlay clear.
+* nemies.c/.h — two-row formation, 
+owsOpposite movement, volleys, palettes, win/lose descent flag.
+* player.c/.h — ship sprite, movement bounds, lives, respawn and invulnerability blink.
+* collision.c/.h — AABB checks; player bullets vs enemies and enemy bullets vs the player.
+* 	itle.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
+* powerups.c/.h — RapidFire toggle and timer (on-screen pickup entity reserved for later).
+* game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
+* src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
+
 ## Controls
 * Title screen: UP/DOWN move the cursor between START GAME (INICIAR) and DIFFICULTY.
         LEFT/RIGHT (or START / A on DIFFICULTY) cycle EASY / NORMAL / HARD.
@@ -112,6 +130,10 @@ HISTORY:
                 will not step down if it would come within 24 px of the row below.
 *       12/11/26 - Opposite-row movement enabled on NORMAL as well (rowsOpposite=1);
                 EASY still moves as a single formation.
+*       12/11/26 - Refactor of src/main.c into modules (config/game headers,
+                difficulty, bullets, hud, enemies, player, collision, title,
+                powerups, game_state). No gameplay changes. main.c is init
+                and dispatch; the starfield stays there.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -119,7 +141,7 @@ TODO:
         - [Done 12/11/26] Add more enemies, control a second row.
         - Change sprites, use a different one for enemies, maybe 2.
           The per-row EnemyRowType is ready: drop a 16x16 sheet in res/tiles/ and
-          point enemyRows[n].spriteDef at it in resources.res / main.c. The bottom
+          point the row's spriteDef at it in resources.res / enemies.c. The bottom
           row already uses a different palette as a stand-in.
         - Add an explosion sprite for the player when hit by enemy fire.
         - [Done 12/11/26] Can two enemies fire at once?
@@ -194,3 +216,9 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 
 **Opposite rows on NORMAL too (later still on Nov 12)**
 * NORMAL now also has `rowsOpposite=1`. Its other values are unchanged (step 8, speed 1, interval 120, cap 2). EASY stays 0 (both rows move together). HARD is unchanged.
+
+**Modular refactor (later still on Nov 12)**
+* Split src/main.c (1226 lines at V0.1.25) into modules with no behavior change. Public headers in inc/; SGDK already compiles every src/*.c and includes -Iinc.
+* New modules: config.h / game.h, difficulty, ullets, hud, nemies, player, collision, 	itle, powerups, game_state. main.c is now init + starfield + loop dispatch (~91 lines).
+* GAME_VERSION is included from game.h so title and pause still show V0.1.xx. After header changes, delete out/src/*.o before rebuilding.
+* Not moved: starfield (drawStarfield and offset scroll) stays in main.c (no background module was planned).

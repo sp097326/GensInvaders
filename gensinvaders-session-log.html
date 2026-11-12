@@ -136,6 +136,7 @@
       <li><a href="#nov12-row2">12/11/2026 - Second enemy row</a></li>
       <li><a href="#nov12-opposite">12/11/2026 - Opposite rows on HARD</a></li>
       <li><a href="#nov12-opposite-n">12/11/2026 - Opposite rows on NORMAL too</a></li>
+      <li><a href="#nov12-refactor">12/11/2026 - Refactor into modules</a></li>
     </ol>
   </nav>
 
@@ -477,6 +478,28 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
     <h2>12/11/2026 (with Bimo) - Opposite rows on NORMAL too</h2>
     <p>NORMAL now also has <code class="inline">rowsOpposite=1</code>. Its other values stay the same
        (step 8, speed 1, interval 120, cap 2). EASY stays 0 (both rows move together). HARD is unchanged.</p>
+  </section>
+
+  <section class="card" id="nov12-refactor">
+    <h2>12/11/2026 (with Bimo) - Refactor into modules</h2>
+    <p><code class="inline">src/main.c</code> (1226 lines at V0.1.25, commit <code class="inline">37ba68e</code>)
+       was split into modules with <strong>no gameplay changes</strong>. Public headers live in
+       <code class="inline">inc/</code>; SGDK&rsquo;s <code class="inline">makefile.gen</code> already compiles
+       every <code class="inline">src/*.c</code> and adds <code class="inline">-Iinc -Isrc</code>.
+       Module data is <code class="inline">static</code> in each <code class="inline">.c</code>.</p>
+    <p>Modules, landed one commit at a time with a clean <code class="inline">-Wall -Wextra</code> build after each:
+       <code class="inline">config.h</code> / <code class="inline">game.h</code>,
+       <code class="inline">difficulty</code>, <code class="inline">bullets</code>,
+       <code class="inline">hud</code>, <code class="inline">enemies</code>,
+       <code class="inline">player</code>, <code class="inline">collision</code>,
+       <code class="inline">title</code>, <code class="inline">powerups</code>,
+       <code class="inline">game_state</code>.
+       <code class="inline">main.c</code> is now init, the starfield, and loop dispatch (~91 lines).
+       <code class="inline">GAME_VERSION</code> is included from <code class="inline">game.h</code>
+       (git-ignored <code class="inline">src/version.h</code>, fallback <code class="inline">V0.1.DEV</code>).</p>
+    <p>Not moved: the starfield (<code class="inline">drawStarfield</code> and the vertical scroll of
+       <code class="inline">offset</code>) stays in <code class="inline">main.c</code>; no background module
+       was in the plan. After header changes, delete <code class="inline">out/src/*.o</code> before rebuilding.</p>
   </section>
 
   <footer>
