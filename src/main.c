@@ -4,7 +4,7 @@
  * Based on ohsat (https://www.ohsat.com/) awesome tutorial.
  * Assets by: taken from ohsat page,
  * Code by: AMH
- * Last mod by: AMH (with Bimo) - 10 / 11 / 2026
+ * Last mod by: AMH (with Bimo) - 12 / 11 / 2026
  *
  * Change history lives in CHANGELOG.md; design notes in README.MD.
  **/
@@ -53,6 +53,7 @@ typedef struct
 #define POWER_OFF 0
 #define PLAYER_START_X 152
 #define PLAYER_START_Y 192
+#define ENEMY_STEP_DOWN 8       // pixels the formation drops on each edge bounce
 #define MAX_LIVES 3             // ships per game
 #define RESPAWN_DELAY 90        // frames the player stays gone after being hit (~1.5 s)
 #define INVULN_FRAMES 120       // frames of blinking invulnerability after respawn (~2 s)
@@ -223,19 +224,45 @@ void positionEnemies() {
     shotTicker++;
     u16 i = 0;
     GameEntity* enemy;
+    u16 hitEdge = 0;
+    u16 reachedPlayer = 0;
 
     /* Formation movement (classic Space Invaders): if ANY living enemy reaches
-     * an edge, the whole group turns around together. Before, each enemy
-     * bounced on its own, so the first one to hit the wall turned back and
-     * ran into the ones still coming, which is why they overlapped. */
+     * an edge, the whole group turns around and steps down together. If they
+     * reach the player's row, it's GAME OVER. Before the shared enemyDir,
+     * each enemy bounced on its own and they overlapped. */
     for (i = 0; i < MAX_ENEMIES; i++) {
         enemy = &enemies[i];
         if (enemy->health > 0) {
             if ((enemyDir > 0 && enemy->x + enemy->w >= RIGHT_EDGE) ||
                 (enemyDir < 0 && enemy->x <= LEFT_EDGE)) {
                 enemyDir = -enemyDir;
+                hitEdge = 1;
                 break;
             }
+        }
+    }
+
+    if (hitEdge) {
+        for (i = 0; i < MAX_ENEMIES; i++) {
+            enemy = &enemies[i];
+            if (enemy->health > 0) {
+                enemy->y += ENEMY_STEP_DOWN;
+                /* The bottom of the sprite reached the player's starting row. */
+                if (enemy->y + enemy->h >= PLAYER_START_Y) {
+                    reachedPlayer = 1;
+                }
+            }
+        }
+        if (reachedPlayer) {
+            for (i = 0; i < MAX_ENEMIES; i++) {
+                enemy = &enemies[i];
+                if (enemy->health > 0) {
+                    SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
+                }
+            }
+            showEndScreen(STATE_GAME_OVER);
+            return;
         }
     }
 
@@ -254,7 +281,6 @@ void positionEnemies() {
         }
     }
 }
-
 void positionPlayer() {
     if (player.health == 0) return;   // waiting to respawn
     //handling velocity, adding it to position

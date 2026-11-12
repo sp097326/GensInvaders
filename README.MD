@@ -65,7 +65,7 @@ CODER:
 INITIAL_DATE: 
 *   07/16/2021
 LAST_MODIFY_DATE:
-*   11/10/2026
+*   11/12/2026
 
 HISTORY:
 *       16/07/21 - Created template and helloworld type code.
@@ -88,6 +88,8 @@ HISTORY:
                 GENS INVADERS, run.bat to launch BlastEm. Then: 3 lives with respawn and blinking
                 invulnerability, starfield background drawn once, enemies move as a formation.
                 Pause screen on START showing the game version (V0.1.xx = git commit count).
+*       12/11/26 - Formation steps down 8 px on each edge bounce; GAME OVER if it reaches
+                the player's row. START still resets the formation to Y = 32.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -97,7 +99,7 @@ TODO:
         - Add an explosion sprite for the player when hit by enemy fire.
         - Can two enemies fire at once?
         - More powerups: ship speed up? a bomb?
-        - Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
+        - [Done 12/11/26] Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -124,3 +126,12 @@ Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change ar
 **Bug fixes and cleanup**
 * Enemy bullet not freed when it hit the player; interrupts never re-enabled; player name buffer overflow.
 * Removed unused globals (`i`, `thex`, `they`, `val`) and renamed the collision routine to `handleCollisions`.
+
+## Work log - 12/11/2026 (with Bimo)
+Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.md`.
+
+**Gameplay**
+* Formation descent (README TODO #7): when any living enemy reaches an edge, the whole group turns around and steps down 8 pixels (`ENEMY_STEP_DOWN`).
+* GAME OVER if any living enemy's sprite reaches the player's row (the bottom of the sprite meets `PLAYER_START_Y`). Uses the existing `showEndScreen(STATE_GAME_OVER)` path.
+* Restart with START still resets the formation to Y = 32 via `placeEnemies()` and restores `enemyDir`.
+* Enemy bullets and collisions are unchanged; they keep using the updated positions.

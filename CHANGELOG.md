@@ -3,6 +3,20 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 - La formación baja en cada vuelta (AMH + Bimo)
+
+### Agregado
+- **Descenso de la formación:** cuando un enemigo vivo toca una orilla, todo
+  el grupo da la vuelta y baja 8 píxeles (`ENEMY_STEP_DOWN`). Si cualquier
+  enemigo vivo llega a la fila del jugador (la base del sprite alcanza
+  `PLAYER_START_Y`), es GAME OVER con la maquinaria de estados existente.
+- Al reiniciar con START, `placeEnemies()` vuelve a poner la formación en
+  Y = 32 y `resetGame()` restaura `enemyDir`.
+
+### Cambiado
+- `positionEnemies()` ahora baja la formación en cada rebote, además de
+  invertir la dirección.
+
 ## 2026-11-10 (noche 3) - Corrige versión DEV en la pausa (AMH + Bimo)
 
 ### Corregido
