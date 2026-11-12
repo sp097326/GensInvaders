@@ -12,6 +12,8 @@ u16  player_update(void);
 void player_stop(void);
 /* Starts the explosion; GAME OVER is deferred until player_update says so. */
 u16  player_hit(int score);
+/* Always ends the match after the explosion (invasion / landing). */
+void player_hitFatal(int score);
 
 GameEntity* player_get(void);
 u16 player_lives(void);

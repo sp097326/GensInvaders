@@ -47,7 +47,7 @@ eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when prese
 * nemies.c/.h — two-row formation, 
 owsOpposite movement, volleys, palettes, win/lose descent flag.
 * player.c/.h — ship sprite, movement bounds, lives, respawn and invulnerability blink.
-* collision.c/.h — AABB checks; player bullets vs enemies and enemy bullets vs the player.
+* collision.c/.h — AABB checks; player bullets vs enemies, enemy bullets vs the player, and fatal enemy-player body contact (or a ship reaching the visible bottom).
 * 	itle.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
 * powerups.c/.h — RapidFire (A) and the Shield ability (C; duration and recharge come from the difficulty table); on-screen pickup entity reserved for later.
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
@@ -69,7 +69,11 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * START: during play, pause / resume (the pause screen shows the game version and the
         current difficulty). After GAME OVER or YOU WIN, returns to the title screen
         with the last difficulty preselected.
-* You get 3 ships; after a hit the ship respawns and blinks for ~2 s (can't be hit).
+* You get 3 ships; after a bullet hit the ship respawns and blinks for ~2 s (can't be hit by bullets).
+* Rules: a bullet hit costs one life. An enemy ship touching the player is always
+        GAME OVER after the explosion, even with lives or a shield left (the shield
+        still blocks bullets). If invaders slip past without touching and reach the
+        bottom of the screen, that is also GAME OVER, so the match cannot stall.
 
 ## Change log
 Detailed changes live in `CHANGELOG.md`. The June 2026 repair session is documented in
@@ -169,6 +173,11 @@ HISTORY:
                 (64 steps) on the right of line 2: blue emptying while
                 active, dark red filling while recharging, green when
                 ready (brief blue blink when the recharge finishes).
+*       12/11/26 - GAME OVER on invasion is now a body collision with the
+                player (explosion, then GAME OVER, even with lives left).
+                Reaching the player's row without touching is no longer
+                enough. If a ship slips past and hits the visible bottom,
+                the same fatal explosion applies.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -192,7 +201,7 @@ TODO:
           the difficulty table (EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s).
           Ready at the start of a match. HUD shows ESC plus a bar (blue / dark red / green).
         - More powerups: ship speed up? a bomb?
-        - [Done 12/11/26] Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
+        - [Done 12/11/26] Formation steps down on each turn (classic invaders). GAME OVER if an enemy ship collides with the player, or reaches the visible bottom after slipping past.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -295,3 +304,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Replaced the numeric shield HUD (`ESC: LISTO` / `ESC: ON n` / `ESC: ns`) with a short `ESC` label and an 8-tile bar (64 levels, eighth-block tiles) on the right of line 2, leaving SCORE and DIFF untouched.
 * While the shield is up the bar is blue (PAL1) and drains with the time left. During recharge it fills in dark red (PAL1). When it is ready it is full and green (PAL3 color 1, the same green as the bottom enemy row) and flashes blue for about half a second when the recharge finishes, along with the existing ready SFX.
 * Plane A is only rewritten when the level, state or blink phase changes. The tiles are generated in code and loaded at `TILE_USER_INDEX + 2` (title still uses the first two user tiles). No new palette or BMP; fill colors already exist in PAL1 / PAL3. The empty part of the bar is a black track (palette index 4).
+
+**Invasion GAME OVER on body contact (later still on Nov 12)**
+* The match no longer ends just because a living enemy reaches the player's row (`PLAYER_START_Y`) without touching the ship. `collision` now tests enemy-player body overlap: that is always GAME OVER after the player's explosion (`player_hitFatal`), even if lives remain. Classic invasion: you do not just lose one ship.
+* The shield and post-respawn invulnerability do not protect against that contact (they still stop enemy bullets).
+* If a ship steps past the player's height without overlapping in X, the formation keeps marching. When any living enemy reaches the visible bottom (`y + h >= BOTTOM_EDGE`, 224), the same fatal explosion and GAME OVER apply, so the game cannot stall with invaders sitting below the gun. They do not bounce or freeze.

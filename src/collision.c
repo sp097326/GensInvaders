@@ -45,8 +45,8 @@ u16 collision_update(int* score) {
 
     /* Each enemy bullet has its own collision against the player. A live
      * shield uses a 32x32 box around the ship: the bullet is destroyed and
-     * the player is not hurt. There is no ship-vs-enemy body collision in
-     * this game, so the shield only has to stop bullets. */
+     * the player is not hurt. Body contact with an enemy is handled below
+     * and is always fatal; the shield does not apply there. */
     {
         GameEntity* p = player_get();
         GameEntity shieldBox;
@@ -69,6 +69,31 @@ u16 collision_update(int* score) {
                     if (player_hit(*score)) {
                         return COLLISION_GAME_OVER;
                     }
+                    return COLLISION_NONE;
+                }
+            }
+        }
+    }
+
+    /* Invasion: overlapping a living enemy is always GAME OVER (shield and
+     * invulnerability do not protect). The explosion plays first; the caller
+     * shows GAME OVER when player_update returns 1. */
+    {
+        GameEntity* p = player_get();
+        if (p->health > 0 && !player_isExploding()) {
+            for (j = 0; j < MAX_ENEMIES; j++) {
+                e = enemies_at(j);
+                if (e->health > 0 && collideEntities(e, p)) {
+                    player_hitFatal(*score);
+                    return COLLISION_NONE;
+                }
+            }
+            /* If a ship slipped past the player without touching, ending at
+             * the visible bottom avoids a stalemate below the gun line. */
+            for (j = 0; j < MAX_ENEMIES; j++) {
+                e = enemies_at(j);
+                if (e->health > 0 && (e->y + e->h >= BOTTOM_EDGE)) {
+                    player_hitFatal(*score);
                     return COLLISION_NONE;
                 }
             }

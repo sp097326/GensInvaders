@@ -3,6 +3,21 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 15) - GAME OVER al chocar con el jugador (AMH + Bimo)
+
+### Cambiado
+- Ya no termina la partida solo porque una nave enemiga llega a la fila del
+  jugador (`PLAYER_START_Y`), aunque no lo toque. El GAME OVER de invasión
+  pasa a `collision`: si un enemigo vivo se solapa con la nave del jugador,
+  se reproduce la explosión y después GAME OVER, aunque queden vidas. Es el
+  comportamiento clásico de invasión, no se pierde solo una vida.
+- El escudo y la invulnerabilidad del respawn no protegen de ese choque
+  (sí siguen deteniendo las balas enemigas).
+- Si las naves bajan más allá de la altura del jugador sin tocarlo, siguen
+  marchando; cuando alguna alcanza el borde inferior visible (`BOTTOM_EDGE`,
+  224), se aplica el mismo GAME OVER con explosión. Así no queda una partida
+  atascada con enemigos debajo del cañón. No rebotan ni se detienen.
+
 ## 2026-11-12 (tarde 14) - Barra de escudo en el HUD (AMH + Bimo)
 
 ### Cambiado

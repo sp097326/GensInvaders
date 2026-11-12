@@ -174,9 +174,8 @@ static u16 rowCanStepDown(u16 row, u16 step) {
 static u16 positionEnemyRowsOpposite() {
     const DifficultyConfig* cfg = difficulty_config();
     u16 step = cfg->stepDown;
-    u16 row, col, i;
+    u16 row, col;
     GameEntity* enemy;
-    u16 reachedPlayer = 0;
     u16 hitEdge;
     s16 dir;
 
@@ -201,23 +200,10 @@ static u16 positionEnemyRowsOpposite() {
                     enemy = &enemies[row * ENEMIES_PER_ROW + col];
                     if (enemy->health > 0) {
                         enemy->y += step;
-                        if (enemy->y + enemy->h >= PLAYER_START_Y) {
-                            reachedPlayer = 1;
-                        }
                     }
                 }
             }
         }
-    }
-
-    if (reachedPlayer) {
-        for (i = 0; i < MAX_ENEMIES; i++) {
-            enemy = &enemies[i];
-            if (enemy->health > 0) {
-                SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
-            }
-        }
-        return 1;
     }
 
     for (row = 0; row < ENEMY_ROWS; row++) {
@@ -247,12 +233,12 @@ u16 enemies_update() {
     u16 i = 0;
     GameEntity* enemy;
     u16 hitEdge = 0;
-    u16 reachedPlayer = 0;
     u16 step = (*difficulty_config()).stepDown;
 
     /* Formation movement (classic Space Invaders): if ANY living enemy reaches
      * an edge, the whole group turns around and, depending on difficulty,
-     * steps down together. If they reach the player's row, it's GAME OVER. */
+     * steps down together. GAME OVER is decided in collision (body contact
+     * with the player, or a ship reaching the visible bottom). */
     for (i = 0; i < MAX_ENEMIES; i++) {
         enemy = &enemies[i];
         if (enemy->health > 0) {
@@ -270,20 +256,7 @@ u16 enemies_update() {
             enemy = &enemies[i];
             if (enemy->health > 0) {
                 enemy->y += step;
-                /* The bottom of the sprite reached the player's starting row. */
-                if (enemy->y + enemy->h >= PLAYER_START_Y) {
-                    reachedPlayer = 1;
-                }
             }
-        }
-        if (reachedPlayer) {
-            for (i = 0; i < MAX_ENEMIES; i++) {
-                enemy = &enemies[i];
-                if (enemy->health > 0) {
-                    SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
-                }
-            }
-            return 1;
         }
     }
 

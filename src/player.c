@@ -185,6 +185,18 @@ u16 player_hit(int score) {
     return 0;
 }
 
+void player_hitFatal(int score) {
+    if (explActive || player.health == 0) return;
+    killGameEntity(&player);
+    player.velx = 0;
+    if (powerups_isOn()) powerups_deactivate();
+    XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
+    lives = 0;
+    hud_updateScore(score, enemies_left(), lives);
+    pendingGameOver = 1;
+    startExplosion();
+}
+
 GameEntity* player_get(void) {
     return &player;
 }
