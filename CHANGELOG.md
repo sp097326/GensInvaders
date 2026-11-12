@@ -3,6 +3,39 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde) - Dificultad y disparos simultáneos (AMH + Bimo)
+
+### Agregado
+- **Tabla de dificultad** (`DifficultyConfig difficultyTable`): los valores se
+  ajustan en datos, no en el código de movimiento o disparo.
+  - **EASY:** la formación no baja; como máximo 1 bala enemiga en pantalla.
+  - **NORMAL:** baja 8 píxeles; hasta 2 balas enemigas; 2 enemigos distintos
+    disparan a la vez.
+  - **HARD:** baja 16 píxeles (el doble); 2 enemigos distintos disparan juntos
+    y pueden acumularse hasta 4 balas en pantalla.
+  También incluye `fireChance` (0-10) para afinar más adelante.
+- **Pool propio de balas enemigas** (`enemyBullets[MAX_ENEMY_BULLETS]`, 4
+  sprites). Cada una colisiona por su lado con el jugador; se liberan al
+  impactar, al salir de pantalla y en `resetGame()`. Las balas del jugador
+  siguen en su propio pool. Vidas, reaparición e invulnerabilidad no cambian.
+- **Menú de dificultad:** después de la intro aparece "SELECT DIFFICULTY"
+  (EASY / NORMAL / HARD). Se elige con ARRIBA/ABAJO y se confirma con START
+  (por defecto NORMAL). Tras GAME OVER o YOU WIN, START vuelve a ese menú
+  con la última elección marcada. La dificultad actual se ve en el HUD
+  (`DIFF:`) y en la pantalla de pausa.
+
+### Cambiado
+- `positionEnemies()` usa `stepDown` de la tabla (0 en EASY).
+- El disparo enemigo pasó a `enemiesTryShoot()`: una andanada de enemigos
+  distintos, limitada por `shotsPerVolley` y `maxEnemyBullets`.
+- START en las pantallas finales ya no reinicia la partida al instante;
+  primero abre el menú de dificultad.
+
+### Pendiente
+- Más adelante, una pantalla de título con un menú de 2 opciones:
+  START GAME y DIFFICULTY (EASY / NORMAL / HARD). Por ahora se mantiene
+  el menú simple de selección de dificultad.
+
 ## 2026-11-12 - La formación baja en cada vuelta (AMH + Bimo)
 
 ### Agregado

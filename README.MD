@@ -37,7 +37,10 @@ does not affect the ROM.
 * D-pad left/right: move the ship.
 * B: shoot.
 * A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
-* START: pause / resume (the pause screen shows the game version). Restarts after GAME OVER or YOU WIN.
+* UP/DOWN: on the difficulty menu, choose EASY / NORMAL / HARD.
+* START: on the difficulty menu, confirm and start (default NORMAL). During play, pause / resume
+        (the pause screen shows the game version and the current difficulty). After GAME OVER
+        or YOU WIN, returns to the difficulty menu with the last choice preselected.
 * You get 3 ships; after a hit the ship respawns and blinks for ~2 s (can't be hit).
 
 ## Change log
@@ -90,6 +93,9 @@ HISTORY:
                 Pause screen on START showing the game version (V0.1.xx = git commit count).
 *       12/11/26 - Formation steps down 8 px on each edge bounce; GAME OVER if it reaches
                 the player's row. START still resets the formation to Y = 32.
+*       12/11/26 - Difficulty menu (EASY / NORMAL / HARD) and a dedicated enemy bullet pool
+                so two distinct enemies can fire at once. Tuning is data-driven
+                (difficultyTable). After GAME OVER / YOU WIN, START returns to the menu.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -97,7 +103,12 @@ TODO:
         - Add more enemies, control a second row.
         - Change sprites, use a different one for enemies, maybe 2
         - Add an explosion sprite for the player when hit by enemy fire.
-        - Can two enemies fire at once?
+        - [Done 12/11/26] Can two enemies fire at once?
+        - Difficulty values are data-driven (difficultyTable in main.c): step down, max
+          enemy bullets, shots per volley and fire chance can be tuned there without
+          changing the movement or fire code.
+        - Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
+          For now the simple pre-game difficulty selection is enough.
         - More powerups: ship speed up? a bomb?
         - [Done 12/11/26] Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
 
@@ -135,3 +146,9 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * GAME OVER if any living enemy's sprite reaches the player's row (the bottom of the sprite meets `PLAYER_START_Y`). Uses the existing `showEndScreen(STATE_GAME_OVER)` path.
 * Restart with START still resets the formation to Y = 32 via `placeEnemies()` and restores `enemyDir`.
 * Enemy bullets and collisions are unchanged; they keep using the updated positions.
+
+**Difficulty and enemy fire (later on Nov 12)**
+* Data-driven difficulty table (`DifficultyConfig difficultyTable`): EASY (no descent, 1 enemy bullet), NORMAL (8 px step, up to 2 bullets, two enemies fire together), HARD (16 px step, two fire together, up to 4 bullets on screen). `fireChance` is in the table for later tuning.
+* Dedicated enemy bullet pool (`enemyBullets`, 4 sprites). Each bullet collides with the player on its own and is freed on hit, off-screen, or reset. Player bullets stay in their own pool. Lives, respawn and invulnerability are unchanged.
+* Pre-game menu "SELECT DIFFICULTY": UP/DOWN to choose, START to confirm (default NORMAL). After GAME OVER or YOU WIN, START returns to that menu with the last choice preselected. Current difficulty is shown on the HUD (`DIFF:`) and on the pause screen.
+* Pending (not in this build): a later title screen with a 2-option menu, START GAME and DIFFICULTY (EASY / NORMAL / HARD).
