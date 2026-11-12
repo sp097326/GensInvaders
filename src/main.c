@@ -10,65 +10,8 @@
  **/
 #include <genesis.h>
 #include <resources.h>
-
-/* Game version. run.bat writes src/version.h before each build with
- * V0.1.xx, where xx = number of commits in the git repo (git rev-list --count HEAD).
- * version.h is git-ignored; if it doesn't exist we fall back to a dev label. */
-#if __has_include("version.h")
-#include "version.h"
-#else
-#define GAME_VERSION "V0.1.DEV"
-#endif
-
-//player related vars
-typedef struct
-{
-    /* data */
-    int x;
-    int y;
-    int w;
-    int h;
-    int velx;
-    int vely;
-    int health;
-    Sprite* sprite;
-    u16 points;             /* score awarded when this entity is destroyed */
-    u16 row;                /* enemy formation row (0 = top) */
-    char name[6];
-} GameEntity;
-
-// Enemy formation: two rows of 7, moving as one group.
-// Each 16x16 ship uses 4 hardware sprites (2 per scanline). Rows are spaced
-// so they never share a scanline (20-sprite/line limit).
-#define ENEMY_ROWS 2
-#define ENEMIES_PER_ROW 7
-#define MAX_ENEMIES (ENEMY_ROWS * ENEMIES_PER_ROW)
-#define ENEMY_COL_SPACING 32
-#define ENEMY_ROW_SPACING 24    // 16 px sprite + 8 px gap; rows do not overlap
-#define ENEMY_START_Y 32
-#define LEFT_EDGE 0         // setting the screen boundaries
-#define RIGHT_EDGE 320      // in order to control enemy movement boundaries
-#define ANIM_STRAIGHT 0
-#define ANIM_MOVE 1
-#define MAX_BULLETS 6       // player bullet pool (also the RapidFire cap)
-#define MAX_PLAYER_BULLETS 3
-#define MAX_ENEMY_BULLETS 4 // dedicated enemy bullet pool (HARD can use all 4)
-#define BOTTOM_EDGE 224
-#define SHOT_INTERVAL 120   // NORMAL default; the table's shotInterval is what the game uses
-#define INTRO_MUSIC 66
-#define SFX_LASER 64
-#define SFX_XPLOSION 65
-#define POWERUP_DURATION 100
-#define POWER_ON 1
-#define POWER_OFF 0
-#define PLAYER_START_X 152
-#define PLAYER_START_Y 192
-#define ENEMY_STEP_DOWN 8       // NORMAL step; HARD uses twice this, EASY uses 0
-#define MAX_LIVES 3             // ships per game
-#define RESPAWN_DELAY 90        // frames the player stays gone after being hit (~1.5 s)
-#define INVULN_FRAMES 120       // frames of blinking invulnerability after respawn (~2 s)
-#define BG_TILES_W 40           // visible width of the plane in tiles (320 px / 8)
-#define BG_TILES_H 32           // plane height in tiles (256 px, matches the scroll wrap)
+#include "config.h"
+#include "game.h"
 
 /* Difficulty is data-driven: tweak the table, not the movement/fire code. */
 typedef enum
@@ -124,18 +67,6 @@ static const EnemyRowType enemyRows[ENEMY_ROWS] = {
     { &ship, PAL2, TRUE, 20 },  /* top row: original colors, 20 points */
     { &ship, PAL3, TRUE, 10 }   /* bottom row: green/yellow tint, 10 points */
 };
-
-/* Game states: the main loop only moves things while PLAYING.
- * STATE_TITLE is the boot (and post-game) title screen with START / difficulty.
- * GAME_OVER and WIN freeze the action and wait for START to return to the title. */
-typedef enum
-{
-    STATE_TITLE,
-    STATE_PLAYING,
-    STATE_PAUSED,
-    STATE_GAME_OVER,
-    STATE_WIN
-} GameState;
 
 #define TITLE_OPT_START 0
 #define TITLE_OPT_DIFF  1
@@ -204,16 +135,6 @@ void updateScoreDisplay() {
 void clearHud() {
     VDP_clearText(0, 0, 40);
     VDP_clearText(0, 1, 40);
-}
-
-void killGameEntity(GameEntity* e) {
-    e -> health = 0;
-    SPR_setVisibility(e -> sprite, HIDDEN);
-}
-
-void reviveGameEntity(GameEntity* e) {
-    e -> health = 1;
-    SPR_setVisibility(e -> sprite, VISIBLE);
 }
 
 /* Game state helpers ------------------------------------------------------ */
