@@ -135,6 +135,7 @@
       <li><a href="#nov12-title">12/11/2026 - Title screen</a></li>
       <li><a href="#nov12-row2">12/11/2026 - Second enemy row</a></li>
       <li><a href="#nov12-opposite">12/11/2026 - Opposite rows on HARD</a></li>
+      <li><a href="#nov12-opposite-n">12/11/2026 - Opposite rows on NORMAL too</a></li>
     </ol>
   </nav>
 
@@ -470,6 +471,12 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        come within 24 px (<code class="inline">ENEMY_ROW_SPACING</code>) of the next living row below;
        it just reverses. If the bottom row is cleared, the top row can drop freely.
        GAME OVER still uses the lowest living enemy.</p>
+  </section>
+
+  <section class="card" id="nov12-opposite-n">
+    <h2>12/11/2026 (with Bimo) - Opposite rows on NORMAL too</h2>
+    <p>NORMAL now also has <code class="inline">rowsOpposite=1</code>. Its other values stay the same
+       (step 8, speed 1, interval 120, cap 2). EASY stays 0 (both rows move together). HARD is unchanged.</p>
   </section>
 
   <footer>

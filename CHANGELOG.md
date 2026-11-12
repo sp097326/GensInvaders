@@ -3,6 +3,13 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 6) - Filas en sentido contrario también en Normal (AMH + Bimo)
+
+### Cambiado
+- `rowsOpposite` queda en 1 también en NORMAL (el resto de valores de NORMAL
+  no cambian: descenso 8, velocidad 1, intervalo 120, etc.). EASY sigue en 0
+  con las dos filas en el mismo sentido. HARD no se toca.
+
 ## 2026-11-12 (tarde 5) - Filas en sentido contrario en Difícil (AMH + Bimo)
 
 ### Agregado

@@ -89,14 +89,15 @@ typedef struct
     u16 enemySpeed;         /* horizontal pixels per frame (also the |enemyDir| reset) */
     u16 bulletSpeed;        /* downward speed of each enemy bullet */
     u8  rowsOpposite;       /* 1 = each row has its own direction and bounces alone.
-                             * Set this to 1 on NORMAL to enable it there too. */
+                             * On in NORMAL and HARD; set EASY to 1 to enable it there too. */
 } DifficultyConfig;
 
 static const DifficultyConfig difficultyTable[DIFF_COUNT] = {
     /* EASY:   no descent, 1 bullet, fires regularly every 90 frames */
     { 0,                   1, 1, 10,  90, 1, 5, 0 },
-    /* NORMAL: 8 px step, 2 shots / cap 2, every 120 frames; rows stay together */
-    { ENEMY_STEP_DOWN,     2, 2,  8, SHOT_INTERVAL, 1, 5, 0 },
+    /* NORMAL: 8 px step, 2 shots / cap 2, every 120 frames;
+     *         rowsOpposite like HARD (row 0 right, row 1 left, bounce alone). */
+    { ENEMY_STEP_DOWN,     2, 2,  8, SHOT_INTERVAL, 1, 5, 1 },
     /* HARD:   16 px step, twice as fast sideways, volley every 60 frames,
      *         slightly faster bullets; cap 4 so consecutive volleys can overlap.
      *         rowsOpposite: row 0 goes right, row 1 goes left, each bounces alone. */
