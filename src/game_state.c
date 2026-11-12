@@ -8,6 +8,7 @@
 #include "player.h"
 #include "title.h"
 #include "collision.h"
+#include "explosions.h"
 
 static int score = 0;
 static GameState gameState = STATE_TITLE;
@@ -54,6 +55,7 @@ static void hideGameSprites() {
     enemies_hideAll();
     bullets_hideAll();
     powerups_hide();
+    explosions_hide();
 }
 
 void game_state_showTitle() {
@@ -169,6 +171,7 @@ static void resetGame() {
     player_reset();
 
     enemies_reset();
+    explosions_reset();
     score = 0;
     clearEndScreen();
     hud_updateScore(score, enemies_left(), player_lives());
@@ -196,6 +199,11 @@ void game_state_update(void) {
             }
         }
         powerups_update();
+        explosions_update();
+    } else if (gameState == STATE_GAME_OVER || gameState == STATE_WIN) {
+        /* Let a burst finish under the end text (last kill or invasion).
+         * Pause freezes the animation, like the rest of the timers. */
+        explosions_update();
     }
 }
 

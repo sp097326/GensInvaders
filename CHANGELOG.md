@@ -3,6 +3,30 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 16) - Explosiones de naves enemigas (AMH + Bimo)
+
+### Añadido
+- Cada nave enemiga eliminada reproduce una explosión distinta a la del jugador:
+  hoja de 6 fotogramas 16x16 (`res/tiles/imgenemyexp.bmp`, paleta de
+  `space.bmp`), un destello compacto blanco/amarillo y chispas verdes que se
+  dispersan. Se dibuja con PAL3 (verde/amarillo/blanco en partida) frente al
+  fuego naranja/rojo de PAL1 del jugador. Dura 24 fotogramas (~0,4 s a 60 Hz),
+  más corta y pequeña que la explosión del jugador (~0,8 s).
+- La nave desaparece al instante y la explosión ocupa su lugar. No interviene
+  en las colisiones ni en el movimiento de la formación.
+- Hasta 6 explosiones simultáneas (`MAX_ENEMY_EXPLOSIONS`); si el pool está
+  lleno se reutiliza la más antigua. Cada una es 1 sprite VDP (16x16). El pico
+  queda en torno a 33 de 80 sprites; en una línea de barrido las naves muertas
+  ya están ocultas, así que las explosiones no se suman a una fila completa y
+  se mantienen bajo el límite de 20.
+- En el choque con el jugador (o al alcanzar el borde inferior visible)
+  explotan el enemigo (animación nueva) y el jugador (la suya); después GAME
+  OVER, como antes. Si varios enemigos solapan al jugador en el mismo
+  fotograma, todos explotan. No se otorga puntuación ni YOU WIN si el último
+  enemigo cae de ese modo.
+- SFX corto y agudo distinto (`res/sounds/enemyexp.wav`, id 69) en el canal 3,
+  para que pueda sonar junto a la explosión del jugador en el canal 2.
+
 ## 2026-11-12 (tarde 15) - GAME OVER al chocar con el jugador (AMH + Bimo)
 
 ### Cambiado

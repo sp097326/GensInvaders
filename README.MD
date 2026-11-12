@@ -178,6 +178,13 @@ HISTORY:
                 Reaching the player's row without touching is no longer
                 enough. If a ship slips past and hits the visible bottom,
                 the same fatal explosion applies.
+*       12/11/26 - Enemy ships play a distinct 6-frame 16x16 burst
+                 (compact white/yellow flash, green sparks flying out)
+                 for 24 frames (~0.4 s) when destroyed. Drawn with PAL3
+                 so it stays different from the player's orange/red
+                 fireball. A pool of 6 simultaneous bursts; the ship
+                 vanishes at once and the explosion takes its place.
+                 On a crash into the player, both explode before GAME OVER.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -202,6 +209,9 @@ TODO:
           Ready at the start of a match. HUD shows ESC plus a bar (blue / dark red / green).
         - More powerups: ship speed up? a bomb?
         - [Done 12/11/26] Formation steps down on each turn (classic invaders). GAME OVER if an enemy ship collides with the player, or reaches the visible bottom after slipping past.
+        - [Done 12/11/26] Distinct explosion animation when an enemy ship
+          is destroyed (and when one crashes into the player). Smaller and
+          faster than the player's (~0.4 s, green/yellow sparks, pool of 6).
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -309,3 +319,10 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * The match no longer ends just because a living enemy reaches the player's row (`PLAYER_START_Y`) without touching the ship. `collision` now tests enemy-player body overlap: that is always GAME OVER after the player's explosion (`player_hitFatal`), even if lives remain. Classic invasion: you do not just lose one ship.
 * The shield and post-respawn invulnerability do not protect against that contact (they still stop enemy bullets).
 * If a ship steps past the player's height without overlapping in X, the formation keeps marching. When any living enemy reaches the visible bottom (`y + h >= BOTTOM_EDGE`, 224), the same fatal explosion and GAME OVER apply, so the game cannot stall with invaders sitting below the gun. They do not bounce or freeze.
+
+**Enemy explosions (later still on Nov 12)**
+* New 6-frame 16x16 indexed sheet `res/tiles/imgenemyexp.bmp` (96x16, color 0 transparent, same palette as `space.bmp`). The burst is smaller than the player's fireball: a tight white/yellow flash, then green sparks that fly outward and fade. `SPRITE enemyexp` in `resources.res` (2x2, FAST, anim speed 0; frames are advanced by hand). Drawn with PAL3 during play (green/yellow/white) so it stays clearly different from the player's PAL1 orange/red/white explosion.
+* Duration is 24 frames (~0.4 s at 60 Hz, 4 ticks per visual frame). The enemy ship is hidden immediately (`killGameEntity`) and the burst plays at that `x,y`. Explosions are independent sprites: they do not collide and they do not affect formation movement.
+* Pool of 6 (`MAX_ENEMY_EXPLOSIONS` in `inc/explosions.h` / `src/explosions.c`). If all slots are busy, the oldest (lowest remaining timer) is reused. Each burst is 1 VDP sprite (16x16). Peak hardware count is about 33 of 80 (14 enemies + player + player explosion + shield + 6 player bullets + 4 enemy bullets + 6 enemy bursts). Dead ships are already hidden, so a scanline holds bursts rather than a full live row and stays under the 20-sprite limit.
+* Hooked from `collision`: a player bullet that kills a ship spawns a burst, then the existing score / YOU WIN path. A body crash into the player (or a landing at `BOTTOM_EDGE`) spawns a burst on every overlapping (or landed) ship, kills them without awarding score or YOU WIN, and then `player_hitFatal` so both explosions play before GAME OVER. The enemy burst can finish under the YOU WIN / GAME OVER text; pause freezes it like the other timers.
+* Optional short high pop SFX (`res/sounds/enemyexp.wav`, PCM id 69, ~0.10 s) on channel 3 at moderate priority, so it can play at the same time as the player's explosion on channel 2 during an invasion crash.

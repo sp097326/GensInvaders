@@ -4,6 +4,7 @@
 #include "player.h"
 #include "hud.h"
 #include "powerups.h"
+#include "explosions.h"
 
 int collideEntities(GameEntity* a, GameEntity* b) {
     return (a->x < b->x + b->w &&
@@ -28,6 +29,7 @@ u16 collision_update(int* score) {
                 e = enemies_at(j);
                 if (e->health > 0) {
                     if (collideEntities(b,e)) {
+                        explosions_spawn(e->x, e->y);
                         killGameEntity(e);
                         bullets_despawnPlayer(b);
                         enemies_decLeft();
@@ -80,22 +82,34 @@ u16 collision_update(int* score) {
      * shows GAME OVER when player_update returns 1. */
     {
         GameEntity* p = player_get();
+        u16 crashed = 0;
+
         if (p->health > 0 && !player_isExploding()) {
             for (j = 0; j < MAX_ENEMIES; j++) {
                 e = enemies_at(j);
                 if (e->health > 0 && collideEntities(e, p)) {
-                    player_hitFatal(*score);
-                    return COLLISION_NONE;
+                    explosions_spawn(e->x, e->y);
+                    killGameEntity(e);
+                    enemies_decLeft();
+                    crashed = 1;
                 }
             }
             /* If a ship slipped past the player without touching, ending at
              * the visible bottom avoids a stalemate below the gun line. */
-            for (j = 0; j < MAX_ENEMIES; j++) {
-                e = enemies_at(j);
-                if (e->health > 0 && (e->y + e->h >= BOTTOM_EDGE)) {
-                    player_hitFatal(*score);
-                    return COLLISION_NONE;
+            if (!crashed) {
+                for (j = 0; j < MAX_ENEMIES; j++) {
+                    e = enemies_at(j);
+                    if (e->health > 0 && (e->y + e->h >= BOTTOM_EDGE)) {
+                        explosions_spawn(e->x, e->y);
+                        killGameEntity(e);
+                        enemies_decLeft();
+                        crashed = 1;
+                    }
                 }
+            }
+            if (crashed) {
+                player_hitFatal(*score);
+                return COLLISION_NONE;
             }
         }
     }

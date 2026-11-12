@@ -18,6 +18,7 @@
 #include "powerups.h"
 #include "hud.h"
 #include "player.h"
+#include "explosions.h"
 #include "game_state.h"
 
 // background scroll offset
@@ -56,6 +57,7 @@ int main(bool hard)
     XGM_setPCM(SFX_XPLOSION, xplosion, sizeof(xplosion));
     XGM_setPCM(SFX_SHIELD_ON, shieldon, sizeof(shieldon));
     XGM_setPCM(SFX_SHIELD_READY, shieldrdy, sizeof(shieldrdy));
+    XGM_setPCM(SFX_ENEMY_EXP, enxplode, sizeof(enxplode));
     //note to this: read the url for the effects.
     SYS_disableInts();
     VDP_loadTileSet(background.tileset,1,DMA);
@@ -71,6 +73,7 @@ int main(bool hard)
     bullets_init();
     hud_init();
     powerups_init();
+    explosions_init();
     SYS_enableInts();
     /* Intro is already playing; show the title screen before the first match. */
     game_state_showTitle();
