@@ -88,16 +88,19 @@ typedef struct
     u16 shotInterval;       /* frames between volley attempts */
     u16 enemySpeed;         /* horizontal pixels per frame (also the |enemyDir| reset) */
     u16 bulletSpeed;        /* downward speed of each enemy bullet */
+    u8  rowsOpposite;       /* 1 = each row has its own direction and bounces alone.
+                             * Set this to 1 on NORMAL to enable it there too. */
 } DifficultyConfig;
 
 static const DifficultyConfig difficultyTable[DIFF_COUNT] = {
     /* EASY:   no descent, 1 bullet, fires regularly every 90 frames */
-    { 0,                   1, 1, 10,  90, 1, 5 },
-    /* NORMAL: unchanged - 8 px step, 2 shots / cap 2, every 120 frames */
-    { ENEMY_STEP_DOWN,     2, 2,  8, SHOT_INTERVAL, 1, 5 },
+    { 0,                   1, 1, 10,  90, 1, 5, 0 },
+    /* NORMAL: 8 px step, 2 shots / cap 2, every 120 frames; rows stay together */
+    { ENEMY_STEP_DOWN,     2, 2,  8, SHOT_INTERVAL, 1, 5, 0 },
     /* HARD:   16 px step, twice as fast sideways, volley every 60 frames,
-     *         slightly faster bullets; cap 4 so consecutive volleys can overlap */
-    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6 }
+     *         slightly faster bullets; cap 4 so consecutive volleys can overlap.
+     *         rowsOpposite: row 0 goes right, row 1 goes left, each bounces alone. */
+    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6, 1 }
 };
 
 static const char* difficultyNames[DIFF_COUNT] = {
@@ -164,6 +167,7 @@ u16 lives = MAX_LIVES;
 u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
 u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
 s16 enemyDir = 1;       // formation direction and speed: +speed right, -speed left
+s16 enemyRowDir[ENEMY_ROWS];  // per-row dir when rowsOpposite is set
 
 typedef enum
 {
@@ -557,8 +561,119 @@ void enemiesTryShoot() {
     }
 }
 
+u16 rowHasLiving(u16 row) {
+    u16 col;
+    for (col = 0; col < ENEMIES_PER_ROW; col++) {
+        if (enemies[row * ENEMIES_PER_ROW + col].health > 0) return 1;
+    }
+    return 0;
+}
+
+s16 rowMinY(u16 row) {
+    u16 col;
+    s16 minY = 32767;
+    GameEntity* e;
+    for (col = 0; col < ENEMIES_PER_ROW; col++) {
+        e = &enemies[row * ENEMIES_PER_ROW + col];
+        if (e->health > 0 && e->y < minY) minY = e->y;
+    }
+    return minY;
+}
+
+/* Keep at least ENEMY_ROW_SPACING between a row and the next living row below
+ * so they never share a scanline. If the row below is gone, this row may drop. */
+u16 rowCanStepDown(u16 row, u16 step) {
+    u16 r;
+    s16 thisY, belowY;
+    if (step == 0 || !rowHasLiving(row)) return 0;
+    thisY = rowMinY(row);
+    for (r = row + 1; r < ENEMY_ROWS; r++) {
+        if (rowHasLiving(r)) {
+            belowY = rowMinY(r);
+            if (belowY - (thisY + (s16)step) < (s16)ENEMY_ROW_SPACING) {
+                return 0;
+            }
+            return 1;
+        }
+    }
+    return 1;
+}
+
+/* rowsOpposite: each row has its own direction, bounces on its own living
+ * edges, and only that row steps down (if it would not crowd the row below). */
+void positionEnemyRowsOpposite() {
+    const DifficultyConfig* cfg = &difficultyTable[currentDiff];
+    u16 step = cfg->stepDown;
+    u16 row, col, i;
+    GameEntity* enemy;
+    u16 reachedPlayer = 0;
+    u16 hitEdge;
+    s16 dir;
+
+    for (row = 0; row < ENEMY_ROWS; row++) {
+        if (!rowHasLiving(row)) continue;
+        dir = enemyRowDir[row];
+        hitEdge = 0;
+        for (col = 0; col < ENEMIES_PER_ROW; col++) {
+            enemy = &enemies[row * ENEMIES_PER_ROW + col];
+            if (enemy->health > 0) {
+                if ((dir > 0 && enemy->x + enemy->w >= RIGHT_EDGE) ||
+                    (dir < 0 && enemy->x <= LEFT_EDGE)) {
+                    hitEdge = 1;
+                    break;
+                }
+            }
+        }
+        if (hitEdge) {
+            enemyRowDir[row] = (s16)(-dir);
+            if (rowCanStepDown(row, step)) {
+                for (col = 0; col < ENEMIES_PER_ROW; col++) {
+                    enemy = &enemies[row * ENEMIES_PER_ROW + col];
+                    if (enemy->health > 0) {
+                        enemy->y += step;
+                        if (enemy->y + enemy->h >= PLAYER_START_Y) {
+                            reachedPlayer = 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (reachedPlayer) {
+        for (i = 0; i < MAX_ENEMIES; i++) {
+            enemy = &enemies[i];
+            if (enemy->health > 0) {
+                SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
+            }
+        }
+        showEndScreen(STATE_GAME_OVER);
+        return;
+    }
+
+    for (row = 0; row < ENEMY_ROWS; row++) {
+        dir = enemyRowDir[row];
+        for (col = 0; col < ENEMIES_PER_ROW; col++) {
+            enemy = &enemies[row * ENEMIES_PER_ROW + col];
+            if (enemy->health > 0) {
+                enemy->x += dir;
+                SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
+            }
+        }
+    }
+}
+
 void positionEnemies() {
     shotTicker++;
+
+    if (difficultyTable[currentDiff].rowsOpposite) {
+        positionEnemyRowsOpposite();
+        if (gameState != STATE_PLAYING) return;
+        enemiesTryShoot();
+        return;
+    }
+
+    {
     u16 i = 0;
     GameEntity* enemy;
     u16 hitEdge = 0;
@@ -609,6 +724,7 @@ void positionEnemies() {
             enemy->x += enemyDir;
             SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
         }
+    }
     }
 
     enemiesTryShoot();
@@ -910,6 +1026,12 @@ void placeEnemies() {
             enem->y = ENEMY_START_Y + row * ENEMY_ROW_SPACING;
             enem->points = type->points;
             enem->row = row;
+            /* Odd rows start on the right when they will move left, so they
+             * are not already sitting on the left edge (which would bounce
+             * and step down on the first frame). */
+            if (difficultyTable[currentDiff].rowsOpposite && (row & 1)) {
+                enem->x += (RIGHT_EDGE - ((ENEMIES_PER_ROW - 1) * ENEMY_COL_SPACING + enem->w));
+            }
             reviveGameEntity(enem);
             SPR_setPosition(enem->sprite, enem->x, enem->y);
             enemiesLeft++;
@@ -1004,7 +1126,16 @@ void resetGame() {
     respawnTimer = 0;
     invulnTimer = 0;
 
-    enemyDir = (s16)difficultyTable[currentDiff].enemySpeed;
+    {
+        const DifficultyConfig* cfg = &difficultyTable[currentDiff];
+        s16 speed = (s16)cfg->enemySpeed;
+        u16 row;
+        enemyDir = speed;
+        for (row = 0; row < ENEMY_ROWS; row++) {
+            /* Even rows start right; odd rows start left when rowsOpposite. */
+            enemyRowDir[row] = (cfg->rowsOpposite && (row & 1)) ? (s16)(-speed) : speed;
+        }
+    }
     setEnemyRowPalettes();
     placeEnemies();
     score = 0;

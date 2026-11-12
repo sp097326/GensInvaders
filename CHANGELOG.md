@@ -3,6 +3,22 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 5) - Filas en sentido contrario en Difícil (AMH + Bimo)
+
+### Agregado
+- Flag `rowsOpposite` en `DifficultyConfig` (EASY=0, NORMAL=0, HARD=1).
+  Ponerlo en 1 también en NORMAL activa el mismo comportamiento ahí.
+- En HARD las filas se mueven en sentidos opuestos (la de arriba arranca a
+  la derecha, la de abajo a la izquierda), rebotan cada una por su cuenta
+  (solo con sus enemigos vivos) y solo baja la fila que rebota, con el
+  `stepDown` y `enemySpeed` de la tabla. La fila inferior empieza recorrida
+  a la derecha para que tenga espacio de ir a la izquierda.
+- Para no juntar las filas en la misma línea de barrido, una fila no baja
+  si quedaría a menos de 24 px (`ENEMY_ROW_SPACING`) de la siguiente fila
+  viva debajo: en ese caso solo invierte el sentido. Si la fila de abajo
+  ya no tiene naves, la de arriba puede bajar sin ese tope.
+- EASY y NORMAL siguen con la formación unida de siempre.
+
 ## 2026-11-12 (tarde 4) - Segunda fila de enemigos (AMH + Bimo)
 
 ### Agregado

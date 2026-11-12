@@ -107,6 +107,9 @@ HISTORY:
 *       12/11/26 - Second row of 7 enemies (14 total), one formation; bottom row uses a
                 tinted palette and is worth 10 points, top row 20. Firing prefers the
                 lowest living ship in each column.
+*       12/11/26 - On HARD, rows move in opposite directions and bounce independently
+                (rowsOpposite flag; set it to 1 on NORMAL to enable it there too). A row
+                will not step down if it would come within 24 px of the row below.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -119,8 +122,9 @@ TODO:
         - Add an explosion sprite for the player when hit by enemy fire.
         - [Done 12/11/26] Can two enemies fire at once?
         - Difficulty values are data-driven (difficultyTable in main.c): step down, max
-          enemy bullets, shots per volley, fire chance, shot interval, enemy speed and
-          bullet speed can be tuned there without changing the movement or fire code.
+          enemy bullets, shots per volley, fire chance, shot interval, enemy speed,
+          bullet speed and rowsOpposite can be tuned there without changing the
+          movement or fire code. Set NORMAL's rowsOpposite to 1 to get opposite rows there too.
         - [Done 12/11/26] Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
           Large blocky GENS / INVADERS logo drawn with solid tiles on plane A.
         - More powerups: ship speed up? a bomb?
@@ -181,3 +185,7 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Two rows of 7 (14 ships) move, bounce and step down as one formation. GAME OVER uses the lowest living enemy; YOU WIN when both rows are cleared. Volleys pick the bottom-most living ship in each column.
 * Per-row `EnemyRowType` (sprite, palette, points). For now both rows reuse `ship`; the bottom row is tinted green/yellow on PAL3 and is worth 10 points, the top row 20. A different 16x16 graphic later is just a new `SPRITE` in `resources.res` and a pointer change — same size has no extra performance cost.
 * Sprite budget: 14 enemies + 1 player + 6 player bullets + 4 enemy bullets = 25 software sprites. In hardware sprites (16x16 = 4 cells, 8x8 = 1): 14*4 + 4 + 6 + 4 = 70 of 80. Per scanline, one full row uses 14 of 20 (rows are 24 px apart so they do not share a line).
+
+**Opposite rows on HARD (later still on Nov 12)**
+* New `rowsOpposite` flag in the difficulty table: 0 on EASY and NORMAL (both rows still move as one formation), 1 on HARD. Set NORMAL's flag to 1 to enable the same behavior there.
+* On HARD, the top row starts right and the bottom row starts left (shifted to the right so it is not already on the left edge). Each row bounces on its own living ships and only that row steps down. A row will not drop if it would come within 24 px of the next living row below; it just reverses. If the bottom row is gone, the top row can descend freely. GAME OVER still uses the lowest living enemy.
