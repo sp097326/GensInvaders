@@ -19,6 +19,7 @@
 #include "powerups.h"
 #include "player.h"
 #include "title.h"
+#include "collision.h"
 
 int score = 0;
 GameState gameState = STATE_TITLE;
@@ -172,61 +173,6 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
     }
 }
 
-int collideEntities(GameEntity* a, GameEntity* b) {
-    return (a->x < b->x + b->w &&
-    a->x + a->w > b->x &&
-    a->y < b->y + b->h &&
-    a->y + a->h >= b->y);
-}
-
-void handleCollisions() {
-    GameEntity* b;
-    GameEntity* e;
-    int i = 0;
-    int j = 0;
-
-    /* Player bullets vs enemies. bullets[] is now the player-only pool. */
-    for (i = 0; i < MAX_BULLETS; i++)
-    {
-        b = bullets_playerAt(i);
-        if (b->health > 0) {
-            for (j = 0; j < MAX_ENEMIES; j++)
-            {
-                e = enemies_at(j);
-                if (e->health > 0) {
-                    if (collideEntities(b,e)) {
-                        killGameEntity(e);
-                        bullets_despawnPlayer(b);
-                        enemies_decLeft();
-                        score += e->points;
-                        hud_updateScore(score, enemies_left(), player_lives());
-                        if (enemies_left() == 0) {
-                            showEndScreen(STATE_WIN);
-                            return;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    /* Each enemy bullet has its own collision against the player. */
-    for (i = 0; i < MAX_ENEMY_BULLETS; i++)
-    {
-        b = bullets_enemyAt(i);
-        if (b->health > 0 && player_get()->health > 0) {
-            if (player_invulnTimer() == 0 && collideEntities(b, player_get())) {
-                bullets_despawnEnemy(b);
-                if (player_hit(score)) {
-                    showEndScreen(STATE_GAME_OVER);
-                }
-                return;
-            }
-        }
-    }
-}
-
 /* Restart after confirming a difficulty: reuse the sprites already allocated,
  * just reset positions, counters and flags. */
 void resetGame() {
@@ -310,7 +256,14 @@ int main(bool hard)
             if (enemies_update()) {
                 showEndScreen(STATE_GAME_OVER);
             }
-            handleCollisions();
+            {
+                u16 hit = collision_update(&score);
+                if (hit == COLLISION_WIN) {
+                    showEndScreen(STATE_WIN);
+                } else if (hit == COLLISION_GAME_OVER) {
+                    showEndScreen(STATE_GAME_OVER);
+                }
+            }
             powerups_update();
         }
         SPR_update();
