@@ -42,6 +42,9 @@
 #define MAX_LIVES 3
 #define RESPAWN_DELAY 90        /* frames the player stays gone after being hit (~1.5 s) */
 #define INVULN_FRAMES 120       /* frames of blinking invulnerability after respawn (~2 s) */
+#define EXPLOSION_DURATION 48   /* frames the death explosion plays (~0.8 s at 60 Hz) */
+#define EXPLOSION_ANIM_FRAMES 6
+#define EXPLOSION_SHAKE 2       /* horizontal pixels of starfield shake at the start */
 
 #define BG_TILES_W 40           /* visible width of the plane in tiles (320 px / 8) */
 #define BG_TILES_H 32           /* plane height in tiles (256 px, matches the scroll wrap) */

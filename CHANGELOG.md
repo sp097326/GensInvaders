@@ -3,6 +3,28 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 10) - Explosión del jugador (AMH + Bimo)
+
+### Agregado
+- Nueva hoja de sprites `res/tiles/imgexplosion.bmp` (96×16, 6 cuadros de 16×16,
+  8 bits indexados, la misma paleta de `space.bmp`, el color 0 es transparente):
+  destello blanco, bola de fuego que crece, restos y desvanecimiento en naranja,
+  blanco y rojo oscuro.
+- Recurso `SPRITE explosion` en `resources.res` (2×2 teselas, FAST, velocidad 0:
+  los cuadros se avanzan a mano para que la animación no se ciclene).
+- Al ser alcanzado, la nave se oculta y se reproduce la explosión en su posición
+  durante 48 cuadros (~0,8 s, 8 ticks por cuadro). En ese lapso no hay mando ni
+  disparos enemigos (las naves y las balas ya en vuelo siguen moviéndose). Un
+  temblor breve del campo de estrellas (scroll horizontal de BG_B) y un destello
+  de 4 cuadros del naranja de PAL1 a blanco.
+- Si quedan vidas, el respawn espera el resto de `RESPAWN_DELAY` (42 cuadros)
+  para que el tiempo total fuera siga siendo ~90 cuadros, y luego la
+  invulnerabilidad parpadeante como antes. Si no quedan vidas, GAME OVER se
+  muestra al terminar la explosión (ya no es inmediato).
+- La lógica vive en el módulo `player` (`player_isExploding`; `player_update`
+  ahora puede devolver 1). El presupuesto de sprites de hardware se mantiene
+  en 70: la explosión de 16×16 (4 celdas) sustituye a la nave oculta.
+
 ## 2026-11-12 (tarde 9) - Disparos enemigos más repartidos (AMH + Bimo)
 
 ### Cambiado

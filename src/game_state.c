@@ -117,7 +117,7 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
         return;
     }
     if (gameState == STATE_PLAYING && (state & BUTTON_START & changed)) {
-        pauseGame();
+        if (!player_isExploding()) pauseGame();
         return;
     }
 
@@ -176,7 +176,9 @@ void game_state_update(void) {
     if (gameState == STATE_TITLE) {
         title_updatePulse();
     } else if (gameState == STATE_PLAYING) {
-        player_update();
+        if (player_update()) {
+            showEndScreen(STATE_GAME_OVER);
+        }
         bullets_update();
         if (enemies_update()) {
             showEndScreen(STATE_GAME_OVER);

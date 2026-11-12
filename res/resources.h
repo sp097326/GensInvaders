@@ -10,5 +10,6 @@ extern const Palette bg_palette;
 extern const Image background;
 extern const SpriteDefinition ship;
 extern const SpriteDefinition bullet;
+extern const SpriteDefinition explosion;
 
 #endif // _RES_RESOURCES_H_

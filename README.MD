@@ -140,6 +140,11 @@ HISTORY:
                 repeating the previous volley columns when others remain.
                 RNG is re-seeded when START begins a match (title frame
                 count + vtimer + getTick()). Difficulty table unchanged.
+*       12/11/26 - Player explosion on hit: 6-frame 16x16 sheet
+                (flash, fireball, debris, fade) at the ship position
+                for 48 frames (~0.8 s). Input and enemy fire freeze
+                during it; then respawn or GAME OVER as before. Brief
+                starfield shake and PAL1 flash.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -149,7 +154,7 @@ TODO:
           The per-row EnemyRowType is ready: drop a 16x16 sheet in res/tiles/ and
           point the row's spriteDef at it in resources.res / enemies.c. The bottom
           row already uses a different palette as a stand-in.
-        - Add an explosion sprite for the player when hit by enemy fire.
+        - [Done 12/11/26] Add an explosion sprite for the player when hit by enemy fire.
         - [Done 12/11/26] Can two enemies fire at once?
         - Difficulty values are data-driven (difficultyTable in difficulty.c): step down, max
           enemy bullets, shots per volley, fire chance, shot interval, enemy speed,
@@ -237,3 +242,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * On NORMAL the volley rate was correct (2 ships every ~2 s) but it was almost always the same ships.
 * Root causes: SGDK only auto-seeds `random()` on the first button of the session (often a menu tap right after boot, with a similar tick); `random() % n` used the low bits of the 16-bit xorshift and could clump columns; the picker did not avoid the previous volley columns.
 * START that begins a match now calls `setRandomSeed` with a title-screen frame counter, `vtimer` and `getTick()`. Each volley still fires the bottom-most living ship in a column, but columns are chosen at random, stay distinct within the volley, and skip the previous volley columns when other eligible ones exist. Uses high bits of `random()` (`randRange`). Applies to all difficulties; table values are unchanged.
+
+**Player explosion (later still on Nov 12)**
+* New 6-frame 16x16 indexed sheet `res/tiles/imgexplosion.bmp` (96x16, color 0 transparent, same PAL1 as `space.bmp`: white flash, expanding orange/red fireball, debris, fade). `SPRITE explosion` in `resources.res` (2x2, FAST, anim speed 0; frames are advanced by hand so it does not loop).
+* On hit the player ship is hidden and the explosion plays at that position for 48 frames (~0.8 s, 8 ticks per visual frame). Input is already blocked while health is 0; pause is also blocked. Enemy fire and the shot ticker are skipped (`player_isExploding`); enemies and bullets already on screen keep moving. A short decaying horizontal shake on the starfield (BG_B) and a 4-frame flash of PAL1 color 2 to white, then restored.
+* If lives remain, the remaining `RESPAWN_DELAY` (42 frames) runs after the explosion so total dead time stays ~90 frames, then the usual blinking invulnerability. If no lives are left, GAME OVER waits until the explosion finishes (`player_update` returns 1). Logic lives in the player module. Hardware-sprite budget stays at 70: the 16x16 explosion (4 cells) replaces the hidden ship.

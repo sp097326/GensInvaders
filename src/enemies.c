@@ -3,6 +3,7 @@
 #include "enemies.h"
 #include "difficulty.h"
 #include "bullets.h"
+#include "player.h"
 
 /* Per-row look and scoring. Swap spriteDef later for a different ship graphic;
  * for now both rows use &ship, with PAL3 (tinted) on the bottom row. */
@@ -232,11 +233,13 @@ static u16 positionEnemyRowsOpposite() {
     return 0;
 }
 u16 enemies_update() {
-    bullets_tickShot();
+    u16 exploding = player_isExploding();
+
+    if (!exploding) bullets_tickShot();
 
     if (difficulty_config()->rowsOpposite) {
         if (positionEnemyRowsOpposite()) return 1;
-        enemiesTryShoot();
+        if (!exploding) enemiesTryShoot();
         return 0;
     }
 
@@ -293,7 +296,7 @@ u16 enemies_update() {
     }
     }
 
-    enemiesTryShoot();
+    if (!exploding) enemiesTryShoot();
     return 0;
 }
 /* Puts every enemy back in its starting slot (used at boot and on restart). */
