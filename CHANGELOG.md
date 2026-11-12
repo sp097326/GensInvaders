@@ -3,6 +3,22 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 9) - Disparos enemigos más repartidos (AMH + Bimo)
+
+### Cambiado
+- Las naves que disparan ya no suelen ser siempre las mismas. Había tres
+  causas: SGDK solo siembra el generador en el primer botón de la sesión
+  (a menudo un toque del menú justo al arrancar, con un tick muy parecido);
+  `random() % n` se apoyaba en los bits bajos del xorshift de 16 bits y
+  podía agrupar columnas; y no se evitaba repetir las columnas de la
+  andanada anterior.
+- Al pulsar START para empezar la partida se vuelve a sembrar el generador
+  con un contador de cuadros de la pantalla de título, `vtimer` y
+  `getTick()`. En cada andanada se eligen columnas distintas al azar entre
+  las que aún tienen un enemigo vivo (sigue disparando el más bajo de la
+  columna) y, si hay alternativas, no se repiten las de la andanada previa.
+  La tabla de dificultad no cambia; aplica a EASY, NORMAL y HARD.
+
 ## 2026-11-12 (tarde 8) - Normal dispara siempre en cada andanada (AMH + Bimo)
 
 ### Cambiado

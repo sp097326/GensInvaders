@@ -136,6 +136,10 @@ HISTORY:
                 and dispatch; the starfield stays there.
 *       12/11/26 - NORMAL fireChance set to 10 so every 120-frame volley
                 actually fires (2 shots, cap 2). EASY and HARD unchanged.
+*       12/11/26 - Enemy volleys pick random distinct columns and avoid
+                repeating the previous volley columns when others remain.
+                RNG is re-seeded when START begins a match (title frame
+                count + vtimer + getTick()). Difficulty table unchanged.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -228,3 +232,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **NORMAL always fires its volley (later still on Nov 12)**
 * After the refactor Alberto noticed that on NORMAL the ships barely seemed to shoot. A diff against V0.1.25 showed no regression: same ticker, pool, getters and table. NORMAL had `fireChance` 8, so about 1 in 5 volleys was skipped and two misses in a row meant 4-6 seconds with no bullets (EASY and HARD already fire every attempt).
 * `fireChance` on NORMAL is now 10: every 120-frame volley (~2 s) fires two shots, still capped at 2. Interval, speed, step, cap and `rowsOpposite` are unchanged. EASY and HARD are unchanged.
+
+**More varied enemy shooters (later still on Nov 12)**
+* On NORMAL the volley rate was correct (2 ships every ~2 s) but it was almost always the same ships.
+* Root causes: SGDK only auto-seeds `random()` on the first button of the session (often a menu tap right after boot, with a similar tick); `random() % n` used the low bits of the 16-bit xorshift and could clump columns; the picker did not avoid the previous volley columns.
+* START that begins a match now calls `setRandomSeed` with a title-screen frame counter, `vtimer` and `getTick()`. Each volley still fires the bottom-most living ship in a column, but columns are chosen at random, stay distinct within the volley, and skip the previous volley columns when other eligible ones exist. Uses high bits of `random()` (`randRange`). Applies to all difficulties; table values are unchanged.

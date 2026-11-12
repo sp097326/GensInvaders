@@ -24,12 +24,39 @@ static u16 enemiesLeft = 0;
 static s16 enemyDir = 1;       // formation direction and speed: +speed right, -speed left
 static s16 enemyRowDir[ENEMY_ROWS];  // per-row dir when rowsOpposite is set
 
-/* Fires a volley of distinct living enemies, capped by the current difficulty. */
+/* Last volley's columns, so the next one can avoid repeating them. */
+static u16 lastShotCol[ENEMIES_PER_ROW];
+static u16 lastShotCount = 0;
+
+/* High bits of SGDK's 16-bit xorshift; (random() % n) leans on the low bits and can clump. */
+static u16 randRange(u16 n) {
+    if (n <= 1) return 0;
+    return (u16)(((u32)random() * (u32)n) >> 16);
+}
+
+static u16 columnWasInLastVolley(u16 col) {
+    u16 i;
+    for (i = 0; i < lastShotCount; i++) {
+        if (lastShotCol[i] == col) return 1;
+    }
+    return 0;
+}
+
+/* Fires a volley of distinct living enemies, capped by the current difficulty.
+ * One shot per eligible column (bottom-most living ship). Prefers columns that
+ * did not fire in the previous volley so the same ships do not keep shooting. */
 static void enemiesTryShoot() {
     const DifficultyConfig* cfg = difficulty_config();
-    u16 living[MAX_ENEMIES];
-    u16 livingCount = 0;
-    u16 i, n, pick, shots, slots;
+    u16 freshIdx[ENEMIES_PER_ROW];
+    u16 freshCol[ENEMIES_PER_ROW];
+    u16 freshCount = 0;
+    u16 reuseIdx[ENEMIES_PER_ROW];
+    u16 reuseCol[ENEMIES_PER_ROW];
+    u16 reuseCount = 0;
+    u16 firedCol[ENEMIES_PER_ROW];
+    u16 firedCount = 0;
+    u16 i, n, pick, shots, slots, col, row, chosenIdx;
+    s16 chosen;
     GameEntity* enemy;
 
     if (bullets_shotTicker() < cfg->shotInterval) return;
@@ -38,32 +65,36 @@ static void enemiesTryShoot() {
      * so later frames don't retry every tick. */
     bullets_clearShotTicker();
 
-    if (cfg->fireChance < 10 && (random() % 10) >= cfg->fireChance) {
+    if (cfg->fireChance < 10 && (randRange(10) >= cfg->fireChance)) {
         return;
     }
 
     /* Prefer the bottom-most living enemy in each column, so the front row
      * shoots first (and a hole in the front uncovers the ship behind it). */
-    {
-        u16 row, col;
-        s16 chosen;
-        for (col = 0; col < ENEMIES_PER_ROW; col++) {
-            chosen = -1;
-            for (row = 0; row < ENEMY_ROWS; row++) {
-                i = row * ENEMIES_PER_ROW + col;
-                if (enemies[i].health > 0) {
-                    if (chosen < 0 || enemies[i].y > enemies[chosen].y) {
-                        chosen = (s16)i;
-                    }
+    for (col = 0; col < ENEMIES_PER_ROW; col++) {
+        chosen = -1;
+        for (row = 0; row < ENEMY_ROWS; row++) {
+            i = row * ENEMIES_PER_ROW + col;
+            if (enemies[i].health > 0) {
+                if (chosen < 0 || enemies[i].y > enemies[chosen].y) {
+                    chosen = (s16)i;
                 }
             }
-            if (chosen >= 0) {
-                living[livingCount] = (u16)chosen;
-                livingCount++;
+        }
+        if (chosen >= 0) {
+            chosenIdx = (u16)chosen;
+            if (columnWasInLastVolley(col)) {
+                reuseIdx[reuseCount] = chosenIdx;
+                reuseCol[reuseCount] = col;
+                reuseCount++;
+            } else {
+                freshIdx[freshCount] = chosenIdx;
+                freshCol[freshCount] = col;
+                freshCount++;
             }
         }
     }
-    if (livingCount == 0) return;
+    if ((freshCount + reuseCount) == 0) return;
 
     slots = 0;
     if (cfg->maxEnemyBullets > bullets_enemyOnScreen()) {
@@ -71,15 +102,32 @@ static void enemiesTryShoot() {
     }
     shots = cfg->shotsPerVolley;
     if (shots > slots) shots = slots;
-    if (shots > livingCount) shots = livingCount;
+    if (shots > (freshCount + reuseCount)) shots = freshCount + reuseCount;
 
     for (n = 0; n < shots; n++) {
-        pick = random() % livingCount;
-        enemy = &enemies[living[pick]];
+        if (freshCount > 0) {
+            pick = randRange(freshCount);
+            enemy = &enemies[freshIdx[pick]];
+            firedCol[firedCount] = freshCol[pick];
+            firedCount++;
+            freshCount--;
+            freshIdx[pick] = freshIdx[freshCount];
+            freshCol[pick] = freshCol[freshCount];
+        } else {
+            pick = randRange(reuseCount);
+            enemy = &enemies[reuseIdx[pick]];
+            firedCol[firedCount] = reuseCol[pick];
+            firedCount++;
+            reuseCount--;
+            reuseIdx[pick] = reuseIdx[reuseCount];
+            reuseCol[pick] = reuseCol[reuseCount];
+        }
         bullets_shootEnemy(enemy);
-        /* Remove this enemy so the same one cannot fire twice in the volley. */
-        livingCount--;
-        living[pick] = living[livingCount];
+    }
+
+    lastShotCount = firedCount;
+    for (i = 0; i < firedCount; i++) {
+        lastShotCol[i] = firedCol[i];
     }
 }
 
@@ -314,6 +362,7 @@ void enemies_reset(void) {
     const DifficultyConfig* cfg = difficulty_config();
     s16 speed = (s16)cfg->enemySpeed;
     u16 row;
+    lastShotCount = 0;
     enemyDir = speed;
     for (row = 0; row < ENEMY_ROWS; row++) {
         /* Even rows start right; odd rows start left when rowsOpposite. */

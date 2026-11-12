@@ -11,6 +11,7 @@
 
 static int score = 0;
 static GameState gameState = STATE_TITLE;
+static u16 menuFrames = 0;  /* ticks on every screen, used to seed the RNG on START */
 
 static void resetGame(void);
 
@@ -62,6 +63,12 @@ void game_state_showTitle() {
 }
 
 static void startGameFromMenu() {
+    /* Re-seed at the moment START begins the match. SGDK only auto-seeds on the
+     * first button of the session, often a menu tap right after boot, so later
+     * matches (and quick starts) reused a similar sequence. Mix a title-screen
+     * frame counter with the vblank timer and getTick(). */
+    u16 seed = menuFrames ^ (u16)vtimer ^ (u16)getTick() ^ (u16)(getTick() >> 8);
+    setRandomSeed(seed);
     title_clear();
     resetGame();
 }
@@ -165,6 +172,7 @@ static void resetGame() {
 }
 
 void game_state_update(void) {
+    menuFrames++;
     if (gameState == STATE_TITLE) {
         title_updatePulse();
     } else if (gameState == STATE_PLAYING) {
