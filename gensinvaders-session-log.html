@@ -140,6 +140,7 @@
       <li><a href="#nov12-normal-fire">12/11/2026 - NORMAL always fires its volley</a></li>
       <li><a href="#nov12-volley-spread">12/11/2026 - More varied enemy shooters</a></li>
       <li><a href="#nov12-explosion">12/11/2026 - Player explosion</a></li>
+      <li><a href="#nov12-shield">12/11/2026 - Shield power-up</a></li>
     </ol>
   </nav>
 
@@ -558,6 +559,33 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        (<code class="inline">player_update</code> returns 1). Logic lives in
        the player module. Hardware-sprite budget stays at 70: the 16&times;16
        explosion (4 cells) replaces the hidden ship.</p>
+  </section>
+
+  <section class="card" id="nov12-shield">
+    <h2>12/11/2026 (with Bimo) - Shield power-up</h2>
+    <p>Button C activates a shield (B was already shoot, A is still RapidFire).
+       It starts charged at the beginning of a match, lasts 5 s, then recharges
+       for 30 s. NTSC uses 300 / 1800 frames; on PAL,
+       <code class="inline">IS_PAL_SYSTEM</code> selects 250 / 1500 so the
+       wall-clock time stays the same. The project had no PAL timing before.</p>
+    <p>While it is on, a 32&times;32 4-frame pulsing blue/white bubble
+       (<code class="inline">res/tiles/imgshield.bmp</code>, same PAL1, color 0
+       transparent) follows the ship. Enemy bullets that touch the 32&times;32
+       box are destroyed and do no damage. There is no ship-vs-enemy body
+       collision in this game, so the shield only has to stop bullets. Short
+       PCM blips play on channel 1 when the shield goes up and when recharge
+       finishes.</p>
+    <p>It cannot be used during the player explosion, while dead, while paused,
+       or during recharge. The timer only ticks in
+       <code class="inline">STATE_PLAYING</code>, so pause freezes it. On life
+       loss the recharge (or LISTO) state is kept; a bullet cannot kill the
+       player while the shield is up. A new match calls
+       <code class="inline">powerups_reset</code> and starts ready. The HUD
+       shows <code class="inline">ESC: LISTO</code>,
+       <code class="inline">ESC: ON n</code> or
+       <code class="inline">ESC: ns</code> on the right of line 2, redrawn
+       with the score line so the existing layout stays intact. One extra
+       hardware sprite (32&times;32 = 1 VDP sprite).</p>
   </section>
 
   <footer>

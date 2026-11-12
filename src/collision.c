@@ -3,6 +3,7 @@
 #include "enemies.h"
 #include "player.h"
 #include "hud.h"
+#include "powerups.h"
 
 int collideEntities(GameEntity* a, GameEntity* b) {
     return (a->x < b->x + b->w &&
@@ -42,17 +43,34 @@ u16 collision_update(int* score) {
         }
     }
 
-    /* Each enemy bullet has its own collision against the player. */
-    for (i = 0; i < MAX_ENEMY_BULLETS; i++)
+    /* Each enemy bullet has its own collision against the player. A live
+     * shield uses a 32x32 box around the ship: the bullet is destroyed and
+     * the player is not hurt. There is no ship-vs-enemy body collision in
+     * this game, so the shield only has to stop bullets. */
     {
-        b = bullets_enemyAt(i);
-        if (b->health > 0 && player_get()->health > 0) {
-            if (player_invulnTimer() == 0 && collideEntities(b, player_get())) {
-                bullets_despawnEnemy(b);
-                if (player_hit(*score)) {
-                    return COLLISION_GAME_OVER;
+        GameEntity* p = player_get();
+        GameEntity shieldBox;
+
+        shieldBox.x = p->x - SHIELD_OFFSET;
+        shieldBox.y = p->y - SHIELD_OFFSET;
+        shieldBox.w = SHIELD_SPRITE_SIZE;
+        shieldBox.h = SHIELD_SPRITE_SIZE;
+
+        for (i = 0; i < MAX_ENEMY_BULLETS; i++)
+        {
+            b = bullets_enemyAt(i);
+            if (b->health > 0 && p->health > 0) {
+                if (powerups_shieldActive() && collideEntities(b, &shieldBox)) {
+                    bullets_despawnEnemy(b);
+                    continue;
                 }
-                return COLLISION_NONE;
+                if (player_invulnTimer() == 0 && collideEntities(b, p)) {
+                    bullets_despawnEnemy(b);
+                    if (player_hit(*score)) {
+                        return COLLISION_GAME_OVER;
+                    }
+                    return COLLISION_NONE;
+                }
             }
         }
     }

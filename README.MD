@@ -29,7 +29,7 @@ To play it, run `run.bat` from the project root (or `run.bat build` to compile f
 `run.bat build` also writes `src/version.h` with the version `V0.1.xx`, where xx is the
 number of git commits; build after committing so the version matches GitHub.
 It opens the ROM in BlastEm 0.6.2, installed at `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
-BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (powerup), Enter = START.
+BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (RapidFire), D = C (shield), Enter = START.
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
 does not affect the ROM.
 
@@ -47,7 +47,7 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * player.c/.h — ship sprite, movement bounds, lives, respawn and invulnerability blink.
 * collision.c/.h — AABB checks; player bullets vs enemies and enemy bullets vs the player.
 * 	itle.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
-* powerups.c/.h — RapidFire toggle and timer (on-screen pickup entity reserved for later).
+* powerups.c/.h — RapidFire (A) and the Shield ability (C: 5 s, 30 s recharge); on-screen pickup entity reserved for later.
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
 * src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
 
@@ -58,6 +58,9 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * D-pad left/right: move the ship (during play).
 * B: shoot.
 * A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
+* C: activate the shield if it is charged (5 s of immunity, then 30 s to recharge).
+        Starts ready at the beginning of a match. Not usable while exploding, dead,
+        paused, or recharging. On BlastEm the default key for C is D.
 * START: during play, pause / resume (the pause screen shows the game version and the
         current difficulty). After GAME OVER or YOU WIN, returns to the title screen
         with the last difficulty preselected.
@@ -145,6 +148,11 @@ HISTORY:
                 for 48 frames (~0.8 s). Input and enemy fire freeze
                 during it; then respawn or GAME OVER as before. Brief
                 starfield shake and PAL1 flash.
+*       12/11/26 - Shield ability on button C (B is shoot, A is still
+                RapidFire). 5 s blue/white bubble around the ship
+                (blocks enemy bullets), then 30 s recharge. Starts
+                charged. HUD shows ESC: LISTO / ON n / ns. Recharge
+                state is kept on death; a new match starts ready.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -162,6 +170,9 @@ TODO:
           movement or fire code. On in NORMAL and HARD; set EASY's rowsOpposite to 1 to enable it there too.
         - [Done 12/11/26] Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
           Large blocky GENS / INVADERS logo drawn with solid tiles on plane A.
+        - [Done 12/11/26] Shield power-up (button C): 5 s of immunity, then 30 s
+          to recharge. Ready at the start of a match. HUD shows LISTO or the
+          remaining seconds.
         - More powerups: ship speed up? a bomb?
         - [Done 12/11/26] Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
 
@@ -247,3 +258,9 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * New 6-frame 16x16 indexed sheet `res/tiles/imgexplosion.bmp` (96x16, color 0 transparent, same PAL1 as `space.bmp`: white flash, expanding orange/red fireball, debris, fade). `SPRITE explosion` in `resources.res` (2x2, FAST, anim speed 0; frames are advanced by hand so it does not loop).
 * On hit the player ship is hidden and the explosion plays at that position for 48 frames (~0.8 s, 8 ticks per visual frame). Input is already blocked while health is 0; pause is also blocked. Enemy fire and the shot ticker are skipped (`player_isExploding`); enemies and bullets already on screen keep moving. A short decaying horizontal shake on the starfield (BG_B) and a 4-frame flash of PAL1 color 2 to white, then restored.
 * If lives remain, the remaining `RESPAWN_DELAY` (42 frames) runs after the explosion so total dead time stays ~90 frames, then the usual blinking invulnerability. If no lives are left, GAME OVER waits until the explosion finishes (`player_update` returns 1). Logic lives in the player module. Hardware-sprite budget stays at 70: the 16x16 explosion (4 cells) replaces the hidden ship.
+
+**Shield power-up (later still on Nov 12)**
+* Button C activates a shield (B is already shoot, A is still the RapidFire toggle). It starts charged at the beginning of a match, lasts 5 s, then recharges for 30 s and cannot be retriggered until then. NTSC uses 300 / 1800 frames; on PAL, `IS_PAL_SYSTEM` selects 250 / 1500 so the wall-clock time stays 5 s / 30 s. The project had no PAL timing before this.
+* While active, a 32x32 4-frame pulsing blue/white bubble (`res/tiles/imgshield.bmp`, same PAL1, color 0 transparent) follows the ship. Enemy bullets that touch the 32x32 box are destroyed and do no damage. This game has no ship-vs-enemy body collision, so the shield only has to stop bullets. Short PCM blips play on channel 1 when the shield goes up and when the recharge finishes.
+* Cannot be used during the player explosion, while dead, while paused, or during recharge. The timer only ticks in STATE_PLAYING, so pause freezes it. On life loss the recharge (or LISTO) state is kept; a bullet cannot kill the player while the shield is up, so in practice the recharge just keeps running through the explosion and respawn. `powerups_reset` on a new match sets it back to ready. HUD field on the right of line 2: `ESC: LISTO`, `ESC: ON n`, or `ESC: ns`, redrawn with the score line so the layout stays intact.
+* One extra hardware sprite (32x32 = 1 VDP sprite, 16 tiles). Real sprite count is about 27 of 80. The earlier "70" budget counted each 16x16 ship as 4 sprites; this ability adds one real VDP sprite, not 16.

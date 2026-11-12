@@ -30,10 +30,22 @@
 #define INTRO_MUSIC 66
 #define SFX_LASER 64
 #define SFX_XPLOSION 65
+#define SFX_SHIELD_ON 67
+#define SFX_SHIELD_READY 68
 
 #define POWERUP_DURATION 100
 #define POWER_ON 1
 #define POWER_OFF 0
+
+/* Shield (button C). 5 s up, 30 s recharge, in wall-clock time.
+ * The project otherwise assumes NTSC frame counts; at reset we pick
+ * the PAL or NTSC duration so both systems last the same real time. */
+#define SHIELD_DURATION_NTSC 300
+#define SHIELD_RECHARGE_NTSC 1800
+#define SHIELD_DURATION_PAL  250
+#define SHIELD_RECHARGE_PAL  1500
+#define SHIELD_SPRITE_SIZE   32
+#define SHIELD_OFFSET        8   /* (32-16)/2, centers the bubble on the ship */
 
 #define PLAYER_START_X 152
 #define PLAYER_START_Y 192

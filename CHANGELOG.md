@@ -3,6 +3,33 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 11) - Power-up de escudo (AMH + Bimo)
+
+### Agregado
+- Habilidad de escudo, botón C (B ya dispara y A sigue siendo RapidFire).
+  Empieza cargado al inicio de la partida. Activo 5 s (300 cuadros en NTSC,
+  250 en PAL) y luego recarga 30 s (1800 / 1500). Las duraciones se eligen
+  con `IS_PAL_SYSTEM` para que el tiempo real sea el mismo en ambos sistemas;
+  el proyecto no manejaba PAL antes.
+- Mientras está activo, un aro azul/blanco de 32×32 (4 cuadros que pulsan,
+  paleta de `space.bmp`, color 0 transparente) envuelve la nave. Las balas
+  enemigas que tocan la caja de 32×32 se destruyen y no hacen daño. No hay
+  colisión cuerpo a cuerpo nave-enemigo en este juego, así que el escudo
+  solo tiene que detener balas.
+- No se puede activar durante la explosión, la pausa, la recarga ni mientras
+  la nave está fuera. El temporizador se congela en pausa (el update solo
+  corre en PLAYING). Al perder una vida se conserva el estado de recarga
+  (o LISTO si no se había usado); no se puede morir por una bala con el
+  escudo puesto, así que en la práctica la recarga sigue su curso durante
+  la explosión y el respawn. Una partida nueva lo deja otra vez cargado.
+- Indicador a la derecha de la línea 2 del HUD, sin tocar SCORE ni DIFF:
+  `ESC: LISTO`, `ESC: ON n` mientras dura y `ESC: ns` en la recarga.
+- SFX cortos (~0,16 s) al activar y al terminar la recarga, en el canal PCM 1
+  para no cortar el láser ni la explosión.
+- Un solo sprite de hardware (32×32 = 1 sprite VDP, 16 teselas). El recuento
+  real queda en ~27 de 80; el “presupuesto 70” anterior contaba cada nave
+  de 16×16 como 4 sprites.
+
 ## 2026-11-12 (tarde 10) - Explosión del jugador (AMH + Bimo)
 
 ### Agregado

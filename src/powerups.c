@@ -1,15 +1,108 @@
 #include <genesis.h>
+#include <resources.h>
 #include "powerups.h"
 #include "bullets.h"
+#include "player.h"
+#include "hud.h"
 
 /* Reserved for a future on-screen pickup; spawn/position are still stubs. */
 static GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
 static u16 powerupTimer = 0;
 static bool powerOn = 0;
 
+static Sprite* shieldSpr = NULL;
+static u16 shieldActive = 0;
+static u16 shieldTimer = 0;
+static u16 shieldRecharge = 0;
+static u16 shieldDuration = SHIELD_DURATION_NTSC;
+static u16 shieldRechargeMax = SHIELD_RECHARGE_NTSC;
+static u16 shieldHudMode = 0xFFFF;
+static u16 shieldHudSecs = 0xFFFF;
+
+static void applyShieldTimings(void) {
+    if (IS_PAL_SYSTEM) {
+        shieldDuration = SHIELD_DURATION_PAL;
+        shieldRechargeMax = SHIELD_RECHARGE_PAL;
+    } else {
+        shieldDuration = SHIELD_DURATION_NTSC;
+        shieldRechargeMax = SHIELD_RECHARGE_NTSC;
+    }
+}
+
+static void hideShieldSprite(void) {
+    if (shieldSpr != NULL) {
+        SPR_setVisibility(shieldSpr, HIDDEN);
+        SPR_setAutoAnimation(shieldSpr, FALSE);
+    }
+}
+
+static void showShieldSprite(void) {
+    GameEntity* p;
+
+    if (shieldSpr == NULL) return;
+    p = player_get();
+    SPR_setPosition(shieldSpr, p->x - SHIELD_OFFSET, p->y - SHIELD_OFFSET);
+    SPR_setAnimAndFrame(shieldSpr, 0, 0);
+    SPR_setAnimationLoop(shieldSpr, TRUE);
+    SPR_setAutoAnimation(shieldSpr, TRUE);
+    SPR_setVisibility(shieldSpr, VISIBLE);
+}
+
+static void followShieldSprite(void) {
+    GameEntity* p;
+
+    if (shieldSpr == NULL) return;
+    p = player_get();
+    if (p->health == 0) {
+        SPR_setVisibility(shieldSpr, HIDDEN);
+        return;
+    }
+    SPR_setPosition(shieldSpr, p->x - SHIELD_OFFSET, p->y - SHIELD_OFFSET);
+    SPR_setVisibility(shieldSpr, VISIBLE);
+}
+
+static void shieldRefreshHud(u16 force) {
+    u16 mode;
+    u16 secs;
+    u16 rate;
+    u16 frames;
+    char line[12];
+
+    if (shieldActive) mode = 1;
+    else if (shieldRecharge > 0) mode = 2;
+    else mode = 0;
+
+    rate = IS_PAL_SYSTEM ? 50 : 60;
+    if (mode == 0) {
+        secs = 0;
+    } else {
+        frames = (mode == 1) ? shieldTimer : shieldRecharge;
+        secs = (u16)((frames + rate - 1) / rate);
+    }
+
+    if (!force && mode == shieldHudMode && secs == shieldHudSecs) return;
+    shieldHudMode = mode;
+    shieldHudSecs = secs;
+
+    if (mode == 1) {
+        sprintf(line, "ESC: ON %d", secs);
+    } else if (mode == 2) {
+        sprintf(line, "ESC: %ds", secs);
+    } else {
+        sprintf(line, "ESC: LISTO");
+    }
+    hud_updateShield(line);
+}
+
 void powerups_init(void) {
     PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
     (void)powerup; /* reserved for a future on-screen pickup */
+    applyShieldTimings();
+    /* One 32x32 bubble (1 hardware sprite, 16 tiles). High priority so the
+     * ring sits above the ship and incoming bullets. PAL1 matches space.bmp. */
+    shieldSpr = SPR_addSprite(&shield, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    SPR_setAutoAnimation(shieldSpr, FALSE);
+    SPR_setVisibility(shieldSpr, HIDDEN);
 }
 
 void powerups_deactivate(void) {
@@ -56,11 +149,38 @@ void powerups_update(void) {
             powerups_deactivate();
         }
     }
+
+    if (shieldActive) {
+        followShieldSprite();
+        if (shieldTimer > 0) shieldTimer--;
+        if (shieldTimer == 0) {
+            shieldActive = 0;
+            hideShieldSprite();
+            shieldRecharge = shieldRechargeMax;
+        }
+        shieldRefreshHud(0);
+    } else if (shieldRecharge > 0) {
+        shieldRecharge--;
+        if (shieldRecharge == 0) {
+            XGM_startPlayPCM(SFX_SHIELD_READY, 10, SOUND_PCM_CH1);
+        }
+        shieldRefreshHud(0);
+    }
 }
 
 void powerups_reset(void) {
     if (powerOn) powerups_deactivate();
     powerupTimer = 0;
+    applyShieldTimings();
+    shieldActive = 0;
+    shieldTimer = 0;
+    shieldRecharge = 0;
+    hideShieldSprite();
+    shieldRefreshHud(1);
+}
+
+void powerups_hide(void) {
+    hideShieldSprite();
 }
 
 void powerups_toggle(void) {
@@ -73,4 +193,19 @@ void powerups_toggle(void) {
 
 u16 powerups_isOn(void) {
     return powerOn ? 1 : 0;
+}
+
+void powerups_tryShield(void) {
+    if (player_isExploding()) return;
+    if (player_get()->health == 0) return;
+    if (shieldActive || shieldRecharge > 0) return;
+    shieldActive = 1;
+    shieldTimer = shieldDuration;
+    showShieldSprite();
+    XGM_startPlayPCM(SFX_SHIELD_ON, 12, SOUND_PCM_CH1);
+    shieldRefreshHud(1);
+}
+
+u16 powerups_shieldActive(void) {
+    return shieldActive;
 }

@@ -53,6 +53,7 @@ static void hideGameSprites() {
     player_hide();
     enemies_hideAll();
     bullets_hideAll();
+    powerups_hide();
 }
 
 void game_state_showTitle() {
@@ -153,6 +154,9 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
     }
     if (state & BUTTON_A & changed) {
         powerups_toggle();
+    }
+    if (state & BUTTON_C & changed) {
+        powerups_tryShield();
     }
 }
 

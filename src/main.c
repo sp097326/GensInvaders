@@ -53,6 +53,8 @@ int main(bool hard)
     //handle sound
     XGM_setPCM(SFX_LASER, laser, sizeof(laser));
     XGM_setPCM(SFX_XPLOSION, xplosion, sizeof(xplosion));
+    XGM_setPCM(SFX_SHIELD_ON, shieldon, sizeof(shieldon));
+    XGM_setPCM(SFX_SHIELD_READY, shieldrdy, sizeof(shieldrdy));
     //note to this: read the url for the effects.
     SYS_disableInts();
     VDP_loadTileSet(background.tileset,1,DMA);
