@@ -131,6 +131,7 @@
       <li><a href="#builds">Build timeline</a></li>
       <li><a href="#nov12">12/11/2026 - Formation steps down</a></li>
       <li><a href="#nov12-diff">12/11/2026 - Difficulty and simultaneous enemy fire</a></li>
+      <li><a href="#nov12-tune">12/11/2026 - Difficulty retune (interval and speed)</a></li>
     </ol>
   </nav>
 
@@ -412,6 +413,19 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        after GAME OVER or YOU WIN, START returns to that menu with the last choice preselected.
        The current difficulty is shown on the HUD and the pause screen.</p>
     <p>Pending: a later title screen with a 2-option menu (START GAME and DIFFICULTY).</p>
+  </section>
+
+  <section class="card" id="nov12-tune">
+    <h2>12/11/2026 (with Bimo) - Difficulty retune</h2>
+    <p><b>Root cause.</b> HARD used the correct table row (<code class="inline">currentDiff</code> was not overwritten
+       and the HUD showed HARD), but fire still used the shared <code class="inline">SHOT_INTERVAL</code> of 120 frames
+       and the same 1 px horizontal speed as NORMAL. The 4-bullet cap almost never filled:
+       at speed 5 a bullet leaves the screen in about 38 frames, long before the next volley.
+       The 16 px step only happens on an edge bounce, at the same bounce rate as NORMAL.
+       No sign of frame drops (light sprite load, small loops, vblank wait).</p>
+    <p>The table now also has <code class="inline">shotInterval</code>, <code class="inline">enemySpeed</code> and
+       <code class="inline">bulletSpeed</code>. EASY fires every 90 frames (chance 10, 1 bullet).
+       NORMAL is unchanged. HARD uses interval 60, step 16, horizontal speed 2 and bullet speed 6.</p>
   </section>
 
   <footer>

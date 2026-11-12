@@ -96,6 +96,9 @@ HISTORY:
 *       12/11/26 - Difficulty menu (EASY / NORMAL / HARD) and a dedicated enemy bullet pool
                 so two distinct enemies can fire at once. Tuning is data-driven
                 (difficultyTable). After GAME OVER / YOU WIN, START returns to the menu.
+*       12/11/26 - Retuned difficulties: the table now also has shotInterval, enemySpeed
+                and bulletSpeed. EASY fires regularly every 90 frames; NORMAL is unchanged;
+                HARD moves and fires twice as fast (step 16, interval 60, speed 2).
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -105,8 +108,8 @@ TODO:
         - Add an explosion sprite for the player when hit by enemy fire.
         - [Done 12/11/26] Can two enemies fire at once?
         - Difficulty values are data-driven (difficultyTable in main.c): step down, max
-          enemy bullets, shots per volley and fire chance can be tuned there without
-          changing the movement or fire code.
+          enemy bullets, shots per volley, fire chance, shot interval, enemy speed and
+          bullet speed can be tuned there without changing the movement or fire code.
         - Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
           For now the simple pre-game difficulty selection is enough.
         - More powerups: ship speed up? a bomb?
@@ -152,3 +155,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Dedicated enemy bullet pool (`enemyBullets`, 4 sprites). Each bullet collides with the player on its own and is freed on hit, off-screen, or reset. Player bullets stay in their own pool. Lives, respawn and invulnerability are unchanged.
 * Pre-game menu "SELECT DIFFICULTY": UP/DOWN to choose, START to confirm (default NORMAL). After GAME OVER or YOU WIN, START returns to that menu with the last choice preselected. Current difficulty is shown on the HUD (`DIFF:`) and on the pause screen.
 * Pending (not in this build): a later title screen with a 2-option menu, START GAME and DIFFICULTY (EASY / NORMAL / HARD).
+
+**Difficulty retune (later still on Nov 12)**
+* Root cause of HARD feeling like NORMAL: `currentDiff` was applied correctly, but HARD shared the 120-frame fire interval and 1 px horizontal speed, and the 4-bullet cap almost never filled because bullets left the screen in ~38 frames. No frame-drop evidence.
+* The table now also has `shotInterval`, `enemySpeed` and `bulletSpeed`.
+* EASY: fires every 90 frames with `fireChance` 10 (1 bullet). NORMAL: unchanged (120, 2 shots, cap 2, step 8, speed 1, bullet 5). HARD: interval 60, cap 4, step 16, horizontal speed 2, bullet speed 6.

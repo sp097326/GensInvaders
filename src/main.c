@@ -45,7 +45,7 @@ typedef struct
 #define MAX_PLAYER_BULLETS 3
 #define MAX_ENEMY_BULLETS 4 // dedicated enemy bullet pool (HARD can use all 4)
 #define BOTTOM_EDGE 224
-#define SHOT_INTERVAL 120
+#define SHOT_INTERVAL 120   // NORMAL default; the table's shotInterval is what the game uses
 #define INTRO_MUSIC 66
 #define SFX_LASER 64
 #define SFX_XPLOSION 65
@@ -76,15 +76,19 @@ typedef struct
     u16 maxEnemyBullets;    /* cap of enemy bullets on screen at once */
     u16 shotsPerVolley;     /* distinct enemies that fire together when the interval hits */
     u16 fireChance;         /* 0-10; the volley fires if (random() % 10) < fireChance */
+    u16 shotInterval;       /* frames between volley attempts */
+    u16 enemySpeed;         /* horizontal pixels per frame (also the |enemyDir| reset) */
+    u16 bulletSpeed;        /* downward speed of each enemy bullet */
 } DifficultyConfig;
 
 static const DifficultyConfig difficultyTable[DIFF_COUNT] = {
-    /* EASY:   no descent, at most 1 enemy bullet, one shot per volley */
-    { 0,                    1, 1, 6 },
-    /* NORMAL: 8 px step, up to 2 bullets, two distinct enemies fire together */
-    { ENEMY_STEP_DOWN,      2, 2, 8 },
-    /* HARD:   16 px step, up to 4 bullets, two distinct enemies fire together */
-    { ENEMY_STEP_DOWN * 2,  4, 2, 10 }
+    /* EASY:   no descent, 1 bullet, fires regularly every 90 frames */
+    { 0,                   1, 1, 10,  90, 1, 5 },
+    /* NORMAL: unchanged - 8 px step, 2 shots / cap 2, every 120 frames */
+    { ENEMY_STEP_DOWN,     2, 2,  8, SHOT_INTERVAL, 1, 5 },
+    /* HARD:   16 px step, twice as fast sideways, volley every 60 frames,
+     *         slightly faster bullets; cap 4 so consecutive volleys can overlap */
+    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6 }
 };
 
 static const char* difficultyNames[DIFF_COUNT] = {
@@ -129,7 +133,7 @@ Difficulty menuDiff = DIFF_NORMAL;
 u16 lives = MAX_LIVES;
 u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
 u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
-s16 enemyDir = 1;       // the whole formation moves together: +1 right, -1 left
+s16 enemyDir = 1;       // formation direction and speed: +speed right, -speed left
 
 typedef enum
 {
@@ -328,7 +332,7 @@ void enemiesTryShoot() {
     u16 i, n, pick, shots, slots;
     GameEntity* enemy;
 
-    if (shotTicker < SHOT_INTERVAL) return;
+    if (shotTicker < cfg->shotInterval) return;
 
     /* Consume the interval even if the roll misses or the pool is full,
      * so later frames don't retry every tick. */
@@ -550,7 +554,7 @@ void shootEnemyBullet(GameEntity* shooter) {
         if (bullet->health == 0) {
             bullet->x = shooter->x + 4;
             bullet->y = shooter->y;
-            bullet->vely = 5;
+            bullet->vely = difficultyTable[currentDiff].bulletSpeed;
             reviveGameEntity(bullet);
             SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
             enemyBulletsOnScreen++;
@@ -775,7 +779,7 @@ void resetGame() {
     respawnTimer = 0;
     invulnTimer = 0;
 
-    enemyDir = 1;
+    enemyDir = (s16)difficultyTable[currentDiff].enemySpeed;
     placeEnemies();
     score = 0;
     clearEndScreen();

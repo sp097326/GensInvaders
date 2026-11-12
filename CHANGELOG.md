@@ -3,6 +3,34 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 2) - Ajuste de cadencia y velocidad por dificultad (AMH + Bimo)
+
+### Corregido
+- HARD se sentía igual o más lento que NORMAL, pero `currentDiff` sí se
+  aplicaba bien (el menú, el HUD y `resetGame()` no lo pisaban; la tabla
+  estaba bien indexada). La causa era de diseño: HARD usaba el mismo
+  `SHOT_INTERVAL` de 120 cuadros y la misma velocidad horizontal (1 px),
+  así que las andanadas llegaban al mismo ritmo. El tope de 4 balas casi
+  nunca se notaba: a velocidad 5 una bala sale de pantalla en ~38 cuadros,
+  mucho antes de la siguiente andanada. El descenso de 16 px solo se ve
+  en cada rebote, con el mismo intervalo entre rebotes que en NORMAL.
+  No había indicios de caída de cuadros (pocos sprites, bucles chicos y
+  el loop espera al vblank).
+- En EASY casi no disparaban: cadencia de 120 cuadros y `fireChance` 6/10,
+  o sea un disparo cada ~3 s en promedio.
+
+### Cambiado
+- La tabla ahora también controla `shotInterval`, `enemySpeed` y
+  `bulletSpeed`.
+  - **EASY:** intervalo 90, `fireChance` 10 (disparo regular, 1 bala);
+    sin descenso; velocidad igual que NORMAL.
+  - **NORMAL:** sin cambios de sensación (intervalo 120, 2 por andanada,
+    tope 2, descenso 8, velocidad 1, bala 5).
+  - **HARD:** intervalo 60, 2 por andanada, tope 4, descenso 16,
+    velocidad horizontal 2 y balas a 6 (un poco más rápidas).
+- `enemiesTryShoot()` usa `cfg->shotInterval`. `resetGame()` inicia
+  `enemyDir` con `enemySpeed`. `shootEnemyBullet()` usa `bulletSpeed`.
+
 ## 2026-11-12 (tarde) - Dificultad y disparos simultáneos (AMH + Bimo)
 
 ### Agregado
