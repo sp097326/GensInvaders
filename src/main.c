@@ -12,46 +12,7 @@
 #include <resources.h>
 #include "config.h"
 #include "game.h"
-
-/* Difficulty is data-driven: tweak the table, not the movement/fire code. */
-typedef enum
-{
-    DIFF_EASY,
-    DIFF_NORMAL,
-    DIFF_HARD,
-    DIFF_COUNT
-} Difficulty;
-
-typedef struct
-{
-    u16 stepDown;           /* pixels the formation drops on each edge bounce; 0 = no descent */
-    u16 maxEnemyBullets;    /* cap of enemy bullets on screen at once */
-    u16 shotsPerVolley;     /* distinct enemies that fire together when the interval hits */
-    u16 fireChance;         /* 0-10; the volley fires if (random() % 10) < fireChance */
-    u16 shotInterval;       /* frames between volley attempts */
-    u16 enemySpeed;         /* horizontal pixels per frame (also the |enemyDir| reset) */
-    u16 bulletSpeed;        /* downward speed of each enemy bullet */
-    u8  rowsOpposite;       /* 1 = each row has its own direction and bounces alone.
-                             * On in NORMAL and HARD; set EASY to 1 to enable it there too. */
-} DifficultyConfig;
-
-static const DifficultyConfig difficultyTable[DIFF_COUNT] = {
-    /* EASY:   no descent, 1 bullet, fires regularly every 90 frames */
-    { 0,                   1, 1, 10,  90, 1, 5, 0 },
-    /* NORMAL: 8 px step, 2 shots / cap 2, every 120 frames;
-     *         rowsOpposite like HARD (row 0 right, row 1 left, bounce alone). */
-    { ENEMY_STEP_DOWN,     2, 2,  8, SHOT_INTERVAL, 1, 5, 1 },
-    /* HARD:   16 px step, twice as fast sideways, volley every 60 frames,
-     *         slightly faster bullets; cap 4 so consecutive volleys can overlap.
-     *         rowsOpposite: row 0 goes right, row 1 goes left, each bounces alone. */
-    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6, 1 }
-};
-
-static const char* difficultyNames[DIFF_COUNT] = {
-    "EASY",
-    "NORMAL",
-    "HARD"
-};
+#include "difficulty.h"
 
 /* Per-row look and scoring. Swap spriteDef later for a different ship graphic;
  * for now both rows use &ship, with PAL3 (tinted) on the bottom row. */
@@ -92,7 +53,6 @@ int score = 0;
 char hud_string[40] = "";
 bool powerOn = 0;
 GameState gameState = STATE_TITLE;
-Difficulty currentDiff = DIFF_NORMAL;
 u16 titleCursor = TITLE_OPT_START;
 u16 titlePulseTick = 0;
 u16 lives = MAX_LIVES;
@@ -128,7 +88,7 @@ void updateScoreDisplay() {
     VDP_clearText(0,0,40);
     VDP_drawText(hud_string, 0,0);
     VDP_clearText(0,1,40);
-    sprintf(hud_string, "DIFF: %s", difficultyNames[currentDiff]);
+    sprintf(hud_string, "DIFF: %s", difficulty_name());
     VDP_drawText(hud_string, 0,1);
 }
 
@@ -172,7 +132,7 @@ void pauseGame() {
     SPR_setAnim(player.sprite, ANIM_STRAIGHT);
     drawCenteredText("PAUSED", 12);
     drawCenteredText("GENS INVADERS " GAME_VERSION, 14);
-    sprintf(line, "DIFFICULTY: %s", difficultyNames[currentDiff]);
+    sprintf(line, "DIFFICULTY: %s", difficulty_name());
     drawCenteredText(line, 16);
     drawCenteredText("PRESS START", 18);
 }
@@ -323,15 +283,12 @@ void drawTitleMenu() {
     drawCenteredText(GAME_VERSION, 15);
     sprintf(line, "%c START GAME (INICIAR)", (titleCursor == TITLE_OPT_START) ? '>' : ' ');
     drawCenteredText(line, 17);
-    sprintf(line, "%c DIFFICULTY: %s", (titleCursor == TITLE_OPT_DIFF) ? '>' : ' ', difficultyNames[currentDiff]);
+    sprintf(line, "%c DIFFICULTY: %s", (titleCursor == TITLE_OPT_DIFF) ? '>' : ' ', difficulty_name());
     drawCenteredText(line, 19);
 }
 
 void cycleDifficulty(s16 dir) {
-    s16 d = (s16)currentDiff + dir;
-    if (d < 0) d = DIFF_COUNT - 1;
-    if (d >= (s16)DIFF_COUNT) d = 0;
-    currentDiff = (Difficulty)d;
+    difficulty_cycle(dir);
     drawTitleMenu();
 }
 
@@ -426,7 +383,7 @@ void updatePowerup() {
 
 /* Fires a volley of distinct living enemies, capped by the current difficulty. */
 void enemiesTryShoot() {
-    const DifficultyConfig* cfg = &difficultyTable[currentDiff];
+    const DifficultyConfig* cfg = difficulty_config();
     u16 living[MAX_ENEMIES];
     u16 livingCount = 0;
     u16 i, n, pick, shots, slots;
@@ -524,7 +481,7 @@ u16 rowCanStepDown(u16 row, u16 step) {
 /* rowsOpposite: each row has its own direction, bounces on its own living
  * edges, and only that row steps down (if it would not crowd the row below). */
 void positionEnemyRowsOpposite() {
-    const DifficultyConfig* cfg = &difficultyTable[currentDiff];
+    const DifficultyConfig* cfg = difficulty_config();
     u16 step = cfg->stepDown;
     u16 row, col, i;
     GameEntity* enemy;
@@ -588,7 +545,7 @@ void positionEnemyRowsOpposite() {
 void positionEnemies() {
     shotTicker++;
 
-    if (difficultyTable[currentDiff].rowsOpposite) {
+    if ((*difficulty_config()).rowsOpposite) {
         positionEnemyRowsOpposite();
         if (gameState != STATE_PLAYING) return;
         enemiesTryShoot();
@@ -600,7 +557,7 @@ void positionEnemies() {
     GameEntity* enemy;
     u16 hitEdge = 0;
     u16 reachedPlayer = 0;
-    u16 step = difficultyTable[currentDiff].stepDown;
+    u16 step = (*difficulty_config()).stepDown;
 
     /* Formation movement (classic Space Invaders): if ANY living enemy reaches
      * an edge, the whole group turns around and, depending on difficulty,
@@ -773,7 +730,7 @@ void shootEnemyBullet(GameEntity* shooter) {
     GameEntity* bullet;
     u16 i;
 
-    if (enemyBulletsOnScreen >= difficultyTable[currentDiff].maxEnemyBullets) {
+    if (enemyBulletsOnScreen >= (*difficulty_config()).maxEnemyBullets) {
         return;
     }
     for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
@@ -781,7 +738,7 @@ void shootEnemyBullet(GameEntity* shooter) {
         if (bullet->health == 0) {
             bullet->x = shooter->x + 4;
             bullet->y = shooter->y;
-            bullet->vely = difficultyTable[currentDiff].bulletSpeed;
+            bullet->vely = (*difficulty_config()).bulletSpeed;
             reviveGameEntity(bullet);
             SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
             enemyBulletsOnScreen++;
@@ -951,7 +908,7 @@ void placeEnemies() {
             /* Odd rows start on the right when they will move left, so they
              * are not already sitting on the left edge (which would bounce
              * and step down on the first frame). */
-            if (difficultyTable[currentDiff].rowsOpposite && (row & 1)) {
+            if ((*difficulty_config()).rowsOpposite && (row & 1)) {
                 enem->x += (RIGHT_EDGE - ((ENEMIES_PER_ROW - 1) * ENEMY_COL_SPACING + enem->w));
             }
             reviveGameEntity(enem);
@@ -1049,7 +1006,7 @@ void resetGame() {
     invulnTimer = 0;
 
     {
-        const DifficultyConfig* cfg = &difficultyTable[currentDiff];
+        const DifficultyConfig* cfg = difficulty_config();
         s16 speed = (s16)cfg->enemySpeed;
         u16 row;
         enemyDir = speed;
@@ -1089,6 +1046,7 @@ int main(bool hard)
 {
     JOY_init();
     JOY_setEventHandler(&myJoyHandler);
+    difficulty_init();
 
     //can I place here an initial sound Pac-Man style?
     XGM_setPCM(INTRO_MUSIC,intro, sizeof(intro));
