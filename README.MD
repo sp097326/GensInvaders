@@ -104,12 +104,18 @@ HISTORY:
 *       12/11/26 - Title screen with a large blocky GENS / INVADERS logo (solid tiles on
                 plane A, with shadow and a gold color pulse) and a 2-option menu:
                 START GAME (INICIAR) and DIFFICULTY. The version is shown under the logo.
+*       12/11/26 - Second row of 7 enemies (14 total), one formation; bottom row uses a
+                tinted palette and is worth 10 points, top row 20. Firing prefers the
+                lowest living ship in each column.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
 *       Start a list of where to take the base "game" to make something better, here's some ideas:
-        - Add more enemies, control a second row.
-        - Change sprites, use a different one for enemies, maybe 2
+        - [Done 12/11/26] Add more enemies, control a second row.
+        - Change sprites, use a different one for enemies, maybe 2.
+          The per-row EnemyRowType is ready: drop a 16x16 sheet in res/tiles/ and
+          point enemyRows[n].spriteDef at it in resources.res / main.c. The bottom
+          row already uses a different palette as a stand-in.
         - Add an explosion sprite for the player when hit by enemy fire.
         - [Done 12/11/26] Can two enemies fire at once?
         - Difficulty values are data-driven (difficultyTable in main.c): step down, max
@@ -170,3 +176,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Replaced the standalone SELECT DIFFICULTY menu with a title screen (`STATE_TITLE`).
 * Large two-row logo, GENS (5x5 blocks) over INVADERS (4x5 blocks), drawn as solid 8x8 tiles on plane A with a drop shadow, so it stays within the 20-sprites-per-scanline limit. The fill color pulses gold/orange. `V0.1.xx` is shown under the logo. The starfield keeps scrolling on plane B; game sprites are hidden.
 * Menu: START GAME (INICIAR) and DIFFICULTY: EASY/NORMAL/HARD. UP/DOWN move the cursor; LEFT/RIGHT (and START or A on DIFFICULTY) cycle the level; START on START GAME begins the match. After GAME OVER / YOU WIN, START returns here with the last difficulty preselected.
+
+**Second enemy row (later still on Nov 12)**
+* Two rows of 7 (14 ships) move, bounce and step down as one formation. GAME OVER uses the lowest living enemy; YOU WIN when both rows are cleared. Volleys pick the bottom-most living ship in each column.
+* Per-row `EnemyRowType` (sprite, palette, points). For now both rows reuse `ship`; the bottom row is tinted green/yellow on PAL3 and is worth 10 points, the top row 20. A different 16x16 graphic later is just a new `SPRITE` in `resources.res` and a pointer change — same size has no extra performance cost.
+* Sprite budget: 14 enemies + 1 player + 6 player bullets + 4 enemy bullets = 25 software sprites. In hardware sprites (16x16 = 4 cells, 8x8 = 1): 14*4 + 4 + 6 + 4 = 70 of 80. Per scanline, one full row uses 14 of 20 (rows are 24 px apart so they do not share a line).

@@ -3,6 +3,24 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 4) - Segunda fila de enemigos (AMH + Bimo)
+
+### Agregado
+- **Segunda fila** de 7 enemigos debajo de la primera (14 en total). Se mueven,
+  rebotan y bajan como una sola formación. GAME OVER usa el enemigo vivo más
+  bajo; YOU WIN al limpiar las dos filas. Los disparos eligen, en cada columna,
+  la nave más baja que siga viva.
+- Infraestructura por fila (`EnemyRowType`): cada fila tiene su propio
+  `SpriteDefinition`, paleta y puntaje. Por ahora las dos reutilizan `ship`;
+  la de abajo usa PAL3 con un tinte verde/amarillo para distinguirla. Arriba
+  vale 20 puntos, abajo 10.
+- Un sprite distinto por fila no debería afectar el desempeño si se mantiene
+  en 16x16: el costo lo marca el tamaño y la cantidad, no el dibujo en sí.
+
+### Cambiado
+- `MAX_ENEMIES` pasa a 14 (`ENEMY_ROWS * ENEMIES_PER_ROW`). El espaciado
+  vertical es 24 px para que las filas no compartan línea de barrido.
+
 ## 2026-11-12 (tarde 3) - Pantalla de título (AMH + Bimo)
 
 ### Agregado

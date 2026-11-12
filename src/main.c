@@ -32,11 +32,20 @@ typedef struct
     int vely;
     int health;
     Sprite* sprite;
+    u16 points;             /* score awarded when this entity is destroyed */
+    u16 row;                /* enemy formation row (0 = top) */
     char name[6];
 } GameEntity;
 
-// Enemy control definitions
-#define MAX_ENEMIES 7       // maximum enemies on screen
+// Enemy formation: two rows of 7, moving as one group.
+// Each 16x16 ship uses 4 hardware sprites (2 per scanline). Rows are spaced
+// so they never share a scanline (20-sprite/line limit).
+#define ENEMY_ROWS 2
+#define ENEMIES_PER_ROW 7
+#define MAX_ENEMIES (ENEMY_ROWS * ENEMIES_PER_ROW)
+#define ENEMY_COL_SPACING 32
+#define ENEMY_ROW_SPACING 24    // 16 px sprite + 8 px gap; rows do not overlap
+#define ENEMY_START_Y 32
 #define LEFT_EDGE 0         // setting the screen boundaries
 #define RIGHT_EDGE 320      // in order to control enemy movement boundaries
 #define ANIM_STRAIGHT 0
@@ -97,6 +106,21 @@ static const char* difficultyNames[DIFF_COUNT] = {
     "HARD"
 };
 
+/* Per-row look and scoring. Swap spriteDef later for a different ship graphic;
+ * for now both rows use &ship, with PAL3 (tinted) on the bottom row. */
+typedef struct
+{
+    const SpriteDefinition* spriteDef;
+    u16 palette;
+    u16 vFlip;
+    u16 points;
+} EnemyRowType;
+
+static const EnemyRowType enemyRows[ENEMY_ROWS] = {
+    { &ship, PAL2, TRUE, 20 },  /* top row: original colors, 20 points */
+    { &ship, PAL3, TRUE, 10 }   /* bottom row: green/yellow tint, 10 points */
+};
+
 /* Game states: the main loop only moves things while PLAYING.
  * STATE_TITLE is the boot (and post-game) title screen with START / difficulty.
  * GAME_OVER and WIN freeze the action and wait for START to return to the title. */
@@ -116,12 +140,12 @@ typedef enum
 
 // on screen entities
 // name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit.
-GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, "PLYR" };
+GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, 0, 0, "PLYR" };
 GameEntity enemies[MAX_ENEMIES];
 GameEntity bullets[MAX_BULLETS];
 GameEntity enemyBullets[MAX_ENEMY_BULLETS];
 // Every field initialized (the empty name "" silences -Wmissing-field-initializers).
-GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, ""};
+GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
 u16 enemiesLeft = 0;
 u16 bulletsOnScreen = 0;
 u16 enemyBulletsOnScreen = 0;
@@ -492,10 +516,25 @@ void enemiesTryShoot() {
         return;
     }
 
-    for (i = 0; i < MAX_ENEMIES; i++) {
-        if (enemies[i].health > 0) {
-            living[livingCount] = i;
-            livingCount++;
+    /* Prefer the bottom-most living enemy in each column, so the front row
+     * shoots first (and a hole in the front uncovers the ship behind it). */
+    {
+        u16 row, col;
+        s16 chosen;
+        for (col = 0; col < ENEMIES_PER_ROW; col++) {
+            chosen = -1;
+            for (row = 0; row < ENEMY_ROWS; row++) {
+                i = row * ENEMIES_PER_ROW + col;
+                if (enemies[i].health > 0) {
+                    if (chosen < 0 || enemies[i].y > enemies[chosen].y) {
+                        chosen = (s16)i;
+                    }
+                }
+            }
+            if (chosen >= 0) {
+                living[livingCount] = (u16)chosen;
+                livingCount++;
+            }
         }
     }
     if (livingCount == 0) return;
@@ -828,7 +867,7 @@ void handleCollisions() {
                         enemiesLeft--;
                         bulletsOnScreen--;
                         shotByPlayer--;
-                        score += 10;
+                        score += e->points;
                         updateScoreDisplay();
                         if (enemiesLeft == 0) {
                             showEndScreen(STATE_WIN);
@@ -858,35 +897,58 @@ void handleCollisions() {
 
 /* Puts every enemy back in its starting slot (used at boot and on restart). */
 void placeEnemies() {
-    u16 i;
-    GameEntity* enem = enemies;
+    u16 row, col, i;
+    GameEntity* enem;
+    const EnemyRowType* type;
     enemiesLeft = 0;
-    for (i = 0; i < MAX_ENEMIES; i++) {
-        enem->x = i*32;
-        enem->y = 32;
-        reviveGameEntity(enem);
-        SPR_setPosition(enem->sprite, enem->x, enem->y);
-        enemiesLeft++;
-        enem++;
+    for (row = 0; row < ENEMY_ROWS; row++) {
+        type = &enemyRows[row];
+        for (col = 0; col < ENEMIES_PER_ROW; col++) {
+            i = row * ENEMIES_PER_ROW + col;
+            enem = &enemies[i];
+            enem->x = col * ENEMY_COL_SPACING;
+            enem->y = ENEMY_START_Y + row * ENEMY_ROW_SPACING;
+            enem->points = type->points;
+            enem->row = row;
+            reviveGameEntity(enem);
+            SPR_setPosition(enem->sprite, enem->x, enem->y);
+            enemiesLeft++;
+        }
     }
 }
 
 void generateEnemies() {
-    /* Creating Enemy Sprites*/
-    u16 i;
-    GameEntity* enem = enemies;
-    for (i = 0; i < MAX_ENEMIES; i++) {
-        enem->x = i*32;
-        enem->y = 32;
-        enem->w = 16;
-        enem->h = 16;
-        enem->velx = 1;
-        enem->health = 1;
-        enem->sprite = SPR_addSprite(&ship, enem->x, enem->y, TILE_ATTR(PAL2, 0, TRUE, FALSE));
-        sprintf(enem->name, "En%d", i);
-        enemiesLeft++;
-        enem++;
+    /* Creating Enemy Sprites — one SpriteDefinition / palette / score per row. */
+    u16 row, col, i;
+    GameEntity* enem;
+    const EnemyRowType* type;
+    enemiesLeft = 0;
+    for (row = 0; row < ENEMY_ROWS; row++) {
+        type = &enemyRows[row];
+        for (col = 0; col < ENEMIES_PER_ROW; col++) {
+            i = row * ENEMIES_PER_ROW + col;
+            enem = &enemies[i];
+            enem->x = col * ENEMY_COL_SPACING;
+            enem->y = ENEMY_START_Y + row * ENEMY_ROW_SPACING;
+            enem->w = 16;
+            enem->h = 16;
+            enem->velx = 1;
+            enem->health = 1;
+            enem->points = type->points;
+            enem->row = row;
+            enem->sprite = SPR_addSprite(type->spriteDef, enem->x, enem->y,
+                TILE_ATTR(type->palette, 0, type->vFlip, FALSE));
+            sprintf(enem->name, "En%d", i);
+            enemiesLeft++;
+        }
     }
+}
+
+/* PAL3 is the title logo on the menu and the bottom-row tint in play. */
+void setEnemyRowPalettes() {
+    PAL_setPalette(PAL3, background.palette->data, CPU);
+    PAL_setColor(48 + 1, RGB24_TO_VDPCOLOR(0x00E800)); /* green instead of blue */
+    PAL_setColor(48 + 2, RGB24_TO_VDPCOLOR(0xF8F800)); /* yellow instead of orange */
 }
 
 void generateBullets() {
@@ -943,6 +1005,7 @@ void resetGame() {
     invulnTimer = 0;
 
     enemyDir = (s16)difficultyTable[currentDiff].enemySpeed;
+    setEnemyRowPalettes();
     placeEnemies();
     score = 0;
     clearEndScreen();
@@ -995,7 +1058,7 @@ int main(bool hard)
     player.health = 1;
     player.sprite = SPR_addSprite(&ship, player.x, player.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 
-    generateEnemies(); //should we use the same method with parameters to determine how many lines of enemies?
+    generateEnemies();
     generateBullets();
     PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
     SYS_enableInts();

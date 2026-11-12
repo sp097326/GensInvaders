@@ -133,6 +133,7 @@
       <li><a href="#nov12-diff">12/11/2026 - Difficulty and simultaneous enemy fire</a></li>
       <li><a href="#nov12-tune">12/11/2026 - Difficulty retune (interval and speed)</a></li>
       <li><a href="#nov12-title">12/11/2026 - Title screen</a></li>
+      <li><a href="#nov12-row2">12/11/2026 - Second enemy row</a></li>
     </ol>
   </nav>
 
@@ -441,6 +442,19 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        UP/DOWN move the cursor; LEFT/RIGHT (and START or A on DIFFICULTY) cycle the level;
        START on START GAME begins the match. After GAME OVER / YOU WIN, START returns here
        with the last difficulty preselected.</p>
+  </section>
+
+  <section class="card" id="nov12-row2">
+    <h2>12/11/2026 (with Bimo) - Second enemy row</h2>
+    <p>Two rows of 7 enemies (14 total) move, bounce and step down as one formation.
+       GAME OVER uses the lowest living enemy; YOU WIN when both rows are cleared.
+       Firing prefers the bottom-most living ship in each column. Difficulty table unchanged.</p>
+    <p>Per-row <code class="inline">EnemyRowType</code> (sprite, palette, points). Both rows currently reuse
+       <code class="inline">ship</code>; the bottom row is tinted on PAL3 (10 points) and the top row keeps PAL2 (20 points).</p>
+    <p><b>Sprite budget.</b> Software sprites: 14 enemies + 1 player + 6 player bullets + 4 enemy bullets = 25.
+       Hardware sprites (16x16 = 4 cells, 8x8 = 1): 56 + 4 + 6 + 4 = 70 of 80.
+       Per scanline, a full row uses 14 of 20; rows are spaced 24 px so they do not share a line.
+       A later unique 16x16 graphic per row has no extra performance cost beyond the same sprite budget.</p>
   </section>
 
   <footer>
