@@ -142,6 +142,7 @@
       <li><a href="#nov12-explosion">12/11/2026 - Player explosion</a></li>
       <li><a href="#nov12-shield">12/11/2026 - Shield power-up</a></li>
       <li><a href="#nov12-shield-times">12/11/2026 - Shield times by difficulty</a></li>
+      <li><a href="#nov12-v02">12/11/2026 - Version prefix 0.2</a></li>
     </ol>
   </nav>
 
@@ -605,6 +606,26 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        <code class="inline">SHIELD_DURATION_*</code> /
        <code class="inline">SHIELD_RECHARGE_*</code> macros were removed from
        <code class="inline">config.h</code>.</p>
+  </section>
+
+  <section class="card" id="nov12-v02">
+    <h2>12/11/2026 (with Bimo) - Version prefix 0.2</h2>
+    <p>The version prefix is now 0.2. The last number is still the total
+       commit count (<code class="inline">git rev-list --count HEAD</code>),
+       not a count from a 0.2 base tag, so this release is
+       <code class="inline">V0.2.42</code> (the next commit after
+       <code class="inline">V0.1.41</code>). The fallback without
+       <code class="inline">src/version.h</code> is
+       <code class="inline">V0.2.DEV</code>. Annotated tag
+       <code class="inline">v0.2.42</code>.</p>
+    <p><code class="inline">run.bat build</code> writes
+       <code class="inline">V0.2.xx</code> to
+       <code class="inline">src/version.h</code> with Python so
+       <code class="inline">echo</code> no longer leaves a trailing space,
+       and it deletes every <code class="inline">out/src/*.o</code> before
+       compiling because several modules include the version through
+       <code class="inline">game.h</code>. The title and pause screens show
+       the new label.</p>
   </section>
 
   <footer>

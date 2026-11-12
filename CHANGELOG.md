@@ -3,6 +3,19 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 13) - Salto a la versión 0.2 (AMH + Bimo)
+
+### Cambiado
+- El prefijo de la versión pasa de `V0.1` a `V0.2`. El último número sigue
+  siendo el conteo total de commits (`git rev-list --count HEAD`), no se
+  reinicia ni se cuenta desde una etiqueta, así que esta entrega es
+  `V0.2.42`. Si no existe `src/version.h`, el juego muestra `V0.2.DEV`.
+- `run.bat build` genera `V0.2.xx` sin el espacio de más que dejaba `echo`,
+  y borra todos los `out\src\*.o` antes de compilar (varios módulos
+  incluyen la versión a través de `game.h`). El título y la pausa la
+  muestran igual que antes.
+- Etiqueta anotada `v0.2.42` en este commit.
+
 ## 2026-11-12 (tarde 12) - Tiempos del escudo según la dificultad (AMH + Bimo)
 
 ### Cambiado

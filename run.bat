@@ -8,8 +8,8 @@ if "%GDK%"=="" set GDK=C:\tools\SGDK
 cd /d "%~dp0"
 if /i "%~1"=="build" (
     call :version
-    rem main.c depende de version.h; borra su objeto para que siempre tome la version nueva.
-    if exist "out\src\main.o" del /q "out\src\main.o"
+    rem Varios modulos incluyen GAME_VERSION via game.h; hay que borrar todos los .o.
+    del /q "out\src\*.o" >nul 2>&1
     "%GDK%\bin\make.exe" -f "%GDK%\makefile.gen" || exit /b 1
 )
 if not exist "out\rom.bin" (
@@ -20,10 +20,11 @@ start "" "%BLASTEM%" "%~dp0out\rom.bin"
 exit /b 0
 
 :version
-rem Version = V0.1.xx, xx = numero de commits del repo (2 digitos minimo).
+rem Version = V0.2.xx, xx = numero de commits del repo (2 digitos minimo).
 set BUILD=00
 for /f %%c in ('git rev-list --count HEAD 2^>nul') do set BUILD=%%c
 if %BUILD% LSS 10 set BUILD=0%BUILD%
-> src\version.h echo #define GAME_VERSION "V0.1.%BUILD%"
-echo Version: V0.1.%BUILD%
+rem Python evita el espacio final que deja echo y escribe CRLF exacto.
+python -c "from pathlib import Path; Path('src/version.h').write_bytes('#define GAME_VERSION \"V0.2.%BUILD%\"\r\n'.encode())"
+echo Version: V0.2.%BUILD%
 exit /b 0

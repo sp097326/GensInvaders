@@ -26,8 +26,10 @@ From the project folder:
 The ROM ends up in `out/rom.bin` (256 KB).
 
 To play it, run `run.bat` from the project root (or `run.bat build` to compile first).
-`run.bat build` also writes `src/version.h` with the version `V0.1.xx`, where xx is the
-number of git commits; build after committing so the version matches GitHub.
+`run.bat build` also writes `src/version.h` with the version `V0.2.xx`, where xx is the
+total number of git commits (`git rev-list --count HEAD`); the 0.2 prefix marks this
+stage of the game, and the last number is not reset. Build after committing so the
+version matches GitHub. If `version.h` is missing, the game shows `V0.2.DEV`.
 It opens the ROM in BlastEm 0.6.2, installed at `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
 BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (RapidFire), D = C (shield), Enter = START.
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
@@ -38,7 +40,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 
 * inc/config.h — shared gameplay constants (formation size, edges, bullet caps, lives, SFX ids). Tunables that change by difficulty stay in the difficulty table.
 * inc/game.h — GameEntity, GameState, killGameEntity / 
-eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when present, otherwise V0.1.DEV).
+eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when present, otherwise V0.2.DEV).
 * difficulty.c/.h — DifficultyConfig table, names, current difficulty, difficulty_config() / difficulty_cycle().
 * ullets.c/.h — player and enemy bullet pools, shooting, movement and despawn.
 * hud.c/.h — score / ships / difficulty lines, centered text, overlay clear.
@@ -158,6 +160,9 @@ HISTORY:
                 table: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
                 Seconds are converted to frames with IS_PAL_SYSTEM
                 (x60 NTSC, x50 PAL). The HUD still shows remaining seconds.
+*       12/11/26 - Version prefix raised to 0.2. The last number is still
+                the total git commit count (this release is V0.2.42).
+                Fallback label is V0.2.DEV. Tagged v0.2.42.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -275,3 +280,7 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **Shield times by difficulty (later still on Nov 12)**
 * After playtesting, 5 s of shield felt too long. Duration and recharge moved into the difficulty table (`shieldDurationSec` / `shieldRechargeSec`): EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
 * `powerups` still converts those seconds to frames with `IS_PAL_SYSTEM` (x60 NTSC, x50 PAL) at reset, so the wall-clock time is the same on both systems. The HUD continues to show remaining seconds (`ESC: ON n`, `ESC: ns`). The fixed `SHIELD_DURATION_*` / `SHIELD_RECHARGE_*` macros were removed from `config.h`.
+
+**Version 0.2 (later still on Nov 12)**
+* The version prefix is now 0.2. The last number is still the total commit count (`git rev-list --count HEAD`), not a count from a 0.2 base tag, so this release is V0.2.42 (the next commit after V0.1.41). The fallback without `src/version.h` is `V0.2.DEV`. Annotated tag `v0.2.42`.
+* `run.bat build` writes `V0.2.xx` to `src/version.h` with Python so `echo` no longer leaves a trailing space, and it deletes every `out/src/*.o` before compiling because several modules include the version through `game.h`.
