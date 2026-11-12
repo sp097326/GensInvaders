@@ -14,6 +14,7 @@
 #include "game.h"
 #include "difficulty.h"
 #include "bullets.h"
+#include "hud.h"
 
 /* Per-row look and scoring. Swap spriteDef later for a different ship graphic;
  * for now both rows use &ship, with PAL3 (tinted) on the bottom row. */
@@ -44,7 +45,6 @@ GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
 u16 enemiesLeft = 0;
 u16 powerupTimer = 0;
 int score = 0;
-char hud_string[40] = "";
 bool powerOn = 0;
 GameState gameState = STATE_TITLE;
 u16 titleCursor = TITLE_OPT_START;
@@ -75,45 +75,22 @@ void updateTitlePulse();
 
 /* Auxiliary functions for game processing */
 
-void updateScoreDisplay() {
-    sprintf(hud_string, "SCORE: %d - LEFT: %d - SHIPS: %d", score, enemiesLeft, lives);
-    VDP_clearText(0,0,40);
-    VDP_drawText(hud_string, 0,0);
-    VDP_clearText(0,1,40);
-    sprintf(hud_string, "DIFF: %s", difficulty_name());
-    VDP_drawText(hud_string, 0,1);
-}
-
-void clearHud() {
-    VDP_clearText(0, 0, 40);
-    VDP_clearText(0, 1, 40);
-}
-
 /* Game state helpers ------------------------------------------------------ */
-
-/* Draws a message centered on the 40-column text plane, on row y. */
-void drawCenteredText(const char* text, u16 y) {
-    u16 len = strlen(text);
-    VDP_drawText(text, (40 - len) / 2, y);
-}
 
 void showEndScreen(GameState newState) {
     gameState = newState;
     player.velx = 0;
     if (newState == STATE_WIN) {
-        drawCenteredText("YOU WIN!", 12);
+        hud_drawCentered("YOU WIN!", 12);
     } else {
-        drawCenteredText("GAME OVER", 12);
+        hud_drawCentered("GAME OVER", 12);
     }
-    drawCenteredText("PRESS START", 14);
+    hud_drawCentered("PRESS START", 14);
 }
 
 /* Clears the overlay rows used by the menu, pause and end screens. */
 void clearEndScreen() {
-    u16 row;
-    for (row = 10; row <= 18; row++) {
-        VDP_clearText(0, row, 40);
-    }
+    hud_clearOverlay();
 }
 
 /* Pause screen: START freezes the action and shows the game version. */
@@ -122,11 +99,11 @@ void pauseGame() {
     gameState = STATE_PAUSED;
     player.velx = 0;
     SPR_setAnim(player.sprite, ANIM_STRAIGHT);
-    drawCenteredText("PAUSED", 12);
-    drawCenteredText("GENS INVADERS " GAME_VERSION, 14);
+    hud_drawCentered("PAUSED", 12);
+    hud_drawCentered("GENS INVADERS " GAME_VERSION, 14);
     sprintf(line, "DIFFICULTY: %s", difficulty_name());
-    drawCenteredText(line, 16);
-    drawCenteredText("PRESS START", 18);
+    hud_drawCentered(line, 16);
+    hud_drawCentered("PRESS START", 18);
 }
 
 void resumeGame() {
@@ -264,11 +241,11 @@ void drawTitleMenu() {
     VDP_clearText(0, 15, 40);
     VDP_clearText(0, 17, 40);
     VDP_clearText(0, 19, 40);
-    drawCenteredText(GAME_VERSION, 15);
+    hud_drawCentered(GAME_VERSION, 15);
     sprintf(line, "%c START GAME (INICIAR)", (titleCursor == TITLE_OPT_START) ? '>' : ' ');
-    drawCenteredText(line, 17);
+    hud_drawCentered(line, 17);
     sprintf(line, "%c DIFFICULTY: %s", (titleCursor == TITLE_OPT_DIFF) ? '>' : ' ', difficulty_name());
-    drawCenteredText(line, 19);
+    hud_drawCentered(line, 19);
 }
 
 void cycleDifficulty(s16 dir) {
@@ -644,7 +621,7 @@ void playerHit() {
     // Own channel (CH2) and top priority (15) so nothing can cut the explosion.
     XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
     lives--;
-    updateScoreDisplay();
+    hud_updateScore(score, enemiesLeft, lives);
     if (lives == 0) {
         showEndScreen(STATE_GAME_OVER);
     } else {
@@ -766,7 +743,7 @@ void handleCollisions() {
                         bullets_despawnPlayer(b);
                         enemiesLeft--;
                         score += e->points;
-                        updateScoreDisplay();
+                        hud_updateScore(score, enemiesLeft, lives);
                         if (enemiesLeft == 0) {
                             showEndScreen(STATE_WIN);
                             return;
@@ -881,7 +858,7 @@ void resetGame() {
     placeEnemies();
     score = 0;
     clearEndScreen();
-    updateScoreDisplay();
+    hud_updateScore(score, enemiesLeft, lives);
     gameState = STATE_PLAYING;
 }
 
