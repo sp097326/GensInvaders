@@ -3,15 +3,18 @@
 static Difficulty currentDiff = DIFF_NORMAL;
 
 static const DifficultyConfig difficultyTable[DIFF_COUNT] = {
-    /* EASY:   no descent, 1 bullet, fires regularly every 90 frames */
-    { 0,                   1, 1, 10,  90, 1, 5, 0 },
+    /* EASY:   no descent, 1 bullet, fires regularly every 90 frames;
+     *         shield 5 s / recharge 10 s. */
+    { 0,                   1, 1, 10,  90, 1, 5, 0, 5, 10 },
     /* NORMAL: 8 px step, 2 shots / cap 2, every 120 frames;
-     *         rowsOpposite like HARD (row 0 right, row 1 left, bounce alone). */
-    { ENEMY_STEP_DOWN,     2, 2, 10, SHOT_INTERVAL, 1, 5, 1 },
+     *         rowsOpposite like HARD (row 0 right, row 1 left, bounce alone);
+     *         shield 3 s / recharge 20 s. */
+    { ENEMY_STEP_DOWN,     2, 2, 10, SHOT_INTERVAL, 1, 5, 1, 3, 20 },
     /* HARD:   16 px step, twice as fast sideways, volley every 60 frames,
      *         slightly faster bullets; cap 4 so consecutive volleys can overlap.
-     *         rowsOpposite: row 0 goes right, row 1 goes left, each bounces alone. */
-    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6, 1 }
+     *         rowsOpposite: row 0 goes right, row 1 goes left, each bounces alone;
+     *         shield 2 s / recharge 30 s. */
+    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6, 1, 2, 30 }
 };
 
 static const char* difficultyNames[DIFF_COUNT] = {

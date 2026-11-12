@@ -26,6 +26,8 @@ typedef struct
     u16 bulletSpeed;        /* downward speed of each enemy bullet */
     u8  rowsOpposite;       /* 1 = each row has its own direction and bounces alone.
                              * On in NORMAL and HARD; set EASY to 1 to enable it there too. */
+    u16 shieldDurationSec;  /* wall-clock seconds the shield stays up */
+    u16 shieldRechargeSec;  /* wall-clock seconds before it can be used again */
 } DifficultyConfig;
 
 void difficulty_init(void);

@@ -4,6 +4,7 @@
 #include "bullets.h"
 #include "player.h"
 #include "hud.h"
+#include "difficulty.h"
 
 /* Reserved for a future on-screen pickup; spawn/position are still stubs. */
 static GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
@@ -14,19 +15,16 @@ static Sprite* shieldSpr = NULL;
 static u16 shieldActive = 0;
 static u16 shieldTimer = 0;
 static u16 shieldRecharge = 0;
-static u16 shieldDuration = SHIELD_DURATION_NTSC;
-static u16 shieldRechargeMax = SHIELD_RECHARGE_NTSC;
+static u16 shieldDuration = 0;
+static u16 shieldRechargeMax = 0;
 static u16 shieldHudMode = 0xFFFF;
 static u16 shieldHudSecs = 0xFFFF;
 
 static void applyShieldTimings(void) {
-    if (IS_PAL_SYSTEM) {
-        shieldDuration = SHIELD_DURATION_PAL;
-        shieldRechargeMax = SHIELD_RECHARGE_PAL;
-    } else {
-        shieldDuration = SHIELD_DURATION_NTSC;
-        shieldRechargeMax = SHIELD_RECHARGE_NTSC;
-    }
+    const DifficultyConfig* cfg = difficulty_config();
+    u16 rate = IS_PAL_SYSTEM ? 50 : 60;
+    shieldDuration = cfg->shieldDurationSec * rate;
+    shieldRechargeMax = cfg->shieldRechargeSec * rate;
 }
 
 static void hideShieldSprite(void) {

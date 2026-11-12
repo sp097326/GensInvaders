@@ -37,13 +37,9 @@
 #define POWER_ON 1
 #define POWER_OFF 0
 
-/* Shield (button C). 5 s up, 30 s recharge, in wall-clock time.
- * The project otherwise assumes NTSC frame counts; at reset we pick
- * the PAL or NTSC duration so both systems last the same real time. */
-#define SHIELD_DURATION_NTSC 300
-#define SHIELD_RECHARGE_NTSC 1800
-#define SHIELD_DURATION_PAL  250
-#define SHIELD_RECHARGE_PAL  1500
+/* Shield (button C). Duration and recharge (wall-clock seconds) live in
+ * the difficulty table. powerups converts them to frames with
+ * IS_PAL_SYSTEM (x60 NTSC, x50 PAL) so the real time is the same on both. */
 #define SHIELD_SPRITE_SIZE   32
 #define SHIELD_OFFSET        8   /* (32-16)/2, centers the bubble on the ship */
 

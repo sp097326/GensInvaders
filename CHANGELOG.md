@@ -3,6 +3,19 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-12 (tarde 12) - Tiempos del escudo según la dificultad (AMH + Bimo)
+
+### Cambiado
+- La duración y la recarga del escudo ya no son fijas (5 s / 30 s). Pasan a la
+  tabla de dificultad (`shieldDurationSec` y `shieldRechargeSec`): FÁCIL 5 s
+  activo y 10 s de recarga, NORMAL 3 s / 20 s, DIFÍCIL 2 s / 30 s.
+- `powerups` convierte esos segundos a cuadros con `IS_PAL_SYSTEM` (×60 en
+  NTSC, ×50 en PAL), igual que antes, para que el tiempo real no cambie de
+  un sistema a otro. El HUD sigue mostrando los segundos que quedan
+  (`ESC: ON n` y `ESC: ns`).
+- Los macros fijos `SHIELD_DURATION_*` / `SHIELD_RECHARGE_*` salen de
+  `config.h`; el tamaño del sprite no cambia.
+
 ## 2026-11-12 (tarde 11) - Power-up de escudo (AMH + Bimo)
 
 ### Agregado

@@ -47,7 +47,7 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * player.c/.h — ship sprite, movement bounds, lives, respawn and invulnerability blink.
 * collision.c/.h — AABB checks; player bullets vs enemies and enemy bullets vs the player.
 * 	itle.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
-* powerups.c/.h — RapidFire (A) and the Shield ability (C: 5 s, 30 s recharge); on-screen pickup entity reserved for later.
+* powerups.c/.h — RapidFire (A) and the Shield ability (C; duration and recharge come from the difficulty table); on-screen pickup entity reserved for later.
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
 * src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
 
@@ -58,7 +58,8 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * D-pad left/right: move the ship (during play).
 * B: shoot.
 * A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
-* C: activate the shield if it is charged (5 s of immunity, then 30 s to recharge).
+* C: activate the shield if it is charged. Duration and recharge depend on
+        difficulty: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
         Starts ready at the beginning of a match. Not usable while exploding, dead,
         paused, or recharging. On BlastEm the default key for C is D.
 * START: during play, pause / resume (the pause screen shows the game version and the
@@ -153,6 +154,10 @@ HISTORY:
                 (blocks enemy bullets), then 30 s recharge. Starts
                 charged. HUD shows ESC: LISTO / ON n / ns. Recharge
                 state is kept on death; a new match starts ready.
+*       12/11/26 - Shield duration and recharge now follow the difficulty
+                table: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
+                Seconds are converted to frames with IS_PAL_SYSTEM
+                (x60 NTSC, x50 PAL). The HUD still shows remaining seconds.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -166,13 +171,15 @@ TODO:
         - [Done 12/11/26] Can two enemies fire at once?
         - Difficulty values are data-driven (difficultyTable in difficulty.c): step down, max
           enemy bullets, shots per volley, fire chance, shot interval, enemy speed,
-          bullet speed and rowsOpposite can be tuned there without changing the
-          movement or fire code. On in NORMAL and HARD; set EASY's rowsOpposite to 1 to enable it there too.
+          bullet speed, rowsOpposite, and shield duration / recharge (seconds)
+          can be tuned there without changing the movement or fire code. On in
+          NORMAL and HARD; set EASY's rowsOpposite to 1 to enable it there too.
+          Shield times: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
         - [Done 12/11/26] Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
           Large blocky GENS / INVADERS logo drawn with solid tiles on plane A.
-        - [Done 12/11/26] Shield power-up (button C): 5 s of immunity, then 30 s
-          to recharge. Ready at the start of a match. HUD shows LISTO or the
-          remaining seconds.
+        - [Done 12/11/26] Shield power-up (button C). Duration and recharge follow
+          the difficulty table (EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s).
+          Ready at the start of a match. HUD shows LISTO or the remaining seconds.
         - More powerups: ship speed up? a bomb?
         - [Done 12/11/26] Formation steps down on each turn (classic invaders) and GAME OVER if it reaches the player.
 
@@ -264,3 +271,7 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * While active, a 32x32 4-frame pulsing blue/white bubble (`res/tiles/imgshield.bmp`, same PAL1, color 0 transparent) follows the ship. Enemy bullets that touch the 32x32 box are destroyed and do no damage. This game has no ship-vs-enemy body collision, so the shield only has to stop bullets. Short PCM blips play on channel 1 when the shield goes up and when the recharge finishes.
 * Cannot be used during the player explosion, while dead, while paused, or during recharge. The timer only ticks in STATE_PLAYING, so pause freezes it. On life loss the recharge (or LISTO) state is kept; a bullet cannot kill the player while the shield is up, so in practice the recharge just keeps running through the explosion and respawn. `powerups_reset` on a new match sets it back to ready. HUD field on the right of line 2: `ESC: LISTO`, `ESC: ON n`, or `ESC: ns`, redrawn with the score line so the layout stays intact.
 * One extra hardware sprite (32x32 = 1 VDP sprite, 16 tiles). Real sprite count is about 27 of 80. The earlier "70" budget counted each 16x16 ship as 4 sprites; this ability adds one real VDP sprite, not 16.
+
+**Shield times by difficulty (later still on Nov 12)**
+* After playtesting, 5 s of shield felt too long. Duration and recharge moved into the difficulty table (`shieldDurationSec` / `shieldRechargeSec`): EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
+* `powerups` still converts those seconds to frames with `IS_PAL_SYSTEM` (x60 NTSC, x50 PAL) at reset, so the wall-clock time is the same on both systems. The HUD continues to show remaining seconds (`ESC: ON n`, `ESC: ns`). The fixed `SHIELD_DURATION_*` / `SHIELD_RECHARGE_*` macros were removed from `config.h`.
