@@ -153,6 +153,7 @@
       <li><a href="#nov13-hud">13/11/2026 - HUD ship icons and readable 1UP banner</a></li>
       <li><a href="#nov13-livespos">13/11/2026 - Life icons moved to the bottom-left</a></li>
       <li><a href="#nov13-warp">13/11/2026 - Between-wave warp animation</a></li>
+      <li><a href="#nov13-hum">13/11/2026 - Shield hum while active</a></li>
     </ol>
   </nav>
 
@@ -829,6 +830,20 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        shield keeps following the ship. The flame is a single hardware
        sprite and sits just above the life icons, so it does not add to
        a busy scanline.</p>
+  </section>
+
+  <section class="card" id="nov13-hum">
+    <h2>13/11/2026 (with Bimo) - Shield hum while active</h2>
+    <p>The shield activation sound seemed to cut off because
+       <code class="inline">shield_on.wav</code> is only 0.16 s, not
+       because shots or explosions stole its channel. A new 2 s hum
+       (<code class="inline">res/sounds/shield_hum.wav</code>, PCM id
+       71) now plays on CH1 for the whole time the shield is up, and
+       is retriggered on EASY (5 s) and NORMAL (3 s). It stops when
+       the shield ends, on pause, on death, on GAME OVER and on the
+       title screen, and comes back after unpausing or a respawn if
+       the shield is still active. During the between-wave warp the
+       shield stays up, so the hum does too.</p>
   </section>
 
   <footer>

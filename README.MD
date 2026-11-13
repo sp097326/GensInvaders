@@ -219,6 +219,9 @@ HISTORY:
                  ship lifts a little, then the next two rows slide in
                  from the top under the OLEADA N banner (~2.5 s).
                  Tagged v0.3.52.
+*       13/11/26 - Shield hum lasts for the whole active duration
+                 (2 s sample on CH1, retriggered on EASY/NORMAL). The
+                 old 0.16 s blip was just too short. Tagged v0.3.53.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -261,6 +264,8 @@ TODO:
           with the "+1 NAVE" banner beside them.
         - [Done 13/11/26] Between-wave transition: starfield warp,
           engine flame, and the next formation sliding in from the top.
+        - [Done 13/11/26] Shield sound lasts for the whole active
+          duration (2 s hum on CH1, not a 0.16 s blip).
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -416,3 +421,7 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Clearing a wave no longer jumps straight to the next formation after a 1.5 s banner. There is now a ~2.5 s transition (150 NTSC / 125 PAL frames) with `OLEADA N` on screen the whole time. Enemy bullets are cleared; score, lives, the shield (including its timers) and RapidFire are kept. Player bullets already in the air can finish; new shots, RapidFire toggles and a fresh shield are blocked. Horizontal movement and pause still work. The 1UP banner and life icons are unchanged (the 8x8 flame sits at Y=208-215, just above the icons on row 27).
 * The ship rises 8 pixels and an 8x8 two-frame exhaust flame (`res/tiles/imgflame.bmp`, PAL1, one hardware sprite) flickers under the hull. The starfield step ramps from 2 to 14 and back down. For the first ~1.25 s the next two rows wait fully above the screen; in the last 1.25 s they slide into their home slots (80 px) as the stars slow and the flame goes out. Wave 1 still starts in place, with no warp.
 * Sprite budget: one extra 8x8 sprite (35 allocated, still well under 80). The flame does not share a scanline with the 16x16 ship and only overlaps the bottom of the shield if it is already on, so the 20-sprites-per-line limit is not a concern.
+
+**Shield hum while active (13/11/2026)**
+* The activation sound seemed to cut off, but nothing was stealing its channel. `shield_on.wav` is only 0.16 s; shots (CH3), explosions (CH2) and the 1UP jingle (CH4) already use other PCM channels. A new 2 s hum (`res/sounds/shield_hum.wav`, PCM id 71) plays on CH1 (the existing shield channel) for the whole time the shield is up: 2 s on HARD (one play), 3 s on NORMAL and 5 s on EASY (the sample is retriggered when it ends). It starts with the original activation attack so the press still has a punch, then sits under the action as a quieter drone.
+* The hum is stopped when the shield timer ends, on pause, on death, on GAME OVER and on the title screen. If the shield is still active after unpausing or after a respawn, it starts again. During the between-wave warp the shield stays up, so the hum stays too. The "shield ready" ding remains on CH1 and only plays after the hum has stopped. The unused short `SFX_SHIELD_ON` sample is still in the ROM but is no longer started on its own.

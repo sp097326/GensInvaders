@@ -8,6 +8,7 @@ extern const u8 xplosion[6656];
 extern const u8 intro[70144];
 extern const u8 shieldon[2304];
 extern const u8 shieldrdy[2304];
+extern const u8 shieldhum[28160];
 extern const u8 enxplode[1536];
 extern const u8 oneup[3328];
 extern const Palette bg_palette;

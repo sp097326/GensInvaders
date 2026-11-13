@@ -3,6 +3,25 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Zumbido del escudo mientras está activo (AMH + Bimo)
+
+### Corregido
+- El sonido al activar el escudo duraba solo 0,16 s (`shield_on.wav`),
+  por eso parecía que se cortaba. Los disparos (canal 3), las explosiones
+  (canal 2) y el 1UP (canal 4) no lo interrumpían: el corte era la
+  propia muestra, demasiado corta.
+
+### Añadido
+- Un zumbido de 2 s (`res/sounds/shield_hum.wav`, id 71) en el canal 1,
+  el mismo del escudo, que dura todo el tiempo que el escudo está
+  activo (2 s en Difícil, 3 s en Normal, 5 s en Fácil; si dura más de
+  2 s se relanza). Se detiene al acabarse el escudo, al pausar, al
+  morir, en GAME OVER y al volver al título. Si el escudo sigue activo
+  al reanudar o al reaparecer, el zumbido vuelve. Durante el warp entre
+  oleadas el escudo sigue en pie, así que el sonido también. El aviso
+  de escudo listo sigue en el canal 1, pero solo suena cuando el zumbido
+  ya terminó.
+
 ## 2026-11-13 - Animación de aceleración entre oleadas (AMH + Bimo)
 
 ### Añadido

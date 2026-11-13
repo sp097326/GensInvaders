@@ -54,6 +54,7 @@ static void showEndScreen(GameState newState) {
     gameState = newState;
     player_get()->velx = 0;
     stopWaveWarp();
+    powerups_muteShieldSound();
     hud_hideExtraLife();
     if (newState == STATE_WIN) {
         clearEndScreen();
@@ -84,6 +85,7 @@ static void pauseGame() {
     char line[28];
     gameState = STATE_PAUSED;
     player_stop();
+    powerups_muteShieldSound();
     hud_drawCentered("PAUSED", 12);
     hud_drawCentered("GENS INVADERS " GAME_VERSION, 14);
     sprintf(line, "DIFFICULTY: %s", difficulty_name());
@@ -97,6 +99,7 @@ static void resumeGame() {
     clearEndScreen();
     gameState = STATE_PLAYING;
     if (wavePauseTimer > 0) drawWaveBanner();
+    powerups_unmuteShieldSound();
 }
 
 /* Hide every game sprite and reset bullet counters. Used by the title screen. */

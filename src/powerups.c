@@ -21,6 +21,51 @@ static u16 shieldHudMode = 0xFFFF;
 static u16 shieldHudLevel = 0xFFFF;
 static u16 shieldHudBlink = 0xFFFF;
 static u16 shieldReadyBlink = 0;
+static u16 shieldHumMuted = 0;
+static u16 shieldHumPlaying = 0;
+
+static void stopShieldHum(void) {
+    if (shieldHumPlaying) {
+        XGM_stopPlayPCM(SOUND_PCM_CH1);
+        shieldHumPlaying = 0;
+    }
+}
+
+static void playShieldHum(void) {
+    XGM_startPlayPCM(SFX_SHIELD_HUM, 13, SOUND_PCM_CH1);
+    shieldHumPlaying = 1;
+}
+
+/* Keep a 2 s hum going on CH1 for as long as the shield is up. Shots
+ * (CH3), explosions (CH2) and the 1UP jingle (CH4) cannot cut it.
+ * The sample is retriggered if the difficulty lasts longer than 2 s. */
+static void shieldHumUpdate(void) {
+    u16 want;
+
+    if (shieldHumMuted) return;
+    want = 0;
+    if (shieldActive && (shieldTimer > 0) &&
+        player_get()->health && !player_isExploding()) {
+        want = 1;
+    }
+    if (!want) {
+        stopShieldHum();
+        return;
+    }
+    if (!XGM_isPlayingPCM(SOUND_PCM_CH1_MSK)) {
+        playShieldHum();
+    }
+}
+
+void powerups_muteShieldSound(void) {
+    shieldHumMuted = 1;
+    stopShieldHum();
+}
+
+void powerups_unmuteShieldSound(void) {
+    shieldHumMuted = 0;
+    shieldHumUpdate();
+}
 
 static void applyShieldTimings(void) {
     const DifficultyConfig* cfg = difficulty_config();
@@ -159,7 +204,10 @@ void powerups_update(void) {
         if (shieldTimer == 0) {
             shieldActive = 0;
             hideShieldSprite();
+            stopShieldHum();
             shieldRecharge = shieldRechargeMax;
+        } else {
+            shieldHumUpdate();
         }
         shieldRefreshHud(0);
     } else if (shieldRecharge > 0) {
@@ -184,11 +232,14 @@ void powerups_reset(void) {
     shieldRecharge = 0;
     shieldReadyBlink = 0;
     hideShieldSprite();
+    shieldHumMuted = 0;
+    stopShieldHum();
     shieldRefreshHud(1);
 }
 
 void powerups_hide(void) {
     hideShieldSprite();
+    stopShieldHum();
 }
 
 void powerups_toggle(void) {
@@ -210,7 +261,8 @@ void powerups_tryShield(void) {
     shieldActive = 1;
     shieldTimer = shieldDuration;
     showShieldSprite();
-    XGM_startPlayPCM(SFX_SHIELD_ON, 12, SOUND_PCM_CH1);
+    shieldHumMuted = 0;
+    playShieldHum();
     shieldRefreshHud(1);
 }
 

@@ -32,6 +32,7 @@
 #define SFX_XPLOSION 65
 #define SFX_SHIELD_ON 67
 #define SFX_SHIELD_READY 68
+#define SFX_SHIELD_HUM 71    /* 2 s loop; plays on CH1 for the shield duration */
 #define SFX_ENEMY_EXP 69
 #define SFX_1UP 70
 
