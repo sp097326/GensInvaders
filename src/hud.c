@@ -14,13 +14,21 @@
 #define BAR_BAND_Y0        2
 #define BAR_BAND_Y1        5
 
-/* Nine 8x8 ship icons on the right of row 0 (cols 31-39), left-aligned
- * so a new life appears to the right of the ones already there. SCORE
- * and LEFT stay on the left; even "SCORE: 999999  LEFT: 14" ends at
- * column 24, leaving a gap before the icons. */
-#define LIVES_ICON_X       31
-#define LIVES_ICON_Y       0
+/* Nine 8x8 ship icons at the bottom-left of the visible plane (row 27,
+ * pixels 216-223, cols 0-8), left-aligned so a new life appears to the
+ * right of the ones already there. The player sits at Y=192 (pixels
+ * 192-207) and the 32px shield reaches Y=216, so this row is just
+ * below the bubble and never overlaps the ship; PLAYER_START_Y stays
+ * put. High priority keeps the icons above enemy bullets and a late
+ * invasion in that corner. Bottom-left is the classic arcade corner
+ * and frees the already busy top HUD.
+ * "+1 NAVE" sits on the same row, just after the 9 icon slots. */
+#define LIVES_ICON_X        0
+#define LIVES_ICON_Y       27
 #define LIVES_ICON_SLOTS   LIVES_CAP
+#define EXTRA_LIFE_TEXT_X  10
+#define EXTRA_LIFE_TEXT_Y  27
+#define EXTRA_LIFE_TEXT_W  30
 
 static char hud_string[40] = "";
 static u16 shieldState = SHIELD_HUD_READY;
@@ -157,10 +165,8 @@ void hud_init(void) {
 void hud_updateScore(int score, u16 enemiesLeft, u16 lives) {
     hudLives = (lives > LIVES_CAP) ? LIVES_CAP : lives;
 
-    /* Leave columns 31-39 alone for the ship icons. */
     sprintf(hud_string, "SCORE: %d  LEFT: %d", score, enemiesLeft);
-    hud_string[LIVES_ICON_X] = 0;
-    VDP_clearText(0, 0, LIVES_ICON_X);
+    VDP_clearText(0, 0, 40);
     VDP_drawText(hud_string, 0, 0);
     drawLivesIcons();
     VDP_clearText(0, 1, SHIELD_BAR_X);
@@ -189,7 +195,7 @@ void hud_clear(void) {
     hudLives = 0;
     VDP_clearText(0, 0, 40);
     VDP_clearText(0, 1, 40);
-    VDP_clearText(0, 2, 40);
+    VDP_clearText(0, LIVES_ICON_Y, 40);
     barDrawn = 0;
 }
 
@@ -215,11 +221,10 @@ void hud_showExtraLife(u16 granted) {
     } else {
         sprintf(extraLifeText, "+%u NAVE", granted);
     }
-    /* Draw the banner once and leave it. Clearing and redrawing every
-     * frame during active display caused flickering horizontal lines
-     * and made the text almost unreadable. */
-    VDP_clearText(0, 2, 40);
-    hud_drawCentered(extraLifeText, 2);
+    /* Draw the banner once, on the bottom row next to the icons, and
+     * leave it. Do not clear the icon slots. */
+    VDP_clearText(EXTRA_LIFE_TEXT_X, EXTRA_LIFE_TEXT_Y, EXTRA_LIFE_TEXT_W);
+    VDP_drawText(extraLifeText, EXTRA_LIFE_TEXT_X, EXTRA_LIFE_TEXT_Y);
     extraLifeGranted = granted;
     extraLifeIconOn = 1;
     extraLifeTimer = IS_PAL_SYSTEM ? EXTRA_LIFE_BANNER_PAL : EXTRA_LIFE_BANNER_NTSC;
@@ -231,7 +236,7 @@ void hud_updateExtraLife(void) {
     if (extraLifeTimer == 0) return;
     extraLifeTimer--;
     if (extraLifeTimer == 0) {
-        VDP_clearText(0, 2, 40);
+        VDP_clearText(EXTRA_LIFE_TEXT_X, EXTRA_LIFE_TEXT_Y, EXTRA_LIFE_TEXT_W);
         extraLifeGranted = 0;
         extraLifeIconOn = 1;
         drawLivesIcons();
@@ -249,5 +254,5 @@ void hud_hideExtraLife(void) {
     extraLifeTimer = 0;
     extraLifeGranted = 0;
     extraLifeIconOn = 1;
-    VDP_clearText(0, 2, 40);
+    VDP_clearText(EXTRA_LIFE_TEXT_X, EXTRA_LIFE_TEXT_Y, EXTRA_LIFE_TEXT_W);
 }

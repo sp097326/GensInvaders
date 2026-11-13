@@ -3,6 +3,19 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Miniaturas de vidas abajo a la izquierda (AMH + Bimo)
+
+### Cambiado
+- Las miniaturas de naves pasan de la esquina superior derecha a la
+  inferior izquierda (fila 27, píxeles 216-223, columnas 0-8). Esa fila
+  queda justo debajo del escudo (que llega a Y=216) y no se solapa con
+  la nave (Y=192-207), así que no hace falta subir al jugador. Siguen
+  en el plano A, con prioridad alta: las balas enemigas y una invasión
+  tardía en esa esquina pasan por detrás. El letrero `+1 NAVE` se mueve
+  a la misma fila, a la derecha de los iconos, para no cargar más la
+  parte de arriba. La esquina superior derecha del HUD queda libre.
+  El icono nuevo sigue parpadeando al ganar una vida.
+
 ## 2026-11-13 - Iconos de naves en el HUD y letrero 1UP legible (AMH + Bimo)
 
 ### Corregido
