@@ -147,6 +147,7 @@
       <li><a href="#nov12-invasion">12/11/2026 - Invasion GAME OVER on body contact</a></li>
       <li><a href="#nov12-enemy-exp">12/11/2026 - Enemy explosions</a></li>
       <li><a href="#nov13-waves">13/11/2026 - Endless waves and version 0.3</a></li>
+      <li><a href="#nov13-scores">13/11/2026 - TOP 5 high-score table</a></li>
     </ol>
   </nav>
 
@@ -719,6 +720,26 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        <code class="inline">V0.3.DEV</code>. Annotated tag
        <code class="inline">v0.3.46</code>. GAME OVER rules and the shield
        (bullets only) are unchanged.</p>
+  </section>
+
+  <section class="card" id="nov13-scores">
+    <h2>13/11/2026 (with Bimo) - TOP 5 high-score table</h2>
+    <p>A single table of 5 scores is saved in cartridge SRAM (magic
+       <code class="inline">GIHS</code>, format 1, checksum). Each row stores
+       3 initials, the score, the wave reached and a difficulty letter
+       (F/N/D). One shared table with a difficulty column was preferred
+       over three separate lists. Invalid SRAM is replaced with defaults
+       (GEN 1000, INV 800, UDL 600, AMH 400, BIM 200).</p>
+    <p>After GAME OVER, a score that beats 5th place (ties stay out) asks
+       for arcade initials: up/down change the letter (A-Z, space, period),
+       left/right move the cursor, A or START confirm. The table is then
+       shown under GAME OVER with a blinking <code class="inline">&gt;</code>
+       on the new row. Otherwise the table is shown immediately. START
+       still returns to the title.</p>
+    <p>The title menu has a third option, <code class="inline">PUNTAJES (TOP 5)</code>.
+       In BlastEm the save file is
+       <code class="inline">%LOCALAPPDATA%\blastem\rom\save.sram</code>.
+       Deleting it restores the defaults.</p>
   </section>
 
   <footer>

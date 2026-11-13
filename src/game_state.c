@@ -9,24 +9,49 @@
 #include "title.h"
 #include "collision.h"
 #include "explosions.h"
+#include "scores.h"
 
 static int score = 0;
 static GameState gameState = STATE_TITLE;
 static u16 menuFrames = 0;  /* ticks on every screen, used to seed the RNG on START */
 static u16 wavePauseTimer = 0;
+static s16 scoreHighlight = -1;
+static u16 scoreBlink = 0;
 
 static void resetGame(void);
 static void drawWaveBanner(void);
+static void clearEndScreen(void);
+static void drawGameOverTable(void);
+
+static void drawGameOverTable(void) {
+    clearEndScreen();
+    hud_drawCentered("GAME OVER", 10);
+    hud_drawCentered("TOP 5", 11);
+    scores_drawTable(12, scoreHighlight);
+    hud_drawCentered("PRESS START", 18);
+}
 
 static void showEndScreen(GameState newState) {
     gameState = newState;
     player_get()->velx = 0;
+    wavePauseTimer = 0;
     if (newState == STATE_WIN) {
+        clearEndScreen();
         hud_drawCentered("YOU WIN!", 12);
-    } else {
-        hud_drawCentered("GAME OVER", 12);
+        hud_drawCentered("PRESS START", 14);
+        return;
     }
-    hud_drawCentered("PRESS START", 14);
+    /* Qualifying scores go through the 3-letter entry first. */
+    if (scores_qualifies((u32)score)) {
+        gameState = STATE_NAME_ENTRY;
+        scores_entryStart((u32)score, difficulty_wave(), (u8)difficulty_current());
+        clearEndScreen();
+        scores_entryDraw();
+    } else {
+        scoreHighlight = -1;
+        gameState = STATE_GAME_OVER;
+        drawGameOverTable();
+    }
 }
 
 /* Clears the overlay rows used by the menu, pause and end screens. */
@@ -88,14 +113,20 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
     if (joy != JOY_1) return;
 
     if (gameState == STATE_TITLE) {
+        if (title_isScoresView()) {
+            if ((state & BUTTON_START & changed) || (state & BUTTON_B & changed)) {
+                title_hideScores();
+            }
+            return;
+        }
         if (state & BUTTON_UP & changed) {
-            if (title_cursor() > TITLE_OPT_START) {
-                title_setCursor(TITLE_OPT_START);
+            if (title_cursor() > 0) {
+                title_setCursor(title_cursor() - 1);
                 title_drawMenu();
             }
         } else if (state & BUTTON_DOWN & changed) {
-            if (title_cursor() < TITLE_OPT_DIFF) {
-                title_setCursor(TITLE_OPT_DIFF);
+            if (title_cursor() + 1 < TITLE_OPT_COUNT) {
+                title_setCursor(title_cursor() + 1);
                 title_drawMenu();
             }
         }
@@ -108,10 +139,16 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
                 title_cycleDifficulty(1);
             }
         }
+        if (title_cursor() == TITLE_OPT_SCORES) {
+            if ((state & BUTTON_START & changed) || (state & BUTTON_A & changed)) {
+                title_showScores();
+            }
+            return;
+        }
         if (state & BUTTON_START & changed) {
             if (title_cursor() == TITLE_OPT_START) {
                 startGameFromMenu();
-            } else {
+            } else if (title_cursor() == TITLE_OPT_DIFF) {
                 title_cycleDifficulty(1);
             }
         }
@@ -127,6 +164,16 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
     }
     if (gameState == STATE_PLAYING && (state & BUTTON_START & changed)) {
         if (!player_isExploding()) pauseGame();
+        return;
+    }
+
+    if (gameState == STATE_NAME_ENTRY) {
+        if (scores_entryJoy(changed, state)) {
+            scoreHighlight = scores_entryRank();
+            gameState = STATE_GAME_OVER;
+            scoreBlink = 0;
+            drawGameOverTable();
+        }
         return;
     }
 
@@ -239,10 +286,20 @@ void game_state_update(void) {
         }
         powerups_update();
         explosions_update();
+    } else if (gameState == STATE_NAME_ENTRY) {
+        explosions_update();
+        scores_entryUpdate();
     } else if (gameState == STATE_GAME_OVER || gameState == STATE_WIN) {
         /* Let a burst finish under the end text (last kill or invasion).
          * Pause freezes the animation, like the rest of the timers. */
         explosions_update();
+        if (gameState == STATE_GAME_OVER && scoreHighlight >= 0) {
+            scoreBlink++;
+            if ((scoreBlink & 31) == 0) {
+                /* Flash the new row so it is easy to spot in the table. */
+                scores_drawTable(12, ((scoreBlink & 32) != 0) ? -1 : scoreHighlight);
+            }
+        }
     }
 }
 

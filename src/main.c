@@ -20,6 +20,7 @@
 #include "player.h"
 #include "explosions.h"
 #include "game_state.h"
+#include "scores.h"
 
 // background scroll offset
 int offset = 0;
@@ -48,6 +49,7 @@ int main(bool hard)
     JOY_init();
     JOY_setEventHandler(&game_state_joy);
     difficulty_init();
+    scores_init();
 
     //can I place here an initial sound Pac-Man style?
     XGM_setPCM(INTRO_MUSIC,intro, sizeof(intro));

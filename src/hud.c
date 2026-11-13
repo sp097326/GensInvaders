@@ -130,7 +130,8 @@ void hud_drawCentered(const char* text, u16 y) {
 
 void hud_clearOverlay(void) {
     u16 row;
-    for (row = 10; row <= 18; row++) {
+    /* 10-22 covers GAME OVER + TOP 5 + PRESS START, and the name entry. */
+    for (row = 10; row <= 22; row++) {
         VDP_clearText(0, row, 40);
     }
 }

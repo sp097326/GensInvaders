@@ -23,6 +23,8 @@ const ROMHeader rom_header = {
 #endif
     0xE0FF0000,
     0xE0FFFFFF,
+    /* SRAM: "RA" + 0xF820 (8-bit, odd addresses) at 0x200000-0x20FFFF.
+     * Needed so emulators (BlastEm) allocate a .sram file for the TOP 5. */
     "RA",
     0xF820,
     0x00200000,

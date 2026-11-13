@@ -193,6 +193,12 @@ HISTORY:
                  prefix raised to 0.3; the last number is still the
                  total commit count (this release is V0.3.46). Fallback
                  is V0.3.DEV. Tagged v0.3.46.
+*       13/11/26 - TOP 5 high-score table saved in cartridge SRAM.
+                 After GAME OVER, a qualifying score (beats 5th place)
+                 asks for 3 arcade initials, then the table is shown
+                 under the GAME OVER text (rank, initials, score, wave,
+                 difficulty letter F/N/D). One shared table. Also
+                 reachable from the title menu (PUNTAJES). Tagged v0.3.47.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -223,6 +229,8 @@ TODO:
         - [Done 13/11/26] Endless waves: clearing a pair of rows spawns
           the next wave a bit faster (movement and fire rate), with caps
           per difficulty. The match no longer ends with YOU WIN.
+        - [Done 13/11/26] TOP 5 high-score table in SRAM, initials entry
+          after GAME OVER, and a PUNTAJES option on the title screen.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -347,3 +355,9 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
   The enemy bullet pool stays at 4, so the hardware-sprite budget does not grow with the wave number.
 * The HUD shows `OLEADA n` on line 2 at column 16, after `DIFF:` and before the `ESC` bar (fits even with 3-digit waves). The pause screen also shows the wave.
 * Version prefix is now 0.3. The last number is still the total commit count (`git rev-list --count HEAD`), not a count from a 0.3 base tag, so this release is V0.3.46. Fallback without `src/version.h` is `V0.3.DEV`. `run.bat build` writes `V0.3.xx`. Annotated tag `v0.3.46`. GAME OVER rules are unchanged; the shield still only stops bullets.
+
+**TOP 5 high scores (13/11/2026)**
+* One shared table of 5 entries is stored in cartridge SRAM (magic `GIHS`, format 1, 16-bit checksum). Each row keeps 3 initials, the score, the wave reached and a difficulty letter (F/N/D). A single table with a difficulty column was preferred over three separate lists, so scores from Easy, Normal and Hard can be compared at a glance. If the SRAM block is missing or fails the checksum, defaults are written: GEN 1000, INV 800, UDL 600, AMH 400, BIM 200 (wave 1).
+* After GAME OVER, a score that beats the current 5th place (ties stay out) opens a 3-letter initials entry: up/down cycle A-Z, space and `.`; left/right move the cursor; A or START confirm. The table is then drawn under `GAME OVER` (rows 12-16) with a blinking `>` on the new row, and `PRESS START` still returns to the title. A score that does not qualify skips the entry prompt and just shows the table. The player explosion still finishes before this screen.
+* The title menu has a third option, `PUNTAJES (TOP 5)`. START or A opens the table under the logo; START or B returns to the menu.
+* The ROM header already declared SRAM (`RA`, 0xF820, 0x200000-0x20FFFF) in `rom_head.c`; a comment was added. In BlastEm the file is `%LOCALAPPDATA%\blastem\rom\save.sram` because the ROM is launched as `out\rom.bin`. Deleting that file and relaunching restores the defaults.

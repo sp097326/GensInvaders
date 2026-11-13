@@ -3,12 +3,14 @@
 #include "hud.h"
 #include "difficulty.h"
 #include "game.h"
+#include "scores.h"
 
 #define TILE_TITLE_FILL   TILE_USER_INDEX
 #define TILE_TITLE_SHADOW (TILE_USER_INDEX + 1)
 
 static u16 titleCursor = TITLE_OPT_START;
 static u16 titlePulseTick = 0;
+static u16 titleScoresView = 0;
 
 /* Solid 8x8 block tiles for the title logo (palette index 1 = fill, 2 = shadow).
  * Drawn on plane A so a wide word like INVADERS does not hit the 20-sprites-per-
@@ -127,14 +129,16 @@ void title_clear() {
 
 void title_drawMenu() {
     char line[32];
-    VDP_clearText(0, 15, 40);
-    VDP_clearText(0, 17, 40);
-    VDP_clearText(0, 19, 40);
+    u16 row;
+    titleScoresView = 0;
+    for (row = 15; row <= 23; row++) VDP_clearText(0, row, 40);
     hud_drawCentered(GAME_VERSION, 15);
     sprintf(line, "%c START GAME (INICIAR)", (titleCursor == TITLE_OPT_START) ? '>' : ' ');
     hud_drawCentered(line, 17);
     sprintf(line, "%c DIFFICULTY: %s", (titleCursor == TITLE_OPT_DIFF) ? '>' : ' ', difficulty_name());
     hud_drawCentered(line, 19);
+    sprintf(line, "%c PUNTAJES (TOP 5)", (titleCursor == TITLE_OPT_SCORES) ? '>' : ' ');
+    hud_drawCentered(line, 21);
 }
 
 void title_cycleDifficulty(s16 dir) {
@@ -160,8 +164,26 @@ void title_updatePulse() {
     }
 }
 
+void title_showScores(void) {
+    u16 row;
+    titleScoresView = 1;
+    for (row = 15; row <= 23; row++) VDP_clearText(0, row, 40);
+    hud_drawCentered("TOP 5", 15);
+    scores_drawTable(16, -1);
+    hud_drawCentered("PRESS START", 22);
+}
+
+void title_hideScores(void) {
+    title_drawMenu();
+}
+
+u16 title_isScoresView(void) {
+    return titleScoresView;
+}
+
 void title_show(void) {
     titleCursor = TITLE_OPT_START;
+    titleScoresView = 0;
     title_clear();
     loadTitleTiles();
     setTitlePalette();

@@ -3,39 +3,99 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
-## 2026-11-13 - Oleadas infinitas y prefijo 0.3 (AMH + Bimo)
-
-### Añadido
-- Al eliminar las dos filas de una oleada el juego ya no termina con YOU WIN:
-  aparece `OLEADA N` centrado unos 1,5 s (90 fotogramas en NTSC, 75 en PAL)
-  y luego entran otras dos filas arriba. Se conservan puntuación, vidas y el
-  estado del escudo / RapidFire. Las balas enemigas se limpian; las del
-  jugador y las explosiones en curso siguen.
-- El HUD muestra `OLEADA n` en la línea 2, a la derecha de `DIFF:` y antes
-  de la barra `ESC`. También aparece en la pausa.
-- Cada oleada escala una copia en tiempo de ejecución de la tabla de
-  dificultad (la oleada 1 es idéntica a V0.2.45). Incrementos y topes:
-
-  | | Intervalo (suelo) | Vel. horizontal (cada 3 oleadas) | Disparos / tope de balas | Vel. bala (cada 3) | Paso abajo |
-  |---|---|---|---|---|---|
-  | Fácil | -10 (mín. 45) | 1→3 | 1/1, 2/2 desde la oleada 4 (tope 2) | 5→7 | sigue en 0 |
-  | Normal | -10 (mín. 40) | 1→3 | 2/2 → 4/4 cada 3 oleadas | 5→7 | 8→16 (+4 cada 4) |
-  | Difícil | -10 (mín. 30) | 2→3 | 2→4 cada 2 oleadas (tope ya 4) | 6→7 | 16→20 (+4 cada 5) |
-
-  En Fácil y Normal las filas siguen el mismo comportamiento de siempre
-  (Fácil en bloque, Normal/Difícil en sentidos opuestos). El tope de 4
-  balas enemigas es el del pool, para no pasar de 80 sprites ni de 20 por
-  línea.
-
-### Cambiado
-- El prefijo de la versión pasa de `V0.2` a `V0.3`. El último número sigue
-  siendo el conteo total de commits (`git rev-list --count HEAD`), no un
-  conteo desde una etiqueta 0.3. Si no existe `src/version.h`, se muestra
-  `V0.3.DEV`. `run.bat build` genera `V0.3.xx`.
-- Las reglas de GAME OVER no cambian: choque con el jugador (después de las
-  explosiones), llegar al borde inferior, o perder todas las vidas. El
-  escudo sigue deteniendo solo las balas.
-
+## 2026-11-13 - Tabla TOP 5 de puntuaciones (AMH + Bimo)
+
+### Añadido
+- Tabla de récords de 5 entradas, persistida en la SRAM del cartucho
+  (firma `GIHS`, formato 1 y suma de comprobación). Si el bloque no es
+  válido se cargan valores de ejemplo: GEN 1000, INV 800, UDL 600, AMH 400
+  y BIM 200.
+- Una sola tabla para todas las dificultades, con una columna F/N/D
+  (Fácil / Normal / Difícil) en cada fila, más las iniciales, el puntaje
+  y la oleada alcanzada. Así se comparan partidas de distinto nivel
+  sin mantener tres listas.
+- Tras GAME OVER, si el puntaje supera al 5.º (los empates no entran),
+  se piden 3 iniciales al estilo arcade: arriba/abajo cambian la letra
+  (A-Z, espacio y punto), izquierda/derecha mueven el cursor, A o START
+  confirman. Después se muestra la tabla bajo el GAME OVER, con un `>`
+  que parpadea en la nueva entrada. Si no clasifica, solo se ve la tabla.
+  START sigue volviendo al título.
+- En el título hay una tercera opción, `PUNTAJES (TOP 5)`. START o A la
+  abre (el logo se queda); START o B regresan al menú.
+
+### Notas
+- La cabecera de la ROM ya declaraba SRAM (`RA`, 0xF820, 0x200000-0x20FFFF);
+  solo se documentó. En BlastEm el archivo queda en
+  `%LOCALAPPDATA%\blastem\rom\save.sram` (el ROM se lanza como `rom.bin`).
+  Borrar ese archivo y volver a abrir el juego restaura los valores de
+  ejemplo.
+
+## 2026-11-13 - Oleadas infinitas y prefijo 0.3 (AMH + Bimo)
+
+
+
+### Añadido
+
+- Al eliminar las dos filas de una oleada el juego ya no termina con YOU WIN:
+
+  aparece `OLEADA N` centrado unos 1,5 s (90 fotogramas en NTSC, 75 en PAL)
+
+  y luego entran otras dos filas arriba. Se conservan puntuación, vidas y el
+
+  estado del escudo / RapidFire. Las balas enemigas se limpian; las del
+
+  jugador y las explosiones en curso siguen.
+
+- El HUD muestra `OLEADA n` en la línea 2, a la derecha de `DIFF:` y antes
+
+  de la barra `ESC`. También aparece en la pausa.
+
+- Cada oleada escala una copia en tiempo de ejecución de la tabla de
+
+  dificultad (la oleada 1 es idéntica a V0.2.45). Incrementos y topes:
+
+
+
+  | | Intervalo (suelo) | Vel. horizontal (cada 3 oleadas) | Disparos / tope de balas | Vel. bala (cada 3) | Paso abajo |
+
+  |---|---|---|---|---|---|
+
+  | Fácil | -10 (mín. 45) | 1→3 | 1/1, 2/2 desde la oleada 4 (tope 2) | 5→7 | sigue en 0 |
+
+  | Normal | -10 (mín. 40) | 1→3 | 2/2 → 4/4 cada 3 oleadas | 5→7 | 8→16 (+4 cada 4) |
+
+  | Difícil | -10 (mín. 30) | 2→3 | 2→4 cada 2 oleadas (tope ya 4) | 6→7 | 16→20 (+4 cada 5) |
+
+
+
+  En Fácil y Normal las filas siguen el mismo comportamiento de siempre
+
+  (Fácil en bloque, Normal/Difícil en sentidos opuestos). El tope de 4
+
+  balas enemigas es el del pool, para no pasar de 80 sprites ni de 20 por
+
+  línea.
+
+
+
+### Cambiado
+
+- El prefijo de la versión pasa de `V0.2` a `V0.3`. El último número sigue
+
+  siendo el conteo total de commits (`git rev-list --count HEAD`), no un
+
+  conteo desde una etiqueta 0.3. Si no existe `src/version.h`, se muestra
+
+  `V0.3.DEV`. `run.bat build` genera `V0.3.xx`.
+
+- Las reglas de GAME OVER no cambian: choque con el jugador (después de las
+
+  explosiones), llegar al borde inferior, o perder todas las vidas. El
+
+  escudo sigue deteniendo solo las balas.
+
+
+
 ## 2026-11-12 (tarde 16) - Explosiones de naves enemigas (AMH + Bimo)
 
 ### Añadido

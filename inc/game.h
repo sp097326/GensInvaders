@@ -33,7 +33,8 @@ typedef struct
 
 /* The main loop only moves things while PLAYING.
  * STATE_TITLE is the boot (and post-game) title screen with START / difficulty.
- * GAME_OVER freezes the action and waits for START to return to the title.
+ * NAME_ENTRY is the 3-letter initials prompt after a qualifying GAME OVER.
+ * GAME_OVER then shows the TOP 5 and waits for START to return to the title.
  * STATE_WIN remains in the enum but is unused: clearing a wave starts the next
  * one instead of ending the match. */
 typedef enum
@@ -41,6 +42,7 @@ typedef enum
     STATE_TITLE,
     STATE_PLAYING,
     STATE_PAUSED,
+    STATE_NAME_ENTRY,
     STATE_GAME_OVER,
     STATE_WIN
 } GameState;
