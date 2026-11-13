@@ -3,6 +3,24 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Disparo cargado (AMH + Bimo)
+
+### Añadido
+- Mantener oprimido el botón B unos 1 s carga un disparo. Al soltar,
+  sale una bala de 24×24 (el triple de la normal) que atraviesa a todos
+  los enemigos en su camino y suma los puntos de cada uno, hasta salir
+  de la pantalla. Un toque corto sigue disparando la bala de 8×8 de
+  siempre (el disparo ocurre al soltar).
+- Mientras carga, un aura naranja rodea la nave; al estar lista parpadea
+  en blanco y suena un aviso corto en el canal 4 (prioridad menor que el
+  1UP, sin tocar el zumbido del escudo en el canal 1). El disparo
+  cargado tiene su propio sonido, más grave, en el canal 3.
+- Solo hay una bala cargada a la vez y no usa el tope de RapidFire
+  (3 o 6 balas chicas). Si todavía hay una en pantalla, al soltar se
+  dispara una bala normal. RapidFire sigue igual: más balas chicas,
+  la carga funciona igual. En el warp entre oleadas no se puede
+  cargar ni disparar (si había una carga, se cancela).
+
 ## 2026-11-13 - Zumbido del escudo mientras está activo (AMH + Bimo)
 
 ### Corregido

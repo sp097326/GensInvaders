@@ -10,6 +10,7 @@ static u16 enemyBulletsOnScreen = 0;
 static u16 shotTicker = 0;
 static u16 shotByPlayer = 0;
 static u16 maxPlayerBullets = MAX_PLAYER_BULLETS;
+static GameEntity chargedBullet;
 
 void bullets_init(void) {
     u16 i;
@@ -39,6 +40,17 @@ void bullets_init(void) {
         sprintf(bullt->name, "EB%d", i);
         bullt++;
     }
+    /* One 24x24 piercing bolt (3x3 tiles, 1 hardware sprite). Dedicated
+     * slot so it never fights the RapidFire cap or the 8x8 pool. */
+    chargedBullet.x = 0;
+    chargedBullet.y = -40;
+    chargedBullet.w = CHARGED_BULLET_SIZE;
+    chargedBullet.h = CHARGED_BULLET_SIZE;
+    chargedBullet.health = 0;
+    chargedBullet.vely = CHARGED_BULLET_SPEED;
+    chargedBullet.sprite = SPR_addSprite(&bulletc, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    SPR_setVisibility(chargedBullet.sprite, HIDDEN);
+    sprintf(chargedBullet.name, "ChB");
 }
 
 void bullets_reset(void) {
@@ -49,6 +61,7 @@ void bullets_reset(void) {
     for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
         killGameEntity(&enemyBullets[i]);
     }
+    killGameEntity(&chargedBullet);
     bulletsOnScreen = 0;
     shotByPlayer = 0;
     enemyBulletsOnScreen = 0;
@@ -63,6 +76,7 @@ void bullets_hideAll(void) {
     for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
         killGameEntity(&enemyBullets[i]);
     }
+    killGameEntity(&chargedBullet);
     bulletsOnScreen = 0;
     shotByPlayer = 0;
     enemyBulletsOnScreen = 0;
@@ -107,6 +121,14 @@ void bullets_update(void) {
             }
         }
     }
+    if (chargedBullet.health > 0) {
+        chargedBullet.y += chargedBullet.vely;
+        if (chargedBullet.y + chargedBullet.h < 0) {
+            killGameEntity(&chargedBullet);
+        } else {
+            SPR_setPosition(chargedBullet.sprite, chargedBullet.x, chargedBullet.y);
+        }
+    }
 }
 
 void bullets_shootPlayer(GameEntity shooter) {
@@ -133,6 +155,28 @@ void bullets_shootPlayer(GameEntity shooter) {
             break;
         }
     }
+}
+
+u16 bullets_shootCharged(GameEntity shooter) {
+    if (chargedBullet.health > 0) {
+        return 0;
+    }
+    /* Center the 24x24 bolt on the 16x16 ship. */
+    chargedBullet.x = shooter.x - 4;
+    chargedBullet.y = shooter.y - 4;
+    chargedBullet.vely = CHARGED_BULLET_SPEED;
+    reviveGameEntity(&chargedBullet);
+    XGM_startPlayPCM(SFX_CHARGE_SHOT, 11, SOUND_PCM_CH3);
+    SPR_setPosition(chargedBullet.sprite, chargedBullet.x, chargedBullet.y);
+    return 1;
+}
+
+u16 bullets_chargedActive(void) {
+    return (chargedBullet.health > 0) ? 1 : 0;
+}
+
+GameEntity* bullets_charged(void) {
+    return &chargedBullet;
 }
 
 void bullets_shootEnemy(GameEntity* shooter) {

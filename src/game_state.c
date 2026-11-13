@@ -100,6 +100,7 @@ static void resumeGame() {
     gameState = STATE_PLAYING;
     if (wavePauseTimer > 0) drawWaveBanner();
     powerups_unmuteShieldSound();
+    player_chargeSyncButton(JOY_readJoypad(JOY_1) & BUTTON_B);
 }
 
 /* Hide every game sprite and reset bullet counters. Used by the title screen. */
@@ -232,8 +233,14 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
      * shots and a fresh shield would break the empty-space beat. An
      * already-active shield keeps ticking and follows the ship. */
     if (wavePauseTimer == 0) {
-        if (state & BUTTON_B & changed) {
-            bullets_shootPlayer(*player_get());
+        /* Fire on release: a short tap is the same 8x8 shot as before,
+         * a ~1 s hold fires the piercing charged bolt. */
+        if (changed & BUTTON_B) {
+            if (state & BUTTON_B) {
+                player_chargeBegin();
+            } else {
+                player_chargeRelease();
+            }
         }
         if (state & BUTTON_A & changed) {
             powerups_toggle();
@@ -263,6 +270,7 @@ static void startNextWave(void) {
     warpArrive = IS_PAL_SYSTEM ? WAVE_WARP_ARRIVE_PAL  : WAVE_WARP_ARRIVE_NTSC;
     wavePauseTimer = warpTotal;
     enemies_beginEnter(WAVE_WARP_ENTER);
+    player_chargeCancel();
     player_setWarpFlame(1);
     starSpeed = STAR_SPEED_NORMAL;
     clearEndScreen();

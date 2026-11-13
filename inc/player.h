@@ -25,6 +25,13 @@ u16 player_isExploding(void);
 u16 player_checkExtraLife(int score);
 /* 8x8 exhaust flame under the ship (wave-transition boost). */
 void player_setWarpFlame(u16 on);
+/* Charged shot: begin on B press, release fires a tap or a charged bolt.
+ * Cancel without firing (warp, death, title). Sync after pause. */
+void player_chargeBegin(void);
+void player_chargeRelease(void);
+void player_chargeCancel(void);
+void player_chargeSyncButton(u16 held);
+
 
 
 #endif

@@ -222,6 +222,9 @@ HISTORY:
 *       13/11/26 - Shield hum lasts for the whole active duration
                  (2 s sample on CH1, retriggered on EASY/NORMAL). The
                  old 0.16 s blip was just too short. Tagged v0.3.53.
+*       13/11/26 - Charged shot: hold B ~1 s, release a 24x24 piercing
+                 bolt. A short tap still fires the normal 8x8 shot.
+                 Tagged v0.3.54.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -266,6 +269,8 @@ TODO:
           engine flame, and the next formation sliding in from the top.
         - [Done 13/11/26] Shield sound lasts for the whole active
           duration (2 s hum on CH1, not a 0.16 s blip).
+        - [Done 13/11/26] Charged shot (hold B ~1 s) fires a piercing
+          24x24 bolt; taps still shoot the normal 8x8 bullet.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -425,3 +430,7 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **Shield hum while active (13/11/2026)**
 * The activation sound seemed to cut off, but nothing was stealing its channel. `shield_on.wav` is only 0.16 s; shots (CH3), explosions (CH2) and the 1UP jingle (CH4) already use other PCM channels. A new 2 s hum (`res/sounds/shield_hum.wav`, PCM id 71) plays on CH1 (the existing shield channel) for the whole time the shield is up: 2 s on HARD (one play), 3 s on NORMAL and 5 s on EASY (the sample is retriggered when it ends). It starts with the original activation attack so the press still has a punch, then sits under the action as a quieter drone.
 * The hum is stopped when the shield timer ends, on pause, on death, on GAME OVER and on the title screen. If the shield is still active after unpausing or after a respawn, it starts again. During the between-wave warp the shield stays up, so the hum stays too. The "shield ready" ding remains on CH1 and only plays after the hum has stopped. The unused short `SFX_SHIELD_ON` sample is still in the ROM but is no longer started on its own.
+
+**Charged shot (13/11/2026)**
+* Fire now happens on button release so a hold can charge. A short tap (under ~1 s, 60 NTSC / 50 PAL frames) still fires the usual 8x8 shot and uses the RapidFire cap (3 or 6). Holding B for about a second arms a charged shot: an orange 16x16 aura appears around the ship, then blinks white when ready and a short lock-on ding plays on CH4 (priority 10, below the 1UP jingle; it never uses CH1, so it cannot cut the shield hum). Releasing then fires a 24x24 bolt (3x the normal shot, one 3x3 hardware sprite, slightly faster at -4 px/frame) that pierces every enemy it touches, awarding the usual per-ship points, until it leaves the screen.
+* Only one charged bolt can be on screen; it has its own slot and does not count against the RapidFire cap. If one is still flying, a charged release falls back to a normal shot so the button is never a dead input. The charge is cancelled (no shot) when a wave-warp starts, on death, and on the title / GAME OVER screens. After pause, if B was released while paused, the charge is dropped without firing. RapidFire is unchanged: it only raises the small-bullet cap; charging works the same with it on or off.

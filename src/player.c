@@ -4,6 +4,7 @@
 #include "hud.h"
 #include "enemies.h"
 #include "powerups.h"
+#include "bullets.h"
 
 static GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, 0, 0, "PLYR" };
 static u16 lives = MAX_LIVES;
@@ -14,6 +15,13 @@ static Sprite* explosionSpr = NULL;
 static Sprite* flameSpr = NULL;
 static u16 flameOn = 0;
 static u16 flameTick = 0;
+static Sprite* chargeGlowSpr = NULL;
+static u16 chargeHeld = 0;
+static u16 chargeTimer = 0;
+static u16 chargeReady = 0;
+
+static void hideChargeGlow(void);
+static void updateChargeGlow(void);
 static u16 explTimer = 0;
 static u16 explActive = 0;
 static u16 pendingGameOver = 0;
@@ -46,6 +54,7 @@ static void startExplosion(void) {
     if (flameSpr != NULL) {
         SPR_setVisibility(flameSpr, HIDDEN);
     }
+    player_chargeCancel();
     /* Brief flash: the shared orange slot of PAL1 goes white for a few frames. */
     PAL_setColor(16 + 2, RGB24_TO_VDPCOLOR(0xFCFCFC));
 }
@@ -158,6 +167,12 @@ void player_init(void) {
     SPR_setAutoAnimation(flameSpr, FALSE);
     SPR_setVisibility(flameSpr, HIDDEN);
     flameOn = 0;
+
+    /* 16x16 aura around the ship (2 frames). One hardware sprite, same
+     * scanlines as the hull, so the 20-sprite/line budget only grows by 1. */
+    chargeGlowSpr = SPR_addSprite(&chargeglow, 0, -32, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    SPR_setAutoAnimation(chargeGlowSpr, FALSE);
+    SPR_setVisibility(chargeGlowSpr, HIDDEN);
 }
 
 void player_reset(void) {
@@ -166,6 +181,7 @@ void player_reset(void) {
     pendingFatal = 0;
     nextExtraLife = EXTRA_LIFE_SCORE;
     player_setWarpFlame(0);
+    player_chargeCancel();
     placePlayer();
     reviveGameEntity(&player);
     lives = MAX_LIVES;
@@ -177,6 +193,7 @@ void player_hide(void) {
     killGameEntity(&player);
     stopExplosion();
     player_setWarpFlame(0);
+    player_chargeCancel();
 }
 
 static void updateFlame(void) {
@@ -201,6 +218,7 @@ u16 player_update(void) {
     updatePlayerLife();
     positionPlayer();
     updateFlame();
+    updateChargeGlow();
     return 0;
 }
 
@@ -288,5 +306,84 @@ void player_setWarpFlame(u16 on) {
     flameTick = 0;
     if (!flameOn && flameSpr != NULL) {
         SPR_setVisibility(flameSpr, HIDDEN);
+    }
+}
+
+static void hideChargeGlow(void) {
+    if (chargeGlowSpr != NULL) {
+        SPR_setVisibility(chargeGlowSpr, HIDDEN);
+    }
+}
+
+static void updateChargeGlow(void) {
+    u16 need;
+    if (chargeGlowSpr == NULL) return;
+    if (!chargeHeld || player.health == 0 || explActive) {
+        hideChargeGlow();
+        return;
+    }
+    if (invulnTimer > 0 && (invulnTimer & 4)) {
+        hideChargeGlow();
+        return;
+    }
+    need = IS_PAL_SYSTEM ? CHARGE_FRAMES_PAL : CHARGE_FRAMES_NTSC;
+    if (!chargeReady) {
+        if (chargeTimer < need) chargeTimer++;
+        if (chargeTimer >= need) {
+            chargeReady = 1;
+            XGM_startPlayPCM(SFX_CHARGE_READY, 10, SOUND_PCM_CH4);
+        }
+    }
+    SPR_setAnimAndFrame(chargeGlowSpr, 0, chargeReady ? 1 : 0);
+    /* Blink only once fully charged; while charging the dim frame stays on. */
+    if (chargeReady && (chargeTimer & 4)) {
+        hideChargeGlow();
+        chargeTimer++;
+        return;
+    }
+    if (chargeReady) chargeTimer++;
+    SPR_setPosition(chargeGlowSpr, player.x, player.y);
+    SPR_setVisibility(chargeGlowSpr, VISIBLE);
+}
+
+void player_chargeBegin(void) {
+    if (player.health == 0 || explActive) return;
+    chargeHeld = 1;
+    chargeTimer = 0;
+    chargeReady = 0;
+}
+
+void player_chargeRelease(void) {
+    u16 ready;
+
+    ready = chargeReady;
+    chargeHeld = 0;
+    chargeTimer = 0;
+    chargeReady = 0;
+    hideChargeGlow();
+    if (player.health == 0 || explActive) return;
+    if (ready) {
+        /* One charged bolt at a time; if it is still on screen, fall back
+         * to a normal shot so the release is never a dead input. */
+        if (!bullets_shootCharged(player)) {
+            bullets_shootPlayer(player);
+        }
+    } else {
+        bullets_shootPlayer(player);
+    }
+}
+
+void player_chargeCancel(void) {
+    chargeHeld = 0;
+    chargeTimer = 0;
+    chargeReady = 0;
+    hideChargeGlow();
+}
+
+void player_chargeSyncButton(u16 held) {
+    /* After pause: if B was released while we were not looking, drop the
+     * charge without firing so unpausing never shoots by accident. */
+    if (!held && chargeHeld) {
+        player_chargeCancel();
     }
 }

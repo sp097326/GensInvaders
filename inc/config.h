@@ -23,6 +23,12 @@
 
 #define MAX_BULLETS 6           /* player bullet pool (also the RapidFire cap) */
 #define MAX_PLAYER_BULLETS 3
+
+/* Charged shot (hold B ~1 s, release). Tap-release still fires a normal 8x8. */
+#define CHARGE_FRAMES_NTSC 60
+#define CHARGE_FRAMES_PAL  50
+#define CHARGED_BULLET_SIZE 24  /* 3x the 8x8 shot */
+#define CHARGED_BULLET_SPEED -4
 #define MAX_ENEMY_BULLETS 4     /* dedicated enemy bullet pool (HARD can use all 4) */
 
 #define SHOT_INTERVAL 120       /* NORMAL default; the table's shotInterval is what the game uses */
@@ -35,6 +41,8 @@
 #define SFX_SHIELD_HUM 71    /* 2 s loop; plays on CH1 for the shield duration */
 #define SFX_ENEMY_EXP 69
 #define SFX_1UP 70
+#define SFX_CHARGE_READY 72  /* short lock-on ding, CH4 (below 1UP priority) */
+#define SFX_CHARGE_SHOT 73   /* heavier shot, CH3 like the laser */
 
 #define POWERUP_DURATION 100
 #define POWER_ON 1

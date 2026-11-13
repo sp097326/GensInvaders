@@ -51,6 +51,31 @@ u16 collision_update(int* score) {
         }
     }
 
+    /* Charged bolt: keep flying and destroy every enemy it touches.
+     * Points are the usual per-ship value. */
+    {
+        GameEntity* c = bullets_charged();
+        if (c->health > 0) {
+            for (j = 0; j < MAX_ENEMIES; j++) {
+                e = enemies_at(j);
+                if (e->health > 0 && collideEntities(c, e)) {
+                    explosions_spawn(e->x, e->y);
+                    killGameEntity(e);
+                    enemies_decLeft();
+                    *score += e->points;
+                    {
+                        u16 gained = player_checkExtraLife(*score);
+                        hud_updateScore(*score, enemies_left(), player_lives());
+                        if (gained) hud_showExtraLife(gained);
+                    }
+                }
+            }
+            if (enemies_left() == 0) {
+                return COLLISION_WIN;
+            }
+        }
+    }
+
     /* Each enemy bullet has its own collision against the player. A live
      * shield uses a 32x32 box around the ship: the bullet is destroyed and
      * the player is not hurt. Body contact with an enemy is handled below

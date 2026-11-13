@@ -12,7 +12,12 @@ void bullets_hideAll(void);
 void bullets_clearEnemy(void);
 void bullets_update(void);
 void bullets_shootPlayer(GameEntity shooter);
+/* One 24x24 piercing shot at a time; does not use the RapidFire cap.
+ * Returns 1 if it actually fired. */
+u16  bullets_shootCharged(GameEntity shooter);
+u16  bullets_chargedActive(void);
 void bullets_shootEnemy(GameEntity* shooter);
+GameEntity* bullets_charged(void);
 
 void bullets_tickShot(void);
 void bullets_clearShotTicker(void);
