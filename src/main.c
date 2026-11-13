@@ -64,6 +64,7 @@ int main(bool hard)
     XGM_setPCM(SFX_1UP, oneup, sizeof(oneup));
     XGM_setPCM(SFX_CHARGE_READY, chargeready, sizeof(chargeready));
     XGM_setPCM(SFX_CHARGE_SHOT, chargeshot, sizeof(chargeshot));
+    XGM_setPCM(SFX_RAPID_PICK, rapidpick, sizeof(rapidpick));
     //note to this: read the url for the effects.
     SYS_disableInts();
     VDP_loadTileSet(background.tileset,1,DMA);

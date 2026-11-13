@@ -5,10 +5,13 @@
 #include "player.h"
 #include "hud.h"
 #include "difficulty.h"
+#include "collision.h"
 
-/* Reserved for a future on-screen pickup; spawn/position are still stubs. */
-static GameEntity powerup = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
+static GameEntity capsule = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
+static u16 capsuleTick = 0;
+static u16 killsSinceDrop = 0;
 static u16 powerupTimer = 0;
+static u16 rapidDuration = 0;
 static bool powerOn = 0;
 
 static Sprite* shieldSpr = NULL;
@@ -23,6 +26,8 @@ static u16 shieldHudBlink = 0xFFFF;
 static u16 shieldReadyBlink = 0;
 static u16 shieldHumMuted = 0;
 static u16 shieldHumPlaying = 0;
+static u16 rapidHudActive = 0xFFFF;
+static u16 rapidHudLevel = 0xFFFF;
 
 static void stopShieldHum(void) {
     if (shieldHumPlaying) {
@@ -67,11 +72,12 @@ void powerups_unmuteShieldSound(void) {
     shieldHumUpdate();
 }
 
-static void applyShieldTimings(void) {
+static void applyTimings(void) {
     const DifficultyConfig* cfg = difficulty_config();
     u16 rate = IS_PAL_SYSTEM ? 50 : 60;
     shieldDuration = cfg->shieldDurationSec * rate;
     shieldRechargeMax = cfg->shieldRechargeSec * rate;
+    rapidDuration = cfg->rapidFireSec * rate;
 }
 
 static void hideShieldSprite(void) {
@@ -142,59 +148,137 @@ static void shieldRefreshHud(u16 force) {
     hud_updateShieldBar(mode, level, blink);
 }
 
+/* The ship body is PAL1 colour 2 (index 18). Red while RapidFire is on;
+ * back to the usual orange when it ends. */
+static void setShipRapidTint(u16 on) {
+    if (on) {
+        PAL_setColor(16 + 2, RGB24_TO_VDPCOLOR(0xF80000));
+    } else {
+        PAL_setColor(16 + 2, RGB24_TO_VDPCOLOR(0xF83800));
+    }
+}
+
+static void rapidRefreshHud(u16 force) {
+    u16 active;
+    u16 level;
+    u16 max;
+
+    active = (powerOn && powerupTimer > 0) ? 1 : 0;
+    max = rapidDuration;
+    if (!active || max == 0) {
+        level = 0;
+    } else {
+        level = (u16)(((u32)powerupTimer * SHIELD_BAR_STEPS + max - 1) / max);
+        if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
+    }
+    if (!force && active == rapidHudActive && level == rapidHudLevel) return;
+    rapidHudActive = active;
+    rapidHudLevel = level;
+    hud_updateRapidBar(active, level);
+}
+
+void powerups_clearCapsule(void) {
+    if (capsule.sprite != NULL) {
+        killGameEntity(&capsule);
+        SPR_setAutoAnimation(capsule.sprite, FALSE);
+    } else {
+        capsule.health = 0;
+    }
+    capsuleTick = 0;
+}
+
+static void collectCapsule(void) {
+    powerups_clearCapsule();
+    /* CH4, below the 1UP jingle, never on the shield hum channel. */
+    XGM_startPlayPCM(SFX_RAPID_PICK, 11, SOUND_PCM_CH4);
+    applyTimings();
+    bullets_setMaxPlayer(MAX_BULLETS);
+    powerupTimer = rapidDuration;
+    setShipRapidTint(1);
+    powerOn = POWER_ON;
+    rapidRefreshHud(1);
+}
+
+void powerups_tryDrop(s16 x, s16 y) {
+    s16 cx;
+
+    if (killsSinceDrop < 255) killsSinceDrop++;
+
+    /* At most one capsule on screen. Pity still counts so the next
+     * free kill can force a drop after this one is gone. */
+    if (capsule.health > 0) return;
+    if (capsule.sprite == NULL) return;
+
+    if (killsSinceDrop < RAPID_DROP_PITY) {
+        if ((random() % RAPID_DROP_MOD) != 0) return;
+    }
+
+    killsSinceDrop = 0;
+    cx = x + 4;
+    if (cx < LEFT_EDGE) cx = LEFT_EDGE;
+    if (cx > (s16)(RIGHT_EDGE - 8)) cx = (s16)(RIGHT_EDGE - 8);
+    capsule.x = cx;
+    capsule.y = y + 4;
+    capsule.vely = CAPSULE_SPEED;
+    capsule.health = 1;
+    capsuleTick = 0;
+    SPR_setAnimAndFrame(capsule.sprite, 0, 0);
+    SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
+    SPR_setVisibility(capsule.sprite, VISIBLE);
+}
+
 void powerups_init(void) {
-    PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
-    (void)powerup; /* reserved for a future on-screen pickup */
-    applyShieldTimings();
+    applyTimings();
+    setShipRapidTint(0);
     /* One 32x32 bubble (1 hardware sprite, 16 tiles). High priority so the
      * ring sits above the ship and incoming bullets. PAL1 matches space.bmp. */
     shieldSpr = SPR_addSprite(&shield, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
     SPR_setAutoAnimation(shieldSpr, FALSE);
     SPR_setVisibility(shieldSpr, HIDDEN);
+
+    /* 8x8 "R" capsule, 2 blink frames, one hardware sprite. Low priority
+     * so the bottom-row life icons and RF bar stay readable if it falls
+     * through that corner. */
+    capsule.sprite = SPR_addSprite(&capsuleSpr, 0, -16, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    SPR_setAutoAnimation(capsule.sprite, FALSE);
+    SPR_setVisibility(capsule.sprite, HIDDEN);
+    capsule.health = 0;
 }
 
 void powerups_deactivate(void) {
     bullets_setMaxPlayer(MAX_PLAYER_BULLETS);
-    // Restore the original color. PAL_setColor takes a single u16 color value;
-    // PAL_setPaletteColors expects a u16* array, hence the previous warning/crash.
-    PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
-    // Clear the flag so the A button toggles the powerup back ON next time.
-    // This line was missing, so powerOn was stuck at 1 after the first press.
+    setShipRapidTint(0);
     powerOn = POWER_OFF;
-}
-
-void powerups_activate(Powerup type) {
-    switch (type)
-    {
-    case RapidFire: {
-        // RapidFire = let the player keep more bullets on screen at once.
-        // Was MAX_PLAYER_BULLETS (3), i.e. identical to the default, so the
-        // powerup did nothing. MAX_BULLETS (6) is the size of the player pool.
-        bullets_setMaxPlayer(MAX_BULLETS);
-        powerupTimer = POWERUP_DURATION;
-        // Tint the powerup color RED while active, using the SAME palette index
-        // (34) that deactivatePowerup() restores so the toggle is symmetric;
-        // it used to be index 18 here, which is why the color never reset.
-        // Use PAL_setColor (one u16 color). The old PAL_setPaletteColors call
-        // wanted a u16* array, so passing a color value was the "aqui truena" bug.
-        PAL_setColor(34, RGB24_TO_VDPCOLOR(0xf83000));
-        powerOn = POWER_ON;
-        break;
-    }
-    default:
-        return;
-    }
+    powerupTimer = 0;
+    rapidRefreshHud(1);
 }
 
 void powerups_update(void) {
     if (powerOn) {
-        // Guard against u16 underflow: decrementing 0 would wrap to 65535,
-        // leaving the powerup stuck on for ~18 minutes (65535 frames).
         if (powerupTimer > 0) {
             powerupTimer--;
         }
         if (powerupTimer == 0) {
             powerups_deactivate();
+        } else {
+            rapidRefreshHud(0);
+        }
+    }
+
+    if (capsule.health > 0) {
+        GameEntity* p;
+
+        capsule.y += capsule.vely;
+        if (capsule.y + capsule.h >= BOTTOM_EDGE) {
+            powerups_clearCapsule();
+        } else {
+            capsuleTick++;
+            SPR_setAnimAndFrame(capsule.sprite, 0, (capsuleTick >> 3) & 1);
+            SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
+            p = player_get();
+            if (p->health && !player_isExploding() && collideEntities(&capsule, p)) {
+                collectCapsule();
+            }
         }
     }
 
@@ -226,7 +310,9 @@ void powerups_update(void) {
 void powerups_reset(void) {
     if (powerOn) powerups_deactivate();
     powerupTimer = 0;
-    applyShieldTimings();
+    killsSinceDrop = 0;
+    powerups_clearCapsule();
+    applyTimings();
     shieldActive = 0;
     shieldTimer = 0;
     shieldRecharge = 0;
@@ -235,19 +321,14 @@ void powerups_reset(void) {
     shieldHumMuted = 0;
     stopShieldHum();
     shieldRefreshHud(1);
+    rapidRefreshHud(1);
 }
 
 void powerups_hide(void) {
     hideShieldSprite();
     stopShieldHum();
-}
-
-void powerups_toggle(void) {
-    if (powerOn) {
-        powerups_deactivate();
-    } else {
-        powerups_activate(RapidFire);
-    }
+    powerups_clearCapsule();
+    if (powerOn) powerups_deactivate();
 }
 
 u16 powerups_isOn(void) {

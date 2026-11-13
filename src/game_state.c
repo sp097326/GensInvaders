@@ -242,9 +242,7 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
                 player_chargeRelease();
             }
         }
-        if (state & BUTTON_A & changed) {
-            powerups_toggle();
-        }
+        /* Button A is free (RapidFire is a capsule pickup, not a toggle). */
         if (state & BUTTON_C & changed) {
             powerups_tryShield();
         }
@@ -261,9 +259,12 @@ static void drawWaveBanner(void) {
 
 static void startNextWave(void) {
     /* Enemy shots vanish; player shots, explosions, score, lives and the
-     * shield / RapidFire state are kept. The new rows wait just above the
-     * screen and slide in during the last part of the warp. */
+     * shield / RapidFire effect are kept (the timer keeps ticking). A
+     * falling capsule is cleared so it does not sit in the empty warp.
+     * The new rows wait just above the screen and slide in during the
+     * last part of the warp. */
     bullets_clearEnemy();
+    powerups_clearCapsule();
     difficulty_nextWave();
     warpTotal  = IS_PAL_SYSTEM ? WAVE_WARP_FRAMES_PAL  : WAVE_WARP_FRAMES_NTSC;
     warpAccel  = IS_PAL_SYSTEM ? WAVE_WARP_ACCEL_PAL   : WAVE_WARP_ACCEL_NTSC;

@@ -29,6 +29,7 @@ typedef struct
     u16 shieldDurationSec;  /* wall-clock seconds the shield stays up */
     u16 shieldRechargeSec;  /* wall-clock seconds before it can be used again */
     u16 enemyPoints;        /* points awarded for each destroyed enemy (both rows) */
+    u16 rapidFireSec;       /* wall-clock seconds RapidFire lasts after a pickup */
 } DifficultyConfig;
 
 void difficulty_init(void);

@@ -13,6 +13,10 @@ void hud_updateScore(int score, u16 enemiesLeft, u16 lives);
 /* level is 0..SHIELD_BAR_STEPS (0 = empty, 64 = full). blink != 0 flashes the
  * ready bar (used for a short pulse when the recharge finishes). */
 void hud_updateShieldBar(u16 state, u16 level, u16 blink);
+/* RapidFire timer on the bottom-right of row 27: "RF" plus an 8-tile
+ * red bar. Hidden (active == 0) clears that corner. level is 0..SHIELD_BAR_STEPS. */
+void hud_updateRapidBar(u16 active, u16 level);
+void hud_hideRapidBar(void);
 void hud_clear(void);
 void hud_drawCentered(const char* text, u16 y);
 void hud_clearOverlay(void);

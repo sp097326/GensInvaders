@@ -43,10 +43,16 @@
 #define SFX_1UP 70
 #define SFX_CHARGE_READY 72  /* short lock-on ding, CH4 (below 1UP priority) */
 #define SFX_CHARGE_SHOT 73   /* heavier shot, CH3 like the laser */
+#define SFX_RAPID_PICK 74    /* capsule pickup, CH4 (below 1UP, never CH1) */
 
-#define POWERUP_DURATION 100
 #define POWER_ON 1
 #define POWER_OFF 0
+
+/* RapidFire capsule: 10% drop, at most one on screen, pity after 10
+ * kills without a drop. Duration (seconds) lives in the difficulty table. */
+#define RAPID_DROP_MOD     10  /* 1 in 10 */
+#define RAPID_DROP_PITY    10  /* guaranteed drop on the 10th dry kill */
+#define CAPSULE_SPEED       1  /* pixels per frame, downward */
 
 /* Shield (button C). Duration and recharge (wall-clock seconds) live in
  * the difficulty table. powerups converts them to frames with

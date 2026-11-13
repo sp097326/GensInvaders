@@ -44,6 +44,7 @@ u16 collision_update(int* score) {
                              * instead of ending the match with YOU WIN. */
                             return COLLISION_WIN;
                         }
+                        powerups_tryDrop(e->x, e->y);
                         break;
                     }
                 }
@@ -67,6 +68,9 @@ u16 collision_update(int* score) {
                         u16 gained = player_checkExtraLife(*score);
                         hud_updateScore(*score, enemies_left(), player_lives());
                         if (gained) hud_showExtraLife(gained);
+                    }
+                    if (enemies_left() > 0) {
+                        powerups_tryDrop(e->x, e->y);
                     }
                 }
             }

@@ -28,7 +28,11 @@
 #define LIVES_ICON_SLOTS   LIVES_CAP
 #define EXTRA_LIFE_TEXT_X  10
 #define EXTRA_LIFE_TEXT_Y  27
-#define EXTRA_LIFE_TEXT_W  30
+#define EXTRA_LIFE_TEXT_W  18  /* stops short of the RF bar at col 29 */
+#define RAPID_LABEL_X      30
+#define RAPID_BAR_X        32
+#define RAPID_BAR_Y        27
+#define RAPID_BAR_LEN       8
 
 static char hud_string[40] = "";
 static u16 shieldState = SHIELD_HUD_READY;
@@ -40,6 +44,10 @@ static u16 hudLives = 0;
 static u16 extraLifeTimer = 0;
 static u16 extraLifeGranted = 0;
 static u16 extraLifeIconOn = 1;
+static u16 rapidActive = 0;
+static u16 rapidLevel = 0;
+static u16 rapidBarAttr[8];
+static u16 rapidBarDrawn = 0;
 
 /* 8x8 silhouette of the player ship (PAL1: 1 blue, 2 orange, 3 white,
  * 4 black). Side columns stay empty so adjacent icons do not touch. */
@@ -188,11 +196,62 @@ void hud_updateShieldBar(u16 state, u16 level, u16 blink) {
     drawShieldBar(0);
 }
 
+static void drawRapidBar(u16 force) {
+    u16 i;
+
+    if (!rapidActive) {
+        if (force || rapidBarDrawn) {
+            VDP_clearText(RAPID_LABEL_X, RAPID_BAR_Y, 2);
+            VDP_clearText(RAPID_BAR_X, RAPID_BAR_Y, RAPID_BAR_LEN);
+            rapidBarDrawn = 0;
+        }
+        return;
+    }
+
+    if (force || !rapidBarDrawn) {
+        VDP_drawText("RF", RAPID_LABEL_X, RAPID_BAR_Y);
+    }
+
+    for (i = 0; i < RAPID_BAR_LEN; i++) {
+        u16 px;
+        u16 idx;
+        u16 attr;
+        u16 start = i * 8;
+        if (rapidLevel >= (start + 8)) px = 8;
+        else if (rapidLevel > start) px = rapidLevel - start;
+        else px = 0;
+        if (px == 0) idx = TILE_BAR_EMPTY;
+        else idx = TILE_BAR_RED1 + (px - 1);
+        attr = TILE_ATTR_FULL(PAL1, 1, FALSE, FALSE, idx);
+        if (force || !rapidBarDrawn || (rapidBarAttr[i] != attr)) {
+            VDP_setTileMapXY(BG_A, attr, RAPID_BAR_X + i, RAPID_BAR_Y);
+            rapidBarAttr[i] = attr;
+        }
+    }
+    rapidBarDrawn = 1;
+}
+
+void hud_updateRapidBar(u16 active, u16 level) {
+    if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
+    rapidActive = (active && level > 0) ? 1 : 0;
+    rapidLevel = level;
+    drawRapidBar(0);
+}
+
+void hud_hideRapidBar(void) {
+    rapidActive = 0;
+    rapidLevel = 0;
+    drawRapidBar(1);
+}
+
 void hud_clear(void) {
     extraLifeTimer = 0;
     extraLifeGranted = 0;
     extraLifeIconOn = 1;
     hudLives = 0;
+    rapidActive = 0;
+    rapidLevel = 0;
+    rapidBarDrawn = 0;
     VDP_clearText(0, 0, 40);
     VDP_clearText(0, 1, 40);
     VDP_clearText(0, LIVES_ICON_Y, 40);

@@ -31,7 +31,7 @@ total number of git commits (`git rev-list --count HEAD`); the 0.2 prefix marks 
 stage of the game, and the last number is not reset. Build after committing so the
 version matches GitHub. If `version.h` is missing, the game shows `V0.3.DEV`.
 It opens the ROM in BlastEm 0.6.2, installed at `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
-BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (RapidFire), D = C (shield), Enter = START.
+BlastEm default keys: arrows = D-pad, S = B (shoot), D = C (shield), Enter = START.
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
 does not affect the ROM.
 
@@ -49,7 +49,7 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * player.c/.h — ship sprite, movement bounds, lives, respawn and invulnerability blink.
 * collision.c/.h — AABB checks; player bullets vs enemies, enemy bullets vs the player, and fatal enemy-player body contact (or a ship reaching the visible bottom).
 * 	itle.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
-* powerups.c/.h — RapidFire (A) and the Shield ability (C; duration and recharge come from the difficulty table); on-screen pickup entity reserved for later.
+* powerups.c/.h — RapidFire capsule pickup and the Shield ability (C; duration and recharge come from the difficulty table).
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
 * src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
 
@@ -58,8 +58,9 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
         LEFT/RIGHT (or START / A on DIFFICULTY) cycle EASY / NORMAL / HARD.
         START on START GAME begins the match with the chosen difficulty (default NORMAL).
 * D-pad left/right: move the ship (during play).
-* B: shoot.
-* A: toggle the RapidFire powerup (up to 6 bullets on screen; expires on its own).
+* B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
+* RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
+* A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
 * C: activate the shield if it is charged. Duration and recharge depend on
         difficulty: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
         Starts ready at the beginning of a match. Not usable while exploding, dead,
@@ -228,6 +229,10 @@ HISTORY:
 *       13/11/26 - Charged-shot release sound is louder and lower
                  (a bass boom, distinct from the normal laser).
                  Tagged v0.3.55.
+*       13/11/26 - RapidFire is now a falling "R" capsule, not a debug
+                 A-button toggle. 10% drop (pity after 10 kills), 10 s
+                 on EASY and 8 s on NORMAL/HARD, RF bar at the bottom
+                 right. Tagged v0.3.56.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -250,6 +255,9 @@ TODO:
         - [Done 12/11/26] Shield power-up (button C). Duration and recharge follow
           the difficulty table (EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s).
           Ready at the start of a match. HUD shows ESC plus a bar (blue / dark red / green).
+        - [Done 13/11/26] RapidFire is a capsule pickup (not a debug
+          A-button toggle). 10% drop, pity after 10 kills, 10 s on EASY
+          and 8 s on NORMAL/HARD, with an RF timer bar.
         - More powerups: ship speed up? a bomb?
         - [Done 12/11/26] Formation steps down on each turn (classic invaders). GAME OVER if an enemy ship collides with the player, or reaches the visible bottom after slipping past.
         - [Done 12/11/26] Distinct explosion animation when an enemy ship
@@ -275,6 +283,9 @@ TODO:
         - [Done 13/11/26] Charged shot (hold B ~1 s) fires a piercing
           24x24 bolt; taps still shoot the normal 8x8 bullet.
         - [Done 13/11/26] Charged-shot release SFX is a louder, deeper boom.
+        - [Done 13/11/26] RapidFire is a capsule pickup (not a debug
+          A-button toggle). 10% drop, pity after 10 kills, 10 s on EASY
+          and 8 s on NORMAL/HARD, with an RF timer bar.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -440,4 +451,9 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Only one charged bolt can be on screen; it has its own slot and does not count against the RapidFire cap. If one is still flying, a charged release falls back to a normal shot so the button is never a dead input. The charge is cancelled (no shot) when a wave-warp starts, on death, and on the title / GAME OVER screens. After pause, if B was released while paused, the charge is dropped without firing. RapidFire is unchanged: it only raises the small-bullet cap; charging works the same with it on or off.
 **Charged-shot boom (13/11/2026)**
 * The charged-shot release sample was thinner and higher than the normal laser (peak 16249, RMS 6733, attack around 1.8 kHz). It is now a ~0.32 s bass boom (sweep about 280 Hz down to 70 Hz) with a short click so it still reads as a shot. Peak 20000, just under the player explosion (20814) and louder than the laser (17972); RMS about 9600, close to the laser, so it stays present without clipping. Still played on CH3, so it cannot cut the shield hum on CH1. The charge-ready ding is slightly fuller (added a lower harmonic) but remains quieter than the boom and the 1UP jingle.
+
+**RapidFire capsule (13/11/2026)**
+* The A-button RapidFire toggle was a leftover debug mode (6 bullets, red tint, 100 frames, unlimited use). It is now a real pickup. Destroyed enemies have a 10% chance (1 in 10) to drop an 8x8 blinking "R" capsule that falls at 1 px/frame. At most one capsule is on screen; after 10 kills without a drop the next one is guaranteed. The last ship of a wave never drops one, because the between-wave warp would clear it immediately. Touching the capsule grants RapidFire; if it leaves the bottom of the screen it disappears.
+* Duration is 10 s on EASY and 8 s on NORMAL and HARD (same wall-clock time on PAL, from the difficulty table). Picking up another capsule while it is active refreshes the timer. A bottom-right "RF" label and red 8-tile bar (plane A, high priority, same tiles as the shield recharge bar) show the time left. The ship body (PAL1 colour 2) turns red for the effect. Button A is free during play (it is still used on the title menu and name entry).
+* The effect persists across waves and keeps ticking during the warp, so leftover time is waiting when shooting returns. A capsule still falling is cleared on warp, death, GAME OVER and the title screen. The effect itself ends on death (you have to pick up another after a respawn). The pickup blip plays on CH4 (priority 11, below the 1UP jingle) and cannot cut the shield hum on CH1. Charged shot is unchanged and still ignores the RapidFire cap. The capsule is a single 8x8 hardware sprite at low priority, so the life icons and RF bar stay readable if it falls through that corner.
 

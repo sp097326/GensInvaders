@@ -231,6 +231,7 @@ u16 player_hit(int score) {
     killGameEntity(&player);
     player.velx = 0;
     if (powerups_isOn()) powerups_deactivate();
+    powerups_clearCapsule();
     // Own channel (CH2) and top priority (15) so nothing can cut the explosion.
     XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
     lives--;
@@ -247,6 +248,7 @@ void player_hitFatal(int score) {
     killGameEntity(&player);
     player.velx = 0;
     if (powerups_isOn()) powerups_deactivate();
+    powerups_clearCapsule();
     XGM_startPlayPCM(SFX_XPLOSION,15,SOUND_PCM_CH2);
     lives = 0;
     hud_updateScore(score, enemies_left(), lives);

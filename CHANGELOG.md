@@ -3,6 +3,29 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - RapidFire como power-up de cápsula (AMH + Bimo)
+
+### Añadido
+- Al destruir un enemigo puede caer una cápsula "R" de 8x8 que parpadea
+  y baja despacio. Al tocarla se activa RapidFire (hasta 6 balas chicas
+  en pantalla). Si se sale de la pantalla, desaparece.
+
+### Cambiado
+- El botón A ya no activa RapidFire (queda libre). La nave se pinta de
+  rojo mientras el efecto está activo. La duración es de 10 s en FÁCIL
+  y 8 s en NORMAL y DIFÍCIL; recoger otra cápsula reinicia el tiempo.
+  En la esquina inferior derecha aparece "RF" y una barra roja con el
+  tiempo restante. El disparo cargado no cambia y sigue funcionando
+  junto con RapidFire.
+- Probabilidad de soltar la cápsula: 1 de cada 10 (10%), como máximo
+  una en pantalla. Si pasan 10 bajas sin soltar ninguna, la siguiente
+  está garantizada. No cae en la última nave de la oleada (la
+  aceleración la borraría). El efecto se mantiene entre oleadas (el
+  reloj sigue corriendo en la aceleración); una cápsula que aún caía
+  sí se borra. En muerte, GAME OVER o título se pierden el efecto y
+  la cápsula. El sonido de recoger suena en el canal 4 y no corta el
+  zumbido del escudo.
+
 ## 2026-11-13 - Disparo cargado más fuerte y grave (AMH + Bimo)
 
 ### Cambiado
