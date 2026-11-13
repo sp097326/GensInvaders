@@ -208,6 +208,10 @@ HISTORY:
                  table: EASY 10, NORMAL 20, HARD 30 (both rows). A full
                  wave is worth 140 / 280 / 420. Extra lives stay every
                  1000 points. Tagged v0.3.49.
+*       13/11/26 - Lives are now up to 9 miniature ships on the right of
+                 the HUD (plane tiles, not sprites). The "+1 NAVE" banner
+                 stays solid and readable for ~1 s; the new icon blinks.
+                 Tagged v0.3.50.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -244,6 +248,8 @@ TODO:
           short 1UP jingle and a "+1 NAVE" banner.
         - [Done 13/11/26] Points per enemy depend on difficulty
           (EASY 10, NORMAL 20, HARD 30); both rows use the same value.
+        - [Done 13/11/26] HUD lives are miniature ships (up to 9) and
+          the "+1 NAVE" banner is a solid, readable plane-A message.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -384,3 +390,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * The only score source remains a player bullet destroying an enemy (no wave bonus; an invasion crash still awards nothing). Previously both difficulties used a fixed per-row split: top row 20, bottom row 10, so a full wave of 14 was always 210 points.
 * Points now come from `enemyPoints` in the difficulty table, the same for every ship: EASY 10, NORMAL 20, HARD 30. A cleared wave is worth 140 / 280 / 420. Extra lives stay at every 1000 points on all difficulties, so the first 1UP arrives around wave 8 on EASY (7 waves = 980), wave 4 on NORMAL (3 waves = 840) and wave 3 on HARD (2 waves = 840).
 * The shared TOP 5 table is unchanged, including the placeholder entries. Hard scores will climb faster than Easy ones; the difficulty letter (F/N/D) still shows which run it was.
+
+**HUD ship icons and readable 1UP banner (13/11/2026)**
+* The "+1 NAVE" glitch was not the 20-sprite-per-scanline limit. The banner was already plane-A text on row 2 (above the enemies, which start at Y=32). Two things made it hard to read: `hud_updateExtraLife` cleared and redrew the whole row every frame during active display, which produced flickering horizontal lines on the VDP, and the text used low priority, so player bullets climbing off the top punched holes in it. The 8-on/8-off blink also left the message invisible half of the ~1 s window.
+* The banner is now drawn once, stays solid for the same ~1 s (60 NTSC / 50 PAL frames), and uses high-priority plane-A tiles (`VDP_setTextPriority`) so sprites pass behind it. Tiles are only touched when the banner appears or disappears.
+* `SHIPS: n` is gone. Up to 9 miniature 8x8 ships (a downscaled silhouette of the player ship, PAL1, plane A, not sprites) sit in the top-right corner, columns 31-39, left-aligned so a new life appears to the right of the ones already there. All 9 fit, so there is no "x9" overflow form. They update when a life is lost or gained. During the 1UP banner the newly awarded icon blinks; the others stay solid. `SCORE` and `LEFT` remain on the left of row 0, with a gap before the icons.

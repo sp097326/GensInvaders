@@ -16,7 +16,8 @@ void hud_updateShieldBar(u16 state, u16 level, u16 blink);
 void hud_clear(void);
 void hud_drawCentered(const char* text, u16 y);
 void hud_clearOverlay(void);
-/* Brief "+1 NAVE" (or "+n NAVE") on row 2. Tick only while PLAYING. */
+/* Solid "+1 NAVE" (or "+n NAVE") on plane A, row 2, for ~1 s. The newly
+ * awarded ship icon(s) blink. Tick only while PLAYING. */
 void hud_showExtraLife(u16 granted);
 void hud_updateExtraLife(void);
 void hud_hideExtraLife(void);

@@ -50,7 +50,7 @@
 
 #define ENEMY_STEP_DOWN 8       /* NORMAL step; HARD uses twice this, EASY uses 0 */
 #define MAX_LIVES 3              /* ships at the start of a match */
-#define LIVES_CAP 9              /* HUD "SHIPS: n" stays one digit; 1UPs stop adding here */
+#define LIVES_CAP 9              /* up to 9 miniature ships on the HUD; 1UPs stop adding here */
 #define EXTRA_LIFE_SCORE 1000    /* a ship is awarded every 1000 points, all difficulties */
 #define EXTRA_LIFE_BANNER_NTSC 60  /* ~1 s for the "+1 NAVE" text */
 #define EXTRA_LIFE_BANNER_PAL  50

@@ -3,6 +3,25 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Iconos de naves en el HUD y letrero 1UP legible (AMH + Bimo)
+
+### Corregido
+- El letrero `+1 NAVE` se veía cortado y con líneas horizontales
+  parpadeantes. La causa no era el límite de 20 sprites por línea: el
+  texto ya estaba en el plano A, pero cada frame se borraba y
+  redibujaba la fila 2 en plena imagen (escrituras a la VRAM fuera del
+  vblank), y además tenía prioridad baja, así que las balas del jugador
+  lo tapaban al subir. Ahora se dibuja una sola vez, se queda sólido
+  unos 1 s (prioridad alta) y se borra al terminar.
+
+### Cambiado
+- El contador `SHIPS: n` se sustituye por hasta 9 miniaturas de la nave
+  (tile 8×8 en el plano A, no sprites) en la esquina superior derecha
+  (columnas 31-39). Empiezan a la izquierda de esa zona y crecen hacia
+  la derecha; caben las 9 del tope, sin un «x9». Se actualizan al
+  perder o ganar una vida. Con el 1UP, el icono nuevo parpadea mientras
+  el letrero está visible.
+
 ## 2026-11-13 - Puntos por nave según la dificultad (AMH + Bimo)
 
 ### Cambiado
