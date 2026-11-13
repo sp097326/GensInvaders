@@ -5,19 +5,19 @@
 #include "bullets.h"
 #include "player.h"
 
-/* Per-row look and scoring. Swap spriteDef later for a different ship graphic;
- * for now both rows use &ship, with PAL3 (tinted) on the bottom row. */
+/* Per-row look. Swap spriteDef later for a different ship graphic;
+ * for now both rows use &ship, with PAL3 (tinted) on the bottom row.
+ * Points come from the difficulty table (same value for every ship). */
 typedef struct
 {
     const SpriteDefinition* spriteDef;
     u16 palette;
     u16 vFlip;
-    u16 points;
 } EnemyRowType;
 
 static const EnemyRowType enemyRows[ENEMY_ROWS] = {
-    { &ship, PAL2, TRUE, 20 },  /* top row: original colors, 20 points */
-    { &ship, PAL3, TRUE, 10 }   /* bottom row: green/yellow tint, 10 points */
+    { &ship, PAL2, TRUE },  /* top row: original colors */
+    { &ship, PAL3, TRUE }   /* bottom row: green/yellow tint */
 };
 
 static GameEntity enemies[MAX_ENEMIES];
@@ -276,16 +276,14 @@ u16 enemies_update() {
 static void placeEnemies() {
     u16 row, col, i;
     GameEntity* enem;
-    const EnemyRowType* type;
     enemiesLeft = 0;
     for (row = 0; row < ENEMY_ROWS; row++) {
-        type = &enemyRows[row];
         for (col = 0; col < ENEMIES_PER_ROW; col++) {
             i = row * ENEMIES_PER_ROW + col;
             enem = &enemies[i];
             enem->x = col * ENEMY_COL_SPACING;
             enem->y = ENEMY_START_Y + row * ENEMY_ROW_SPACING;
-            enem->points = type->points;
+            enem->points = difficulty_config()->enemyPoints;
             enem->row = row;
             /* Odd rows start on the right when they will move left, so they
              * are not already sitting on the left edge (which would bounce
@@ -317,7 +315,7 @@ void enemies_init() {
             enem->h = 16;
             enem->velx = 1;
             enem->health = 1;
-            enem->points = type->points;
+            enem->points = difficulty_config()->enemyPoints;
             enem->row = row;
             enem->sprite = SPR_addSprite(type->spriteDef, enem->x, enem->y,
                 TILE_ATTR(type->palette, 0, type->vFlip, FALSE));

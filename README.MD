@@ -204,6 +204,10 @@ HISTORY:
                  "+1 NAVE" appears for ~1 s and a short two-note 1UP
                  jingle plays on PCM channel 4. Same threshold on all
                  difficulties; resets each match. Tagged v0.3.48.
+*       13/11/26 - Points per destroyed ship now follow the difficulty
+                 table: EASY 10, NORMAL 20, HARD 30 (both rows). A full
+                 wave is worth 140 / 280 / 420. Extra lives stay every
+                 1000 points. Tagged v0.3.49.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -238,6 +242,8 @@ TODO:
           after GAME OVER, and a PUNTAJES option on the title screen.
         - [Done 13/11/26] Extra life every 1000 points, cap 9, with a
           short 1UP jingle and a "+1 NAVE" banner.
+        - [Done 13/11/26] Points per enemy depend on difficulty
+          (EASY 10, NORMAL 20, HARD 30); both rows use the same value.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -373,3 +379,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * A ship is awarded at 1000, 2000, 3000... (`EXTRA_LIFE_SCORE` in `config.h`, same on all difficulties). If one kill crosses more than one threshold, every crossed mark is counted. Lives are capped at 9 (`LIVES_CAP`) so `SHIPS: n` on the HUD stays one digit; past the cap no ship is added but the next threshold still advances (no queued 1UPs). Starting lives stay at 3 (`MAX_LIVES`). The counter resets in `player_reset` at the start of a match.
 * On a grant, `SHIPS` is updated immediately and a blinking `+1 NAVE` (or `+n NAVE`) appears for about 1 s (60 NTSC / 50 PAL frames) on row 2, under the HUD and clear of the wave banner. A short two-note ding (`res/sounds/oneup.wav`, PCM id 70, ~0.22 s) plays on channel 4 so it does not cut the laser (CH3) or the player explosion (CH2).
 * No award on the GAME OVER / initials screens (score no longer increases there). A 1UP earned during the death explosion of the last ship from a bullet cancels the pending GAME OVER and the player respawns. An invasion or bottom-edge fatal hit still ends the match even if a threshold is crossed while the explosion plays; the threshold advances but no ship is added.
+
+**Points per ship by difficulty (13/11/2026)**
+* The only score source remains a player bullet destroying an enemy (no wave bonus; an invasion crash still awards nothing). Previously both difficulties used a fixed per-row split: top row 20, bottom row 10, so a full wave of 14 was always 210 points.
+* Points now come from `enemyPoints` in the difficulty table, the same for every ship: EASY 10, NORMAL 20, HARD 30. A cleared wave is worth 140 / 280 / 420. Extra lives stay at every 1000 points on all difficulties, so the first 1UP arrives around wave 8 on EASY (7 waves = 980), wave 4 on NORMAL (3 waves = 840) and wave 3 on HARD (2 waves = 840).
+* The shared TOP 5 table is unchanged, including the placeholder entries. Hard scores will climb faster than Easy ones; the difficulty letter (F/N/D) still shows which run it was.

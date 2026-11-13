@@ -3,6 +3,23 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Puntos por nave según la dificultad (AMH + Bimo)
+
+### Cambiado
+- El valor de cada nave destruida pasa a la tabla de dificultad
+  (`enemyPoints`): Fácil 10, Normal 20, Difícil 30. Las dos filas valen
+  lo mismo. Antes la fila de atrás daba 20 y la de adelante 10 en los
+  tres niveles (210 puntos por oleada). No hay bonus de oleada ni otras
+  fuentes de puntaje: solo las naves derribadas con bala (el choque de
+  invasión sigue sin sumar).
+- Una oleada completa (14 naves) vale 140 / 280 / 420. La vida extra
+  sigue siendo cada 1000 puntos en las tres dificultades, así que el
+  primer 1UP llega hacia la oleada 8 en Fácil (7 oleadas = 980), la 4
+  en Normal (3 = 840) y la 3 en Difícil (2 = 840).
+- El TOP 5 sigue siendo una sola tabla: los puntajes de Difícil
+  crecerán más rápido. Los valores de ejemplo (GEN 1000, etc.) no se
+  tocan.
+
 ## 2026-11-13 - Nave extra cada 1000 puntos (AMH + Bimo)
 
 ### Añadido

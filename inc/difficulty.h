@@ -28,6 +28,7 @@ typedef struct
                              * On in NORMAL and HARD; set EASY to 1 to enable it there too. */
     u16 shieldDurationSec;  /* wall-clock seconds the shield stays up */
     u16 shieldRechargeSec;  /* wall-clock seconds before it can be used again */
+    u16 enemyPoints;        /* points awarded for each destroyed enemy (both rows) */
 } DifficultyConfig;
 
 void difficulty_init(void);

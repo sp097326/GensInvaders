@@ -149,6 +149,7 @@
       <li><a href="#nov13-waves">13/11/2026 - Endless waves and version 0.3</a></li>
       <li><a href="#nov13-scores">13/11/2026 - TOP 5 high-score table</a></li>
       <li><a href="#nov13-1up">13/11/2026 - Extra life every 1000 points</a></li>
+      <li><a href="#nov13-points">13/11/2026 - Points per ship by difficulty</a></li>
     </ol>
   </nav>
 
@@ -761,6 +762,22 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        on channel 4. There is no award on GAME OVER or the initials entry.
        A 1UP during the last ship's bullet-death explosion cancels that
        GAME OVER; an invasion fatal hit still ends the match.</p>
+  </section>
+
+  <section class="card" id="nov13-points">
+    <h2>13/11/2026 (with Bimo) - Points per ship by difficulty</h2>
+    <p>The only score source is still destroying an enemy with a player
+       bullet (no wave bonus; invasion crashes award nothing). Previously
+       the top row was worth 20 and the bottom row 10 on every difficulty,
+       so a full wave was always 210 points.</p>
+    <p>Each ship now uses <code class="inline">enemyPoints</code> from the
+       difficulty table: EASY 10, NORMAL 20, HARD 30, the same for both
+       rows. A cleared wave is worth 140 / 280 / 420. Extra lives stay
+       every 1000 points, so the first 1UP arrives around wave 8 on EASY,
+       wave 4 on NORMAL and wave 3 on HARD.</p>
+    <p>The shared TOP 5 table and its placeholder entries are unchanged.
+       Hard scores will climb faster; the F/N/D letter still shows the
+       difficulty of each run.</p>
   </section>
 
   <footer>
