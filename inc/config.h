@@ -58,6 +58,10 @@
 #define EXPLOSION_ENEMY_DURATION 24  /* ~0.4 s at 60 Hz, faster than the player burst */
 #define EXPLOSION_ENEMY_ANIM_FRAMES 6
 
+/* Intermission after a wave is cleared (~1.5 s on both systems). */
+#define WAVE_BANNER_FRAMES_NTSC 90
+#define WAVE_BANNER_FRAMES_PAL  75
+
 #define BG_TILES_W 40           /* visible width of the plane in tiles (320 px / 8) */
 #define BG_TILES_H 32           /* plane height in tiles (256 px, matches the scroll wrap) */
 

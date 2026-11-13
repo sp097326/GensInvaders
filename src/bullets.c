@@ -68,6 +68,15 @@ void bullets_hideAll(void) {
     enemyBulletsOnScreen = 0;
 }
 
+void bullets_clearEnemy(void) {
+    u16 i;
+    for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
+        killGameEntity(&enemyBullets[i]);
+    }
+    enemyBulletsOnScreen = 0;
+    shotTicker = 0;
+}
+
 void bullets_update(void) {
     u16 i = 0;
     GameEntity *bllt;

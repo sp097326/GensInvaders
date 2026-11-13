@@ -37,4 +37,10 @@ void difficulty_cycle(s16 dir);
 const DifficultyConfig* difficulty_config(void);
 const char* difficulty_name(void);
 
+/* Wave 1 uses the table as-is. Later waves scale a runtime copy (see
+ * difficulty.c). beginMatch resets to wave 1; nextWave advances it. */
+void difficulty_beginMatch(void);
+void difficulty_nextWave(void);
+u16  difficulty_wave(void);
+
 #endif

@@ -101,6 +101,10 @@ void hud_updateScore(int score, u16 enemiesLeft, u16 lives) {
     VDP_clearText(0,1, SHIELD_BAR_X);
     sprintf(hud_string, "DIFF: %s", difficulty_name());
     VDP_drawText(hud_string, 0,1);
+    /* Col 16 leaves a gap after "DIFF: NORMAL" (12 chars) and stays
+     * clear of the ESC bar at col 29, even with "OLEADA 999". */
+    sprintf(hud_string, "OLEADA %d", difficulty_wave());
+    VDP_drawText(hud_string, 16, 1);
     barDrawn = 0;
     drawShieldBar(1);
 }

@@ -20,11 +20,11 @@ start "" "%BLASTEM%" "%~dp0out\rom.bin"
 exit /b 0
 
 :version
-rem Version = V0.2.xx, xx = numero de commits del repo (2 digitos minimo).
+rem Version = V0.3.xx, xx = numero de commits del repo (2 digitos minimo).
 set BUILD=00
 for /f %%c in ('git rev-list --count HEAD 2^>nul') do set BUILD=%%c
 if %BUILD% LSS 10 set BUILD=0%BUILD%
 rem Python evita el espacio final que deja echo y escribe CRLF exacto.
-python -c "from pathlib import Path; Path('src/version.h').write_bytes('#define GAME_VERSION \"V0.2.%BUILD%\"\r\n'.encode())"
-echo Version: V0.2.%BUILD%
+python -c "from pathlib import Path; Path('src/version.h').write_bytes('#define GAME_VERSION \"V0.3.%BUILD%\"\r\n'.encode())"
+echo Version: V0.3.%BUILD%
 exit /b 0

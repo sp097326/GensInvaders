@@ -26,10 +26,10 @@ From the project folder:
 The ROM ends up in `out/rom.bin` (256 KB).
 
 To play it, run `run.bat` from the project root (or `run.bat build` to compile first).
-`run.bat build` also writes `src/version.h` with the version `V0.2.xx`, where xx is the
+`run.bat build` also writes `src/version.h` with the version `V0.3.xx`, where xx is the
 total number of git commits (`git rev-list --count HEAD`); the 0.2 prefix marks this
 stage of the game, and the last number is not reset. Build after committing so the
-version matches GitHub. If `version.h` is missing, the game shows `V0.2.DEV`.
+version matches GitHub. If `version.h` is missing, the game shows `V0.3.DEV`.
 It opens the ROM in BlastEm 0.6.2, installed at `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
 BlastEm default keys: arrows = D-pad, S = B (shoot), A = A (RapidFire), D = C (shield), Enter = START.
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
@@ -40,7 +40,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 
 * inc/config.h — shared gameplay constants (formation size, edges, bullet caps, lives, SFX ids). Tunables that change by difficulty stay in the difficulty table.
 * inc/game.h — GameEntity, GameState, killGameEntity / 
-eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when present, otherwise V0.2.DEV).
+eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when present, otherwise V0.3.DEV).
 * difficulty.c/.h — DifficultyConfig table, names, current difficulty, difficulty_config() / difficulty_cycle().
 * ullets.c/.h — player and enemy bullet pools, shooting, movement and despawn.
 * hud.c/.h — score / ships / difficulty lines, shield bar (ESC + 8 tiles), centered text, overlay clear.
@@ -185,6 +185,14 @@ HISTORY:
                  fireball. A pool of 6 simultaneous bursts; the ship
                  vanishes at once and the explosion takes its place.
                  On a crash into the player, both explode before GAME OVER.
+*       13/11/26 - Endless waves: clearing both rows no longer ends the
+                 match. A brief OLEADA N banner (~1.5 s) plays and two
+                 new rows spawn at the top. Score, lives and the shield
+                 state are kept. Each wave scales movement and fire rate
+                 from the difficulty's base values, with caps. Version
+                 prefix raised to 0.3; the last number is still the
+                 total commit count (this release is V0.3.46). Fallback
+                 is V0.3.DEV. Tagged v0.3.46.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -212,6 +220,9 @@ TODO:
         - [Done 12/11/26] Distinct explosion animation when an enemy ship
           is destroyed (and when one crashes into the player). Smaller and
           faster than the player's (~0.4 s, green/yellow sparks, pool of 6).
+        - [Done 13/11/26] Endless waves: clearing a pair of rows spawns
+          the next wave a bit faster (movement and fire rate), with caps
+          per difficulty. The match no longer ends with YOU WIN.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -326,3 +337,13 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * Pool of 6 (`MAX_ENEMY_EXPLOSIONS` in `inc/explosions.h` / `src/explosions.c`). If all slots are busy, the oldest (lowest remaining timer) is reused. Each burst is 1 VDP sprite (16x16). Peak hardware count is about 33 of 80 (14 enemies + player + player explosion + shield + 6 player bullets + 4 enemy bullets + 6 enemy bursts). Dead ships are already hidden, so a scanline holds bursts rather than a full live row and stays under the 20-sprite limit.
 * Hooked from `collision`: a player bullet that kills a ship spawns a burst, then the existing score / YOU WIN path. A body crash into the player (or a landing at `BOTTOM_EDGE`) spawns a burst on every overlapping (or landed) ship, kills them without awarding score or YOU WIN, and then `player_hitFatal` so both explosions play before GAME OVER. The enemy burst can finish under the YOU WIN / GAME OVER text; pause freezes it like the other timers.
 * Optional short high pop SFX (`res/sounds/enemyexp.wav`, PCM id 69, ~0.10 s) on channel 3 at moderate priority, so it can play at the same time as the player's explosion on channel 2 during an invasion crash.
+
+**Endless waves and version 0.3 (13/11/2026)**
+* Clearing both rows no longer shows YOU WIN. The game stays in STATE_PLAYING, shows a centered `OLEADA N` banner for about 1.5 s (90 NTSC frames / 75 PAL), then respawns two rows at `ENEMY_START_Y`. Score, lives, RapidFire and the shield (including mid-recharge) are kept. Enemy bullets and the volley ticker are cleared; player bullets and any enemy explosions already playing continue. The player can still move, shoot and use the shield during the banner; pause freezes the timer and redraws the banner on resume.
+* Wave 1 is an exact copy of the existing difficulty table. Later waves scale a runtime `DifficultyConfig` (`difficulty_beginMatch` / `difficulty_nextWave` in `difficulty.c`). Per-difficulty increments and caps:
+  * EASY: interval 90 down by 10 to a floor of 45; speed 1 to 3 every 3 waves; volley/cap stay 1 until wave 4, then 2 (never more); bullet speed 5 to 7 every 3 waves; no descent (stepDown stays 0).
+  * NORMAL: interval 120 to 40; speed 1 to 3 every 3 waves; volley and bullet cap grow from 2 to 4 every 3 waves; bullet speed 5 to 7; stepDown 8 to 16 (+4 every 4 waves). Rows still move in opposite directions; column picking is unchanged.
+  * HARD: interval 60 to 30; speed 2 to 3 every 3 waves; volley 2 to 4 every 2 waves (the bullet cap is already 4); bullet speed 6 to 7; stepDown 16 to 20 (+4 every 5 waves).
+  The enemy bullet pool stays at 4, so the hardware-sprite budget does not grow with the wave number.
+* The HUD shows `OLEADA n` on line 2 at column 16, after `DIFF:` and before the `ESC` bar (fits even with 3-digit waves). The pause screen also shows the wave.
+* Version prefix is now 0.3. The last number is still the total commit count (`git rev-list --count HEAD`), not a count from a 0.3 base tag, so this release is V0.3.46. Fallback without `src/version.h` is `V0.3.DEV`. `run.bat build` writes `V0.3.xx`. Annotated tag `v0.3.46`. GAME OVER rules are unchanged; the shield still only stops bullets.

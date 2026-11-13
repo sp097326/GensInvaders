@@ -5,12 +5,14 @@
 #include "config.h"
 
 /* Game version. run.bat writes src/version.h before each build with
- * V0.2.xx, where xx = number of commits in the git repo (git rev-list --count HEAD).
- * version.h is git-ignored; if it doesn't exist we fall back to a dev label. */
+ * V0.3.xx, where xx = number of commits in the git repo (git rev-list --count HEAD).
+ * The prefix is 0.3 (endless waves); the last number is still the total count,
+ * not a count from a 0.3 base tag. version.h is git-ignored; if it is missing
+ * we fall back to a dev label. */
 #if __has_include("version.h")
 #include "version.h"
 #else
-#define GAME_VERSION "V0.2.DEV"
+#define GAME_VERSION "V0.3.DEV"
 #endif
 
 /* name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit. */
@@ -31,7 +33,9 @@ typedef struct
 
 /* The main loop only moves things while PLAYING.
  * STATE_TITLE is the boot (and post-game) title screen with START / difficulty.
- * GAME_OVER and WIN freeze the action and wait for START to return to the title. */
+ * GAME_OVER freezes the action and waits for START to return to the title.
+ * STATE_WIN remains in the enum but is unused: clearing a wave starts the next
+ * one instead of ending the match. */
 typedef enum
 {
     STATE_TITLE,

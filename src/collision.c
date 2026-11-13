@@ -36,6 +36,8 @@ u16 collision_update(int* score) {
                         *score += e->points;
                         hud_updateScore(*score, enemies_left(), player_lives());
                         if (enemies_left() == 0) {
+                            /* Wave cleared: the caller starts the next one
+                             * instead of ending the match with YOU WIN. */
                             return COLLISION_WIN;
                         }
                         break;

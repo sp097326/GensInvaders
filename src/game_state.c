@@ -13,8 +13,10 @@
 static int score = 0;
 static GameState gameState = STATE_TITLE;
 static u16 menuFrames = 0;  /* ticks on every screen, used to seed the RNG on START */
+static u16 wavePauseTimer = 0;
 
 static void resetGame(void);
+static void drawWaveBanner(void);
 
 static void showEndScreen(GameState newState) {
     gameState = newState;
@@ -41,12 +43,15 @@ static void pauseGame() {
     hud_drawCentered("GENS INVADERS " GAME_VERSION, 14);
     sprintf(line, "DIFFICULTY: %s", difficulty_name());
     hud_drawCentered(line, 16);
+    sprintf(line, "OLEADA %d", difficulty_wave());
+    hud_drawCentered(line, 17);
     hud_drawCentered("PRESS START", 18);
 }
 
 static void resumeGame() {
     clearEndScreen();
     gameState = STATE_PLAYING;
+    if (wavePauseTimer > 0) drawWaveBanner();
 }
 
 /* Hide every game sprite and reset bullet counters. Used by the title screen. */
@@ -61,6 +66,7 @@ static void hideGameSprites() {
 void game_state_showTitle() {
     gameState = STATE_TITLE;
     player_get()->velx = 0;
+    wavePauseTimer = 0;
     hideGameSprites();
     title_show();
 }
@@ -164,12 +170,37 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
 
 /* Restart after confirming a difficulty: reuse the sprites already allocated,
  * just reset positions, counters and flags. */
+static void drawWaveBanner(void) {
+    char line[20];
+    sprintf(line, "OLEADA %d", difficulty_wave());
+    hud_drawCentered(line, 12);
+}
+
+static void startNextWave(void) {
+    /* Enemy shots vanish; player shots, explosions, score, lives and the
+     * shield / RapidFire state are kept. */
+    bullets_clearEnemy();
+    difficulty_nextWave();
+    wavePauseTimer = IS_PAL_SYSTEM ? WAVE_BANNER_FRAMES_PAL : WAVE_BANNER_FRAMES_NTSC;
+    clearEndScreen();
+    drawWaveBanner();
+    hud_updateScore(score, enemies_left(), player_lives());
+}
+
+static void finishWavePause(void) {
+    enemies_reset();
+    clearEndScreen();
+    hud_updateScore(score, enemies_left(), player_lives());
+}
+
 static void resetGame() {
     bullets_reset();
     powerups_reset();
 
     player_reset();
 
+    difficulty_beginMatch();
+    wavePauseTimer = 0;
     enemies_reset();
     explosions_reset();
     score = 0;
@@ -184,18 +215,26 @@ void game_state_update(void) {
         title_updatePulse();
     } else if (gameState == STATE_PLAYING) {
         if (player_update()) {
+            wavePauseTimer = 0;
             showEndScreen(STATE_GAME_OVER);
         }
         bullets_update();
-        if (enemies_update()) {
-            showEndScreen(STATE_GAME_OVER);
-        }
-        {
-            u16 hit = collision_update(&score);
-            if (hit == COLLISION_WIN) {
-                showEndScreen(STATE_WIN);
-            } else if (hit == COLLISION_GAME_OVER) {
+        if (wavePauseTimer > 0) {
+            /* Brief intermission: no formation or enemy fire, banner up.
+             * The player can still move and shoot; the shield keeps ticking. */
+            wavePauseTimer--;
+            if (wavePauseTimer == 0) finishWavePause();
+        } else {
+            if (enemies_update()) {
                 showEndScreen(STATE_GAME_OVER);
+            }
+            {
+                u16 hit = collision_update(&score);
+                if (hit == COLLISION_WIN) {
+                    startNextWave();
+                } else if (hit == COLLISION_GAME_OVER) {
+                    showEndScreen(STATE_GAME_OVER);
+                }
             }
         }
         powerups_update();

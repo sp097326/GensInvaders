@@ -8,6 +8,8 @@
 void bullets_init(void);
 void bullets_reset(void);
 void bullets_hideAll(void);
+/* Hide every enemy bullet and reset the volley ticker. Player shots stay. */
+void bullets_clearEnemy(void);
 void bullets_update(void);
 void bullets_shootPlayer(GameEntity shooter);
 void bullets_shootEnemy(GameEntity* shooter);
