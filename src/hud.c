@@ -18,6 +18,7 @@ static u16 shieldLevel = SHIELD_BAR_STEPS;
 static u16 shieldBlink = 0;
 static u16 barAttr[8];
 static u16 barDrawn = 0;
+static u16 extraLifeTimer = 0;
 
 static void buildBarTile(u32* dst, u16 fillPx, u16 fillColor) {
     u16 y;
@@ -134,4 +135,37 @@ void hud_clearOverlay(void) {
     for (row = 10; row <= 22; row++) {
         VDP_clearText(0, row, 40);
     }
+}
+
+static char extraLifeText[20] = "+1 NAVE";
+
+void hud_showExtraLife(u16 granted) {
+    if (granted == 0) return;
+    if (granted == 1) {
+        sprintf(extraLifeText, "+1 NAVE");
+    } else {
+        sprintf(extraLifeText, "+%u NAVE", granted);
+    }
+    VDP_clearText(0, 2, 40);
+    hud_drawCentered(extraLifeText, 2);
+    extraLifeTimer = IS_PAL_SYSTEM ? EXTRA_LIFE_BANNER_PAL : EXTRA_LIFE_BANNER_NTSC;
+}
+
+void hud_updateExtraLife(void) {
+    if (extraLifeTimer == 0) return;
+    extraLifeTimer--;
+    if (extraLifeTimer == 0) {
+        VDP_clearText(0, 2, 40);
+        return;
+    }
+    /* Blink every 8 frames. */
+    VDP_clearText(0, 2, 40);
+    if ((extraLifeTimer & 8) == 0) {
+        hud_drawCentered(extraLifeText, 2);
+    }
+}
+
+void hud_hideExtraLife(void) {
+    extraLifeTimer = 0;
+    VDP_clearText(0, 2, 40);
 }

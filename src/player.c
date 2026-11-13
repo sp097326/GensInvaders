@@ -14,6 +14,8 @@ static Sprite* explosionSpr = NULL;
 static u16 explTimer = 0;
 static u16 explActive = 0;
 static u16 pendingGameOver = 0;
+static u16 pendingFatal = 0;     /* invasion / landing: a 1UP must not cancel GAME OVER */
+static u32 nextExtraLife = EXTRA_LIFE_SCORE;
 static s16 explX = 0;
 static s16 explY = 0;
 
@@ -147,6 +149,8 @@ void player_init(void) {
 void player_reset(void) {
     stopExplosion();
     pendingGameOver = 0;
+    pendingFatal = 0;
+    nextExtraLife = EXTRA_LIFE_SCORE;
     placePlayer();
     reviveGameEntity(&player);
     lives = MAX_LIVES;
@@ -180,6 +184,7 @@ u16 player_hit(int score) {
     lives--;
     hud_updateScore(score, enemies_left(), lives);
     pendingGameOver = (lives == 0) ? 1 : 0;
+    pendingFatal = 0;
     startExplosion();
     /* GAME OVER waits until the explosion finishes (player_update returns 1). */
     return 0;
@@ -194,6 +199,7 @@ void player_hitFatal(int score) {
     lives = 0;
     hud_updateScore(score, enemies_left(), lives);
     pendingGameOver = 1;
+    pendingFatal = 1;
     startExplosion();
 }
 
@@ -211,4 +217,34 @@ u16 player_invulnTimer(void) {
 
 u16 player_isExploding(void) {
     return explActive;
+}
+
+u16 player_checkExtraLife(int score) {
+    u16 granted = 0;
+    u32 sc;
+
+    if (score < 0) return 0;
+    sc = (u32)score;
+
+    while (sc >= nextExtraLife) {
+        /* Invasion already decided the match: keep counting thresholds but
+         * do not add a ship that would cancel GAME OVER. */
+        if (!pendingFatal && lives < LIVES_CAP) {
+            lives++;
+            granted++;
+        }
+        if (nextExtraLife > (0xFFFFFFFFul - (u32)EXTRA_LIFE_SCORE)) {
+            nextExtraLife = 0xFFFFFFFFul;
+            break;
+        }
+        nextExtraLife += (u32)EXTRA_LIFE_SCORE;
+    }
+
+    if (granted > 0) {
+        /* A 1UP earned after losing the last ship (bullet hit, not invasion)
+         * cancels the pending GAME OVER and the player will respawn. */
+        if (pendingGameOver && !pendingFatal) pendingGameOver = 0;
+        XGM_startPlayPCM(SFX_1UP, 12, SOUND_PCM_CH4);
+    }
+    return granted;
 }

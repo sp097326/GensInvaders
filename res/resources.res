@@ -12,3 +12,4 @@ WAV intro "music/intro_short.wav" XGM
 WAV shieldon "sounds/shield_on.wav" XGM
 WAV shieldrdy "sounds/shield_ready.wav" XGM
 WAV enxplode "sounds/enemyexp.wav" XGM
+WAV oneup "sounds/oneup.wav" XGM

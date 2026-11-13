@@ -199,6 +199,11 @@ HISTORY:
                  under the GAME OVER text (rank, initials, score, wave,
                  difficulty letter F/N/D). One shared table. Also
                  reachable from the title menu (PUNTAJES). Tagged v0.3.47.
+*       13/11/26 - Extra life every 1000 points (1000, 2000, 3000...),
+                 cap of 9 ships so the HUD stays one digit. A blinking
+                 "+1 NAVE" appears for ~1 s and a short two-note 1UP
+                 jingle plays on PCM channel 4. Same threshold on all
+                 difficulties; resets each match. Tagged v0.3.48.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -231,6 +236,8 @@ TODO:
           per difficulty. The match no longer ends with YOU WIN.
         - [Done 13/11/26] TOP 5 high-score table in SRAM, initials entry
           after GAME OVER, and a PUNTAJES option on the title screen.
+        - [Done 13/11/26] Extra life every 1000 points, cap 9, with a
+          short 1UP jingle and a "+1 NAVE" banner.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -361,3 +368,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * After GAME OVER, a score that beats the current 5th place (ties stay out) opens a 3-letter initials entry: up/down cycle A-Z, space and `.`; left/right move the cursor; A or START confirm. The table is then drawn under `GAME OVER` (rows 12-16) with a blinking `>` on the new row, and `PRESS START` still returns to the title. A score that does not qualify skips the entry prompt and just shows the table. The player explosion still finishes before this screen.
 * The title menu has a third option, `PUNTAJES (TOP 5)`. START or A opens the table under the logo; START or B returns to the menu.
 * The ROM header already declared SRAM (`RA`, 0xF820, 0x200000-0x20FFFF) in `rom_head.c`; a comment was added. In BlastEm the file is `%LOCALAPPDATA%\blastem\rom\save.sram` because the ROM is launched as `out\rom.bin`. Deleting that file and relaunching restores the defaults.
+
+**Extra life every 1000 points (13/11/2026)**
+* A ship is awarded at 1000, 2000, 3000... (`EXTRA_LIFE_SCORE` in `config.h`, same on all difficulties). If one kill crosses more than one threshold, every crossed mark is counted. Lives are capped at 9 (`LIVES_CAP`) so `SHIPS: n` on the HUD stays one digit; past the cap no ship is added but the next threshold still advances (no queued 1UPs). Starting lives stay at 3 (`MAX_LIVES`). The counter resets in `player_reset` at the start of a match.
+* On a grant, `SHIPS` is updated immediately and a blinking `+1 NAVE` (or `+n NAVE`) appears for about 1 s (60 NTSC / 50 PAL frames) on row 2, under the HUD and clear of the wave banner. A short two-note ding (`res/sounds/oneup.wav`, PCM id 70, ~0.22 s) plays on channel 4 so it does not cut the laser (CH3) or the player explosion (CH2).
+* No award on the GAME OVER / initials screens (score no longer increases there). A 1UP earned during the death explosion of the last ship from a bullet cancels the pending GAME OVER and the player respawns. An invasion or bottom-edge fatal hit still ends the match even if a threshold is crossed while the explosion plays; the threshold advances but no ship is added.

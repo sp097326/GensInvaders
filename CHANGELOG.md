@@ -3,6 +3,25 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Nave extra cada 1000 puntos (AMH + Bimo)
+
+### Añadido
+- Al llegar a 1000, 2000, 3000… puntos se otorga una nave extra (el umbral
+  avanza aunque un solo disparo cruce varios múltiplos). El tope es 9
+  (`LIVES_CAP`), para que `SHIPS: n` del HUD quepa en un dígito. Si ya se
+  tiene el máximo, no se suma la vida pero el umbral sigue contando, así
+  que no se “acumulan” 1UP pendientes.
+- El umbral (`EXTRA_LIFE_SCORE` 1000) y el tope son los mismos en las tres
+  dificultades y se reinician al empezar una partida.
+- Un letrero `+1 NAVE` (o `+n NAVE` si se cruzan varios umbrales) parpadea
+  unos 1 s en la fila 3, bajo el HUD, y se actualiza `SHIPS`. SFX corto de
+  dos notas (`res/sounds/oneup.wav`, id 70) en el canal 4, para no cortar
+  el láser ni las explosiones.
+- No se otorga en GAME OVER, en la captura de iniciales ni si la muerte
+  fue por invasión (choque o borde inferior). Si un 1UP llega durante la
+  explosión de la última vida por una bala, se cancela el GAME OVER y la
+  nave reaparece.
+
 ## 2026-11-13 - Tabla TOP 5 de puntuaciones (AMH + Bimo)
 
 ### Añadido

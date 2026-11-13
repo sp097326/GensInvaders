@@ -33,6 +33,7 @@
 #define SFX_SHIELD_ON 67
 #define SFX_SHIELD_READY 68
 #define SFX_ENEMY_EXP 69
+#define SFX_1UP 70
 
 #define POWERUP_DURATION 100
 #define POWER_ON 1
@@ -48,7 +49,11 @@
 #define PLAYER_START_Y 192
 
 #define ENEMY_STEP_DOWN 8       /* NORMAL step; HARD uses twice this, EASY uses 0 */
-#define MAX_LIVES 3
+#define MAX_LIVES 3              /* ships at the start of a match */
+#define LIVES_CAP 9              /* HUD "SHIPS: n" stays one digit; 1UPs stop adding here */
+#define EXTRA_LIFE_SCORE 1000    /* a ship is awarded every 1000 points, all difficulties */
+#define EXTRA_LIFE_BANNER_NTSC 60  /* ~1 s for the "+1 NAVE" text */
+#define EXTRA_LIFE_BANNER_PAL  50
 #define RESPAWN_DELAY 90        /* frames the player stays gone after being hit (~1.5 s) */
 #define INVULN_FRAMES 120       /* frames of blinking invulnerability after respawn (~2 s) */
 #define EXPLOSION_DURATION 48   /* frames the death explosion plays (~0.8 s at 60 Hz) */

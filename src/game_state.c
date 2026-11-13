@@ -35,6 +35,7 @@ static void showEndScreen(GameState newState) {
     gameState = newState;
     player_get()->velx = 0;
     wavePauseTimer = 0;
+    hud_hideExtraLife();
     if (newState == STATE_WIN) {
         clearEndScreen();
         hud_drawCentered("YOU WIN!", 12);
@@ -92,6 +93,7 @@ void game_state_showTitle() {
     gameState = STATE_TITLE;
     player_get()->velx = 0;
     wavePauseTimer = 0;
+    hud_hideExtraLife();
     hideGameSprites();
     title_show();
 }
@@ -252,6 +254,7 @@ static void resetGame() {
     explosions_reset();
     score = 0;
     clearEndScreen();
+    hud_hideExtraLife();
     hud_updateScore(score, enemies_left(), player_lives());
     gameState = STATE_PLAYING;
 }
@@ -286,6 +289,7 @@ void game_state_update(void) {
         }
         powerups_update();
         explosions_update();
+        hud_updateExtraLife();
     } else if (gameState == STATE_NAME_ENTRY) {
         explosions_update();
         scores_entryUpdate();

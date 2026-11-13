@@ -19,5 +19,9 @@ GameEntity* player_get(void);
 u16 player_lives(void);
 u16 player_invulnTimer(void);
 u16 player_isExploding(void);
+/* After the score increases: grant a life for every EXTRA_LIFE_SCORE crossed,
+ * up to LIVES_CAP. Thresholds still advance when the cap is hit. Returns how
+ * many lives were actually added. No grant during a fatal (invasion) death. */
+u16 player_checkExtraLife(int score);
 
 #endif

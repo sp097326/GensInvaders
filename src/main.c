@@ -60,6 +60,7 @@ int main(bool hard)
     XGM_setPCM(SFX_SHIELD_ON, shieldon, sizeof(shieldon));
     XGM_setPCM(SFX_SHIELD_READY, shieldrdy, sizeof(shieldrdy));
     XGM_setPCM(SFX_ENEMY_EXP, enxplode, sizeof(enxplode));
+    XGM_setPCM(SFX_1UP, oneup, sizeof(oneup));
     //note to this: read the url for the effects.
     SYS_disableInts();
     VDP_loadTileSet(background.tileset,1,DMA);
