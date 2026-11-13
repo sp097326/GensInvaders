@@ -225,6 +225,9 @@ HISTORY:
 *       13/11/26 - Charged shot: hold B ~1 s, release a 24x24 piercing
                  bolt. A short tap still fires the normal 8x8 shot.
                  Tagged v0.3.54.
+*       13/11/26 - Charged-shot release sound is louder and lower
+                 (a bass boom, distinct from the normal laser).
+                 Tagged v0.3.55.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -271,6 +274,7 @@ TODO:
           duration (2 s hum on CH1, not a 0.16 s blip).
         - [Done 13/11/26] Charged shot (hold B ~1 s) fires a piercing
           24x24 bolt; taps still shoot the normal 8x8 bullet.
+        - [Done 13/11/26] Charged-shot release SFX is a louder, deeper boom.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -434,3 +438,6 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **Charged shot (13/11/2026)**
 * Fire now happens on button release so a hold can charge. A short tap (under ~1 s, 60 NTSC / 50 PAL frames) still fires the usual 8x8 shot and uses the RapidFire cap (3 or 6). Holding B for about a second arms a charged shot: an orange 16x16 aura appears around the ship, then blinks white when ready and a short lock-on ding plays on CH4 (priority 10, below the 1UP jingle; it never uses CH1, so it cannot cut the shield hum). Releasing then fires a 24x24 bolt (3x the normal shot, one 3x3 hardware sprite, slightly faster at -4 px/frame) that pierces every enemy it touches, awarding the usual per-ship points, until it leaves the screen.
 * Only one charged bolt can be on screen; it has its own slot and does not count against the RapidFire cap. If one is still flying, a charged release falls back to a normal shot so the button is never a dead input. The charge is cancelled (no shot) when a wave-warp starts, on death, and on the title / GAME OVER screens. After pause, if B was released while paused, the charge is dropped without firing. RapidFire is unchanged: it only raises the small-bullet cap; charging works the same with it on or off.
+**Charged-shot boom (13/11/2026)**
+* The charged-shot release sample was thinner and higher than the normal laser (peak 16249, RMS 6733, attack around 1.8 kHz). It is now a ~0.32 s bass boom (sweep about 280 Hz down to 70 Hz) with a short click so it still reads as a shot. Peak 20000, just under the player explosion (20814) and louder than the laser (17972); RMS about 9600, close to the laser, so it stays present without clipping. Still played on CH3, so it cannot cut the shield hum on CH1. The charge-ready ding is slightly fuller (added a lower harmonic) but remains quieter than the boom and the 1UP jingle.
+

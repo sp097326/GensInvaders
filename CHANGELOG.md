@@ -3,6 +3,16 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Disparo cargado más fuerte y grave (AMH + Bimo)
+
+### Cambiado
+- El sonido al soltar la bala cargada es ahora un impacto más fuerte y
+  grave (~0,32 s, alrededor de 70-280 Hz), claramente distinto del
+  láser de la bala chica. El pico queda por debajo de la explosión del
+  jugador para no recortar. El aviso de carga lista se volvió un poco
+  más lleno (con un armónico grave), sin subir de más. Sigue en el
+  canal 3, así que no corta el zumbido del escudo.
+
 ## 2026-11-13 - Disparo cargado (AMH + Bimo)
 
 ### Añadido

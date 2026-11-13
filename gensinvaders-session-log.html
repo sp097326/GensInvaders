@@ -155,6 +155,7 @@
       <li><a href="#nov13-warp">13/11/2026 - Between-wave warp animation</a></li>
       <li><a href="#nov13-hum">13/11/2026 - Shield hum while active</a></li>
       <li><a href="#nov13-charge">13/11/2026 - Charged shot</a></li>
+      <li><a href="#nov13-boom">13/11/2026 - Louder, deeper charged-shot boom</a></li>
     </ol>
   </nav>
 
@@ -857,6 +858,17 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        8x8 shot, now on release. RapidFire only raises the small-bullet
        cap; the charged bolt has its own slot. Charging is disabled
        during the between-wave warp.</p>
+  </section>
+
+
+  <section class="card" id="nov13-boom">
+    <h2>13/11/2026 (with Bimo) - Louder, deeper charged-shot boom</h2>
+    <p>The charged-shot release sound is now a ~0.32 s bass boom
+       (about 280 Hz down to 70 Hz), louder than the normal laser and
+       just under the player explosion so it does not clip. It stays
+       on CH3 and does not cut the shield hum. The charge-ready cue
+       is slightly fuller, still quieter than the boom and the 1UP
+       jingle.</p>
   </section>
 
   <footer>
