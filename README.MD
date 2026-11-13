@@ -215,6 +215,10 @@ HISTORY:
 *       13/11/26 - Life icons moved to the bottom-left corner (row 27,
                  just below the shield). "+1 NAVE" sits next to them;
                  the top-right of the HUD is clear again. Tagged v0.3.51.
+*       13/11/26 - Short between-wave warp: faster stars, engine flame,
+                 ship lifts a little, then the next two rows slide in
+                 from the top under the OLEADA N banner (~2.5 s).
+                 Tagged v0.3.52.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -255,6 +259,8 @@ TODO:
           the "+1 NAVE" banner is a solid, readable plane-A message.
         - [Done 13/11/26] Life icons sit in the bottom-left corner,
           with the "+1 NAVE" banner beside them.
+        - [Done 13/11/26] Between-wave transition: starfield warp,
+          engine flame, and the next formation sliding in from the top.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -405,3 +411,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 * The nine 8x8 ship icons left the top-right of row 0 (the top HUD was already busy with SCORE, LEFT, DIFF, OLEADA and the ESC bar) and now sit at the bottom-left of the visible plane: row 27, pixels 216-223, columns 0-8, still left-aligned so a new life appears to the right. They remain high-priority plane-A tiles, not sprites.
 * That row is just below the 32px shield (which ends at Y=216) and does not overlap the player ship (Y=192-207, only moves horizontally), so `PLAYER_START_Y` was left at 192. Enemy bullets and a late invasion in that corner pass behind the icons. Explosions stay at the ship's Y and do not cover the row.
 * The solid `+1 NAVE` banner moved to the same row, starting at column 10, just after the nine icon slots, so the top of the screen is no longer used for it. Clearing the banner does not wipe the icons. The newly awarded icon still blinks while the banner is up. `SCORE` / `LEFT` once again use the full width of row 0.
+
+**Between-wave warp animation (13/11/2026)**
+* Clearing a wave no longer jumps straight to the next formation after a 1.5 s banner. There is now a ~2.5 s transition (150 NTSC / 125 PAL frames) with `OLEADA N` on screen the whole time. Enemy bullets are cleared; score, lives, the shield (including its timers) and RapidFire are kept. Player bullets already in the air can finish; new shots, RapidFire toggles and a fresh shield are blocked. Horizontal movement and pause still work. The 1UP banner and life icons are unchanged (the 8x8 flame sits at Y=208-215, just above the icons on row 27).
+* The ship rises 8 pixels and an 8x8 two-frame exhaust flame (`res/tiles/imgflame.bmp`, PAL1, one hardware sprite) flickers under the hull. The starfield step ramps from 2 to 14 and back down. For the first ~1.25 s the next two rows wait fully above the screen; in the last 1.25 s they slide into their home slots (80 px) as the stars slow and the flame goes out. Wave 1 still starts in place, with no warp.
+* Sprite budget: one extra 8x8 sprite (35 allocated, still well under 80). The flame does not share a scanline with the 16x16 ship and only overlaps the bottom of the shield if it is already on, so the 20-sprites-per-line limit is not a concern.

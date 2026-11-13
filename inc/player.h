@@ -23,5 +23,8 @@ u16 player_isExploding(void);
  * up to LIVES_CAP. Thresholds still advance when the cap is hit. Returns how
  * many lives were actually added. No grant during a fatal (invasion) death. */
 u16 player_checkExtraLife(int score);
+/* 8x8 exhaust flame under the ship (wave-transition boost). */
+void player_setWarpFlame(u16 on);
+
 
 #endif

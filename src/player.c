@@ -11,6 +11,9 @@ static u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
 static u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
 
 static Sprite* explosionSpr = NULL;
+static Sprite* flameSpr = NULL;
+static u16 flameOn = 0;
+static u16 flameTick = 0;
 static u16 explTimer = 0;
 static u16 explActive = 0;
 static u16 pendingGameOver = 0;
@@ -39,6 +42,9 @@ static void startExplosion(void) {
         SPR_setAnimAndFrame(explosionSpr, 0, 0);
         SPR_setPosition(explosionSpr, explX, explY);
         SPR_setVisibility(explosionSpr, VISIBLE);
+    }
+    if (flameSpr != NULL) {
+        SPR_setVisibility(flameSpr, HIDDEN);
     }
     /* Brief flash: the shared orange slot of PAL1 goes white for a few frames. */
     PAL_setColor(16 + 2, RGB24_TO_VDPCOLOR(0xFCFCFC));
@@ -144,6 +150,14 @@ void player_init(void) {
     explosionSpr = SPR_addSprite(&explosion, 0, -32, TILE_ATTR(PAL1, 1, FALSE, FALSE));
     SPR_setAutoAnimation(explosionSpr, FALSE);
     SPR_setVisibility(explosionSpr, HIDDEN);
+
+    /* 8x8 exhaust (2 frames). One hardware sprite, sits under the ship
+     * at Y=208-215, just above the life icons (row 27) and below the
+     * 16x16 hull, so it does not add to a busy scanline. */
+    flameSpr = SPR_addSprite(&flame, 0, -16, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    SPR_setAutoAnimation(flameSpr, FALSE);
+    SPR_setVisibility(flameSpr, HIDDEN);
+    flameOn = 0;
 }
 
 void player_reset(void) {
@@ -151,6 +165,7 @@ void player_reset(void) {
     pendingGameOver = 0;
     pendingFatal = 0;
     nextExtraLife = EXTRA_LIFE_SCORE;
+    player_setWarpFlame(0);
     placePlayer();
     reviveGameEntity(&player);
     lives = MAX_LIVES;
@@ -161,12 +176,31 @@ void player_reset(void) {
 void player_hide(void) {
     killGameEntity(&player);
     stopExplosion();
+    player_setWarpFlame(0);
+}
+
+static void updateFlame(void) {
+    if (flameSpr == NULL) return;
+    if (!flameOn || player.health == 0 || explActive) {
+        SPR_setVisibility(flameSpr, HIDDEN);
+        return;
+    }
+    /* Hide with the ship during the post-respawn invuln blink. */
+    if (invulnTimer > 0 && (invulnTimer & 4)) {
+        SPR_setVisibility(flameSpr, HIDDEN);
+        return;
+    }
+    flameTick++;
+    SPR_setAnimAndFrame(flameSpr, 0, (flameTick >> 2) & 1);
+    SPR_setPosition(flameSpr, player.x + 4, player.y + 16);
+    SPR_setVisibility(flameSpr, VISIBLE);
 }
 
 u16 player_update(void) {
     if (updateExplosion()) return 1;
     updatePlayerLife();
     positionPlayer();
+    updateFlame();
     return 0;
 }
 
@@ -247,4 +281,12 @@ u16 player_checkExtraLife(int score) {
         XGM_startPlayPCM(SFX_1UP, 12, SOUND_PCM_CH4);
     }
     return granted;
+}
+
+void player_setWarpFlame(u16 on) {
+    flameOn = on ? 1 : 0;
+    flameTick = 0;
+    if (!flameOn && flameSpr != NULL) {
+        SPR_setVisibility(flameSpr, HIDDEN);
+    }
 }

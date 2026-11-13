@@ -3,6 +3,21 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Animación de aceleración entre oleadas (AMH + Bimo)
+
+### Añadido
+- Al limpiar una oleada hay una transición de unos 2,5 s (150 cuadros
+  NTSC / 125 PAL). Las balas enemigas se quitan; el puntaje, las vidas,
+  el escudo y el RapidFire se conservan. La nave sube un poco (8 px),
+  enciende un motor de 8×8 (sprite nuevo de 2 fotogramas) y las
+  estrellas se aceleran (de 2 a 14) y luego frenan. En la última parte
+  las dos filas entran desde arriba, como si la nave se topara con ellas.
+  El letrero `OLEADA N` permanece visible durante toda la transición.
+- Durante el warp se puede mover la nave a los lados, pero no disparar
+  ni activar el escudo (un escudo ya activo sigue y acompaña a la nave).
+  Los temporizadores del escudo, el letrero de 1UP y los iconos de vidas
+  siguen funcionando. La oleada 1 arranca sin esta animación.
+
 ## 2026-11-13 - Miniaturas de vidas abajo a la izquierda (AMH + Bimo)
 
 ### Cambiado

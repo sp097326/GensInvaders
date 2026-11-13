@@ -346,6 +346,35 @@ void enemies_reset(void) {
     placeEnemies();
 }
 
+void enemies_beginEnter(u16 offset) {
+    u16 i;
+    enemies_reset();
+    if (offset == 0) return;
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        enemies[i].y -= (s16)offset;
+        SPR_setPosition(enemies[i].sprite, enemies[i].x, enemies[i].y);
+    }
+}
+
+void enemies_advanceEnter(u16 remain, u16 total, u16 offset) {
+    u16 i;
+    GameEntity* enem;
+    s16 dest;
+    s16 shift;
+
+    if (total == 0) {
+        shift = 0;
+    } else {
+        shift = (s16)(((u32)offset * (u32)remain) / (u32)total);
+    }
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        enem = &enemies[i];
+        dest = (s16)(ENEMY_START_Y + enem->row * ENEMY_ROW_SPACING);
+        enem->y = dest - shift;
+        SPR_setPosition(enem->sprite, enem->x, enem->y);
+    }
+}
+
 void enemies_hideAll(void) {
     u16 i;
     for (i = 0; i < MAX_ENEMIES; i++) {

@@ -152,6 +152,7 @@
       <li><a href="#nov13-points">13/11/2026 - Points per ship by difficulty</a></li>
       <li><a href="#nov13-hud">13/11/2026 - HUD ship icons and readable 1UP banner</a></li>
       <li><a href="#nov13-livespos">13/11/2026 - Life icons moved to the bottom-left</a></li>
+      <li><a href="#nov13-warp">13/11/2026 - Between-wave warp animation</a></li>
     </ol>
   </nav>
 
@@ -811,6 +812,23 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        same row, just after the icons. The top-right of the HUD is clear
        again. The newly awarded icon still blinks while the banner is
        up.</p>
+  </section>
+
+  <section class="card" id="nov13-warp">
+    <h2>13/11/2026 (with Bimo) - Between-wave warp animation</h2>
+    <p>Clearing a wave now plays a ~2.5 s transition (150 NTSC / 125 PAL
+       frames). The player ship rises 8 pixels, an 8x8 two-frame exhaust
+       flame flickers under the hull, and the starfield ramps from step
+       2 to 14 and back down. In the last stretch the next two rows
+       slide in from above the screen, under the
+       <code class="inline">OLEADA N</code> banner, as if the ship ran
+       into them. Wave 1 still starts in place.</p>
+    <p>Enemy bullets are cleared; score, lives, shield timers and
+       RapidFire are kept. The player can steer and pause, but cannot
+       shoot, toggle RapidFire or raise a new shield. An already-active
+       shield keeps following the ship. The flame is a single hardware
+       sprite and sits just above the life icons, so it does not add to
+       a busy scanline.</p>
   </section>
 
   <footer>

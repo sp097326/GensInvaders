@@ -15,6 +15,10 @@ static int score = 0;
 static GameState gameState = STATE_TITLE;
 static u16 menuFrames = 0;  /* ticks on every screen, used to seed the RNG on START */
 static u16 wavePauseTimer = 0;
+static u16 warpTotal = 0;
+static u16 warpAccel = 0;
+static u16 warpArrive = 0;
+static s16 starSpeed = STAR_SPEED_NORMAL;
 static s16 scoreHighlight = -1;
 static u16 scoreBlink = 0;
 
@@ -22,6 +26,21 @@ static void resetGame(void);
 static void drawWaveBanner(void);
 static void clearEndScreen(void);
 static void drawGameOverTable(void);
+static void stopWaveWarp(void);
+static void updateWaveWarp(void);
+
+s16 game_state_starSpeed(void) {
+    return starSpeed;
+}
+
+static void stopWaveWarp(void) {
+    wavePauseTimer = 0;
+    starSpeed = STAR_SPEED_NORMAL;
+    player_setWarpFlame(0);
+    if (player_get()->health && !player_isExploding()) {
+        player_get()->y = PLAYER_START_Y;
+    }
+}
 
 static void drawGameOverTable(void) {
     clearEndScreen();
@@ -34,7 +53,7 @@ static void drawGameOverTable(void) {
 static void showEndScreen(GameState newState) {
     gameState = newState;
     player_get()->velx = 0;
-    wavePauseTimer = 0;
+    stopWaveWarp();
     hud_hideExtraLife();
     if (newState == STATE_WIN) {
         clearEndScreen();
@@ -92,7 +111,7 @@ static void hideGameSprites() {
 void game_state_showTitle() {
     gameState = STATE_TITLE;
     player_get()->velx = 0;
-    wavePauseTimer = 0;
+    stopWaveWarp();
     hud_hideExtraLife();
     hideGameSprites();
     title_show();
@@ -206,14 +225,19 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
             SPR_setAnim(player_get()->sprite, ANIM_STRAIGHT);
         }
     }
-    if (state & BUTTON_B & changed) {
-        bullets_shootPlayer(*player_get());
-    }
-    if (state & BUTTON_A & changed) {
-        powerups_toggle();
-    }
-    if (state & BUTTON_C & changed) {
-        powerups_tryShield();
+    /* During the between-wave warp the player can still steer, but
+     * shots and a fresh shield would break the empty-space beat. An
+     * already-active shield keeps ticking and follows the ship. */
+    if (wavePauseTimer == 0) {
+        if (state & BUTTON_B & changed) {
+            bullets_shootPlayer(*player_get());
+        }
+        if (state & BUTTON_A & changed) {
+            powerups_toggle();
+        }
+        if (state & BUTTON_C & changed) {
+            powerups_tryShield();
+        }
     }
 }
 
@@ -227,17 +251,65 @@ static void drawWaveBanner(void) {
 
 static void startNextWave(void) {
     /* Enemy shots vanish; player shots, explosions, score, lives and the
-     * shield / RapidFire state are kept. */
+     * shield / RapidFire state are kept. The new rows wait just above the
+     * screen and slide in during the last part of the warp. */
     bullets_clearEnemy();
     difficulty_nextWave();
-    wavePauseTimer = IS_PAL_SYSTEM ? WAVE_BANNER_FRAMES_PAL : WAVE_BANNER_FRAMES_NTSC;
+    warpTotal  = IS_PAL_SYSTEM ? WAVE_WARP_FRAMES_PAL  : WAVE_WARP_FRAMES_NTSC;
+    warpAccel  = IS_PAL_SYSTEM ? WAVE_WARP_ACCEL_PAL   : WAVE_WARP_ACCEL_NTSC;
+    warpArrive = IS_PAL_SYSTEM ? WAVE_WARP_ARRIVE_PAL  : WAVE_WARP_ARRIVE_NTSC;
+    wavePauseTimer = warpTotal;
+    enemies_beginEnter(WAVE_WARP_ENTER);
+    player_setWarpFlame(1);
+    starSpeed = STAR_SPEED_NORMAL;
     clearEndScreen();
     drawWaveBanner();
     hud_updateScore(score, enemies_left(), player_lives());
+    updateWaveWarp();
+}
+
+static void updateWaveWarp(void) {
+    u16 elapsed;
+    s16 lift;
+    s16 spd;
+    GameEntity* p;
+
+    if (warpTotal == 0 || warpAccel == 0 || warpArrive == 0) {
+        starSpeed = STAR_SPEED_NORMAL;
+        return;
+    }
+
+    elapsed = warpTotal - wavePauseTimer;
+    lift = 0;
+    spd = STAR_SPEED_NORMAL;
+
+    if (wavePauseTimer >= (warpTotal - warpAccel)) {
+        if (elapsed > warpAccel) elapsed = warpAccel;
+        spd = STAR_SPEED_NORMAL + (s16)(((STAR_SPEED_WARP - STAR_SPEED_NORMAL) * (s32)elapsed) / (s32)warpAccel);
+        lift = (s16)(((s32)WAVE_WARP_LIFT * (s32)elapsed) / (s32)warpAccel);
+    } else if (wavePauseTimer > warpArrive) {
+        spd = STAR_SPEED_WARP;
+        lift = WAVE_WARP_LIFT;
+    } else {
+        spd = STAR_SPEED_NORMAL + (s16)(((STAR_SPEED_WARP - STAR_SPEED_NORMAL) * (s32)wavePauseTimer) / (s32)warpArrive);
+        lift = (s16)(((s32)WAVE_WARP_LIFT * (s32)wavePauseTimer) / (s32)warpArrive);
+        enemies_advanceEnter(wavePauseTimer, warpArrive, WAVE_WARP_ENTER);
+        if (wavePauseTimer < (warpArrive / 5)) {
+            player_setWarpFlame(0);
+        }
+    }
+    if (spd < STAR_SPEED_NORMAL) spd = STAR_SPEED_NORMAL;
+    starSpeed = spd;
+
+    p = player_get();
+    if (p->health && !player_isExploding()) {
+        p->y = PLAYER_START_Y - lift;
+    }
 }
 
 static void finishWavePause(void) {
-    enemies_reset();
+    enemies_advanceEnter(0, 1, WAVE_WARP_ENTER);
+    stopWaveWarp();
     clearEndScreen();
     hud_updateScore(score, enemies_left(), player_lives());
 }
@@ -249,7 +321,7 @@ static void resetGame() {
     player_reset();
 
     difficulty_beginMatch();
-    wavePauseTimer = 0;
+    stopWaveWarp();
     enemies_reset();
     explosions_reset();
     score = 0;
@@ -270,10 +342,15 @@ void game_state_update(void) {
         }
         bullets_update();
         if (wavePauseTimer > 0) {
-            /* Brief intermission: no formation or enemy fire, banner up.
-             * The player can still move and shoot; the shield keeps ticking. */
+            /* Warp intermission: no formation AI or enemy fire. The player
+             * can steer; shooting and a new shield are blocked in the joy
+             * handler. Shield timers, 1UP banner and life icons keep going. */
             wavePauseTimer--;
-            if (wavePauseTimer == 0) finishWavePause();
+            if (wavePauseTimer == 0) {
+                finishWavePause();
+            } else {
+                updateWaveWarp();
+            }
         } else {
             if (enemies_update()) {
                 showEndScreen(STATE_GAME_OVER);

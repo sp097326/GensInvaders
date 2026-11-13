@@ -63,9 +63,22 @@
 #define EXPLOSION_ENEMY_DURATION 24  /* ~0.4 s at 60 Hz, faster than the player burst */
 #define EXPLOSION_ENEMY_ANIM_FRAMES 6
 
-/* Intermission after a wave is cleared (~1.5 s on both systems). */
-#define WAVE_BANNER_FRAMES_NTSC 90
-#define WAVE_BANNER_FRAMES_PAL  75
+/* Intermission after a wave is cleared (~2.5 s on both systems):
+ * starfield warp, engine flame, then the next formation slides in.
+ * The OLEADA N banner stays up for the whole transition. */
+#define WAVE_WARP_FRAMES_NTSC 150
+#define WAVE_WARP_FRAMES_PAL  125
+#define WAVE_WARP_ACCEL_NTSC   60  /* first second: stars and ship ramp up */
+#define WAVE_WARP_ACCEL_PAL    50
+#define WAVE_WARP_ARRIVE_NTSC  75  /* last 1.25 s: formation slides in */
+#define WAVE_WARP_ARRIVE_PAL   62
+#define STAR_SPEED_NORMAL       2
+#define STAR_SPEED_WARP        14
+#define WAVE_WARP_LIFT          8  /* pixels the ship rises during the boost */
+#define WAVE_WARP_ENTER        80  /* both rows start fully above the screen */
+/* Kept as aliases so older comments still read; the warp timer is what is used. */
+#define WAVE_BANNER_FRAMES_NTSC WAVE_WARP_FRAMES_NTSC
+#define WAVE_BANNER_FRAMES_PAL  WAVE_WARP_FRAMES_PAL
 
 #define BG_TILES_W 40           /* visible width of the plane in tiles (320 px / 8) */
 #define BG_TILES_H 32           /* plane height in tiles (256 px, matches the scroll wrap) */

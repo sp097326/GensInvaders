@@ -86,8 +86,14 @@ int main(bool hard)
     while(1)
     {
         // The starfield keeps scrolling on every screen, even GAME OVER.
-        VDP_setVerticalScroll(BG_B,offset -= 2);
-        if (offset <= -256) offset = 0;
+        // During a between-wave warp the step ramps up, then back down.
+        {
+            s16 spd = game_state_starSpeed();
+            if (spd < 1) spd = 1;
+            offset -= spd;
+            while (offset <= -256) offset += 256;
+        }
+        VDP_setVerticalScroll(BG_B, offset);
 
         // Old idea: random starfield tiles every frame. Removed for performance;
         // pregenerating the values once would be the way to bring it back.

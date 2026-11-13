@@ -17,5 +17,6 @@ extern const SpriteDefinition bullet;
 extern const SpriteDefinition explosion;
 extern const SpriteDefinition enemyexp;
 extern const SpriteDefinition shield;
+extern const SpriteDefinition flame;
 
 #endif // _RES_RESOURCES_H_
