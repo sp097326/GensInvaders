@@ -3,6 +3,18 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - El disparo cargado ya no salta la pelea del jefe (AMH + Bimo)
+
+### Corregido
+- En la oleada del jefe las filas enemigas ya están ocultas, así que el
+  contador de naves vale 0 durante toda la pelea. Al soltar un disparo
+  cargado, una comprobación trataba ese 0 como "oleada limpia" y saltaba
+  a la siguiente (el jefe desaparecía sin explosión ni bonus, y la barra
+  no tenía que llegar a cero). Ahora esa oleada solo termina cuando la
+  vida del jefe llega a 0, con la explosión, el bonus y luego el warp.
+  Las oleadas normales no cambian: el disparo cargado sigue limpiando
+  la formación y pasando de oleada al matar al último.
+
 ## 2026-11-13 - Jefe: daño visible y movimiento en la mitad superior (AMH + Bimo)
 
 ### Corregido

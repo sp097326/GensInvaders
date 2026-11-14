@@ -247,6 +247,11 @@ HISTORY:
                  a core hit and a spark on a wing hit. The mothership
                  now roams the top half of the screen (Lissajous).
                  Tagged v0.3.59.
+*       13/11/26 - A charged shot no longer skips the boss fight.
+                 On a boss wave the hidden formation already has 0
+                 ships left; that count must not clear the wave.
+                 The mothership now leaves only when its HP hits 0
+                 (explosion, bonus, then warp). Tagged v0.3.60.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -310,6 +315,9 @@ TODO:
           larger core hitbox, white flash + hit tick on a core hit,
           spark on a wing hit, Lissajous movement that never enters
           the bottom half.
+        - [Done 13/11/26] Charged shot no longer ends a boss wave:
+          enemiesLeft is already 0 with the rows hidden, so that
+          count is ignored until the mothership's HP reaches 0.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -491,3 +499,6 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **Boss hitbox, feedback and top-half roam (13/11/2026)**
 * The first mothership build only damaged a 16x16 core inset 4 px from the top, while the painted glow was wider, so shots at the obvious weak point often counted as a wing hit: the bullet vanished, HP did not drop, the JEFE bar did not move, and there was no flash or tick. That is why it felt like the boss took no damage. The weak zone is now the center third of the hull and the full 24 px body height (24x24 at offset 20,0). A core hit whites out the mothership for a few frames (PAL2 only, so the player ship is not bleached) and always plays the hit tick, including with the charged bolt. A wing hit spawns a spark and still deals no damage. The JEFE bar is force-redrawn on every HP change.
 * Horizontal-only patrol at Y=40 is gone. After the enter animation the mothership follows a smooth Lissajous path across the top half of the screen (Y 28-88, so the hull never crosses mid-screen into the player area). Speed scales with difficulty (`bossSpeed` 1/2/3). Volleys are still fired from the underside and the HP bar stays on HUD row 2.
+
+**Charged shot no longer skips the boss (13/11/2026)**
+* On a boss wave the two rows are hidden and `enemiesLeft` is 0 for the whole fight. The charged-bolt path treated "bolt in flight and no ships left" as a wave clear, so releasing a charged shot (even a miss) returned `COLLISION_WIN`, hid the mothership without the defeat explosion or bonus, and jumped to the next wave. Normal shots did not trip it because they only checked the count after an actual kill. The formation-clear check is now ignored while the boss is active or the current wave is a boss wave; `game_state` also refuses to start the next wave if the mothership is still up. The fight ends only when boss HP reaches 0, through the usual explosion, points, RapidFire grant and warp. Regular waves are unchanged.

@@ -6,12 +6,23 @@
 #include "powerups.h"
 #include "explosions.h"
 #include "boss.h"
+#include "difficulty.h"
 
 int collideEntities(GameEntity* a, GameEntity* b) {
     return (a->x < b->x + b->w &&
     a->x + a->w > b->x &&
     a->y < b->y + b->h &&
     a->y + a->h >= b->y);
+}
+
+/* Formation waves end when the last ship dies. A boss wave hides the
+ * rows, so enemiesLeft is already 0 for the whole fight: that count
+ * must not clear the wave. Only a mothership whose HP has reached 0
+ * may, via boss_hitShot. */
+static u16 formationCleared(void) {
+    if (boss_isActive()) return 0;
+    if (boss_isWave(difficulty_wave())) return 0;
+    return (enemies_left() == 0) ? 1 : 0;
 }
 
 u16 collision_update(int* score) {
@@ -40,7 +51,7 @@ u16 collision_update(int* score) {
                             hud_updateScore(*score, enemies_left(), player_lives());
                             if (gained) hud_showExtraLife(gained);
                         }
-                        if (enemies_left() == 0) {
+                        if (formationCleared()) {
                             /* Wave cleared: the caller starts the next one
                              * instead of ending the match with YOU WIN. */
                             return COLLISION_WIN;
@@ -75,7 +86,11 @@ u16 collision_update(int* score) {
                     }
                 }
             }
-            if (enemies_left() == 0) {
+            /* Do not treat "no formation left" as a win just because a
+             * charged bolt is in flight: on a boss wave that count is
+             * already 0, which used to skip the mothership and jump
+             * straight to the next wave. */
+            if (formationCleared()) {
                 return COLLISION_WIN;
             }
         }

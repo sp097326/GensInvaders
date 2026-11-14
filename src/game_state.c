@@ -432,7 +432,11 @@ void game_state_update(void) {
             {
                 u16 hit = collision_update(&score);
                 if (hit == COLLISION_WIN) {
-                    startNextWave();
+                    /* A boss wave may advance only after the mothership
+                     * has already been hidden by its defeat sequence. */
+                    if (!boss_isActive()) {
+                        startNextWave();
+                    }
                 } else if (hit == COLLISION_GAME_OVER) {
                     showEndScreen(STATE_GAME_OVER);
                 }

@@ -160,6 +160,7 @@
       <li><a href="#nov13-boss">13/11/2026 - Mothership boss every 10 waves</a></li>
       <li><a href="#nov13-code">13/11/2026 - Title-screen start-wave code</a></li>
       <li><a href="#nov13-bossfix">13/11/2026 - Boss damage feedback and top-half roam</a></li>
+      <li><a href="#nov13-bosscharge">13/11/2026 - Charged shot no longer skips the boss</a></li>
     </ol>
   </nav>
 
@@ -932,6 +933,20 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        on every HP change. The boss now follows a Lissajous path in the
        top half of the screen (never below mid-screen), faster on harder
        difficulties. Volleys and the HP bar follow it.</p>
+  </section>
+
+
+  <section class="card" id="nov13-bosscharge">
+    <h2>13/11/2026 (with Bimo) - Charged shot no longer skips the boss</h2>
+    <p>During a boss wave the formation is hidden, so
+       <code class="inline">enemiesLeft</code> is already 0. Releasing a
+       charged shot hit a check that treated &ldquo;bolt in flight and no
+       ships left&rdquo; as a wave clear: the mothership vanished without
+       its defeat explosion or bonus and the game jumped to the next wave.
+       The formation-clear path is now ignored while the boss is active or
+       the current wave is a boss wave, and the next wave cannot start if
+       the mothership is still up. The fight ends only when its HP reaches
+       0 (explosion, bonus, then warp). Regular waves are unchanged.</p>
   </section>
 
   <footer>
