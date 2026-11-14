@@ -16,6 +16,7 @@
 #include "bullets.h"
 #include "enemies.h"
 #include "powerups.h"
+#include "boss.h"
 #include "hud.h"
 #include "player.h"
 #include "explosions.h"
@@ -65,6 +66,8 @@ int main(bool hard)
     XGM_setPCM(SFX_CHARGE_READY, chargeready, sizeof(chargeready));
     XGM_setPCM(SFX_CHARGE_SHOT, chargeshot, sizeof(chargeshot));
     XGM_setPCM(SFX_RAPID_PICK, rapidpick, sizeof(rapidpick));
+    XGM_setPCM(SFX_BOSS_HIT, bosshit, sizeof(bosshit));
+    XGM_setPCM(SFX_BOSS_DIE, bossdie, sizeof(bossdie));
     //note to this: read the url for the effects.
     SYS_disableInts();
     VDP_loadTileSet(background.tileset,1,DMA);
@@ -80,6 +83,7 @@ int main(bool hard)
     bullets_init();
     hud_init();
     powerups_init();
+    boss_init();
     explosions_init();
     SYS_enableInts();
     /* Intro is already playing; show the title screen before the first match. */

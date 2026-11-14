@@ -157,6 +157,7 @@
       <li><a href="#nov13-charge">13/11/2026 - Charged shot</a></li>
       <li><a href="#nov13-boom">13/11/2026 - Louder, deeper charged-shot boom</a></li>
       <li><a href="#nov13-rapid">13/11/2026 - RapidFire capsule power-up</a></li>
+      <li><a href="#nov13-boss">13/11/2026 - Mothership boss every 10 waves</a></li>
     </ol>
   </nav>
 
@@ -885,6 +886,20 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        falling capsules are cleared on warp, death, GAME OVER and the
        title screen. The pickup sound is on CH4 and does not cut the
        shield hum. Charged shot is unchanged.</p>
+  </section>
+
+
+  <section class="card" id="nov13-boss">
+    <h2>13/11/2026 (with Bimo) - Mothership boss every 10 waves</h2>
+    <p>Waves 10, 20, 30... bring a mothership instead of the two rows.
+       It has 500 HP on the first visit and doubles each return (1000,
+       2000, 4000) up to a cap of 8000 from wave 50, so the bar and the
+       16-bit counters stay safe. Only the glowing 16x16 core takes
+       damage (30 / 20 / 10 on EASY / NORMAL / HARD; the charged shot
+       deals 3x, once per pass). Harder difficulties also move and fire
+       faster. A JEFE bar on row 2 shows remaining HP. Defeating it
+       awards points, refreshes RapidFire and starts the next regular
+       wave. The sprite is a placeholder.</p>
   </section>
 
   <footer>

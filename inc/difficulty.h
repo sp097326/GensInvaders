@@ -30,6 +30,11 @@ typedef struct
     u16 shieldRechargeSec;  /* wall-clock seconds before it can be used again */
     u16 enemyPoints;        /* points awarded for each destroyed enemy (both rows) */
     u16 rapidFireSec;       /* wall-clock seconds RapidFire lasts after a pickup */
+    u16 bossDamage;         /* HP removed by a normal shot to the core */
+    u16 bossSpeed;          /* horizontal pixels per frame */
+    u16 bossShotInterval;   /* frames between volleys */
+    u16 bossShotsPerVolley; /* downward shots per volley (capped at MAX_ENEMY_BULLETS) */
+    u16 bossPoints;         /* base points for the first appearance; later visits multiply by 2, 3... */
 } DifficultyConfig;
 
 void difficulty_init(void);

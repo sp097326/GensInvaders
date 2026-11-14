@@ -201,6 +201,28 @@ void bullets_shootEnemy(GameEntity* shooter) {
     }
 }
 
+void bullets_shootEnemyXY(s16 x, s16 y) {
+    GameEntity* bullet;
+    u16 i;
+    const DifficultyConfig* cfg = difficulty_config();
+
+    if (enemyBulletsOnScreen >= MAX_ENEMY_BULLETS) {
+        return;
+    }
+    for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
+        bullet = &enemyBullets[i];
+        if (bullet->health == 0) {
+            bullet->x = x;
+            bullet->y = y;
+            bullet->vely = cfg->bulletSpeed;
+            reviveGameEntity(bullet);
+            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
+            enemyBulletsOnScreen++;
+            break;
+        }
+    }
+}
+
 void bullets_tickShot(void) {
     shotTicker++;
 }

@@ -17,6 +17,9 @@ void hud_updateShieldBar(u16 state, u16 level, u16 blink);
  * red bar. Hidden (active == 0) clears that corner. level is 0..SHIELD_BAR_STEPS. */
 void hud_updateRapidBar(u16 active, u16 level);
 void hud_hideRapidBar(void);
+/* Mothership HP on row 2: "JEFE" plus a 16-tile bar. Hidden when active==0. */
+void hud_updateBossBar(u16 active, u16 hp, u16 hpMax);
+void hud_hideBossBar(void);
 void hud_clear(void);
 void hud_drawCentered(const char* text, u16 y);
 void hud_clearOverlay(void);

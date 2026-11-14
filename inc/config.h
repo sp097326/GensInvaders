@@ -44,6 +44,23 @@
 #define SFX_CHARGE_READY 72  /* short lock-on ding, CH4 (below 1UP priority) */
 #define SFX_CHARGE_SHOT 73   /* heavier shot, CH3 like the laser */
 #define SFX_RAPID_PICK 74    /* capsule pickup, CH4 (below 1UP, never CH1) */
+#define SFX_BOSS_HIT 75      /* short core tick, CH4, rate-limited */
+#define SFX_BOSS_DIE 76      /* heavier boom on death, CH2 */
+
+/* Mothership boss: first appears on wave 10, then every 10 waves.
+ * HP starts at 500 and doubles each return, capped so the bar and u16 stay safe. */
+#define BOSS_WAVE_EVERY      10
+#define BOSS_HP_BASE        500
+#define BOSS_HP_CAP        8000  /* wave 50+: 500, 1000, 2000, 4000, 8000 */
+#define BOSS_CHARGED_MULT     3  /* charged bolt deals 3x a normal hit */
+#define BOSS_W               64
+#define BOSS_H               24
+#define BOSS_CORE_W          16
+#define BOSS_CORE_H          16
+#define BOSS_CORE_OX         24  /* (64-16)/2, center weak point */
+#define BOSS_CORE_OY          4
+#define BOSS_HOME_Y          40
+#define BOSS_BAR_STEPS      128  /* 16 tiles x 8 px */
 
 #define POWER_ON 1
 #define POWER_OFF 0

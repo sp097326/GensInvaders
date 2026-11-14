@@ -14,6 +14,8 @@ extern const u8 oneup[3328];
 extern const u8 chargeready[2560];
 extern const u8 chargeshot[4608];
 extern const u8 rapidpick[2304];
+extern const u8 bosshit[1280];
+extern const u8 bossdie[5120];
 extern const Palette bg_palette;
 extern const Image background;
 extern const SpriteDefinition ship;
@@ -25,5 +27,6 @@ extern const SpriteDefinition enemyexp;
 extern const SpriteDefinition shield;
 extern const SpriteDefinition flame;
 extern const SpriteDefinition capsuleSpr;
+extern const SpriteDefinition mothership;
 
 #endif // _RES_RESOURCES_H_

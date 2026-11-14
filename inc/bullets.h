@@ -17,6 +17,9 @@ void bullets_shootPlayer(GameEntity shooter);
 u16  bullets_shootCharged(GameEntity shooter);
 u16  bullets_chargedActive(void);
 void bullets_shootEnemy(GameEntity* shooter);
+/* Like shootEnemy, but at an explicit muzzle and up to MAX_ENEMY_BULLETS
+ * (used by the boss, whose volley can exceed the formation cap). */
+void bullets_shootEnemyXY(s16 x, s16 y);
 GameEntity* bullets_charged(void);
 
 void bullets_tickShot(void);

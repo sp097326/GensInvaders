@@ -7,19 +7,22 @@ static DifficultyConfig runtime;
 static const DifficultyConfig difficultyTable[DIFF_COUNT] = {
     /* EASY:   no descent, 1 bullet, fires regularly every 90 frames;
      *         shield 5 s / recharge 10 s; 10 points per ship;
-     *         RapidFire lasts 10 s. */
-    { 0,                   1, 1, 10,  90, 1, 5, 0, 5, 10, 10, 10 },
+     *         RapidFire lasts 10 s;
+     *         boss: 30 dmg, speed 1, 1 shot every 90 frames, 500 pts. */
+    { 0,                   1, 1, 10,  90, 1, 5, 0, 5, 10, 10, 10, 30, 1, 90, 1, 500 },
     /* NORMAL: 8 px step, 2 shots / cap 2, every 120 frames;
      *         rowsOpposite like HARD (row 0 right, row 1 left, bounce alone);
      *         shield 3 s / recharge 20 s; 20 points per ship;
-     *         RapidFire lasts 8 s. */
-    { ENEMY_STEP_DOWN,     2, 2, 10, SHOT_INTERVAL, 1, 5, 1, 3, 20, 20, 8 },
+     *         RapidFire lasts 8 s;
+     *         boss: 20 dmg, speed 2, 2 shots every 60 frames, 1000 pts. */
+    { ENEMY_STEP_DOWN,     2, 2, 10, SHOT_INTERVAL, 1, 5, 1, 3, 20, 20, 8, 20, 2, 60, 2, 1000 },
     /* HARD:   16 px step, twice as fast sideways, volley every 60 frames,
      *         slightly faster bullets; cap 4 so consecutive volleys can overlap.
      *         rowsOpposite: row 0 goes right, row 1 goes left, each bounces alone;
      *         shield 2 s / recharge 30 s; 30 points per ship;
-     *         RapidFire lasts 8 s. */
-    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6, 1, 2, 30, 30, 8 }
+     *         RapidFire lasts 8 s;
+     *         boss: 10 dmg, speed 3, 4 shots every 40 frames, 1500 pts. */
+    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6, 1, 2, 30, 30, 8, 10, 3, 40, 4, 1500 }
 };
 
 /* Per-difficulty caps and increments applied on top of the table above.

@@ -380,6 +380,7 @@ void enemies_hideAll(void) {
     for (i = 0; i < MAX_ENEMIES; i++) {
         killGameEntity(&enemies[i]);
     }
+    enemiesLeft = 0;
 }
 
 GameEntity* enemies_at(u16 i) {

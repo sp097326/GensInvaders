@@ -10,6 +10,7 @@
 #include "collision.h"
 #include "explosions.h"
 #include "scores.h"
+#include "boss.h"
 
 static int score = 0;
 static GameState gameState = STATE_TITLE;
@@ -107,6 +108,7 @@ static void resumeGame() {
 static void hideGameSprites() {
     player_hide();
     enemies_hideAll();
+    boss_hide();
     bullets_hideAll();
     powerups_hide();
     explosions_hide();
@@ -255,6 +257,9 @@ static void drawWaveBanner(void) {
     char line[20];
     sprintf(line, "OLEADA %d", difficulty_wave());
     hud_drawCentered(line, 12);
+    if (boss_isWave(difficulty_wave())) {
+        hud_drawCentered("JEFE", 13);
+    }
 }
 
 static void startNextWave(void) {
@@ -270,7 +275,13 @@ static void startNextWave(void) {
     warpAccel  = IS_PAL_SYSTEM ? WAVE_WARP_ACCEL_PAL   : WAVE_WARP_ACCEL_NTSC;
     warpArrive = IS_PAL_SYSTEM ? WAVE_WARP_ARRIVE_PAL  : WAVE_WARP_ARRIVE_NTSC;
     wavePauseTimer = warpTotal;
-    enemies_beginEnter(WAVE_WARP_ENTER);
+    if (boss_isWave(difficulty_wave())) {
+        enemies_hideAll();
+        boss_beginEnter(WAVE_WARP_ENTER);
+    } else {
+        boss_hide();
+        enemies_beginEnter(WAVE_WARP_ENTER);
+    }
     player_chargeCancel();
     player_setWarpFlame(1);
     starSpeed = STAR_SPEED_NORMAL;
@@ -305,7 +316,11 @@ static void updateWaveWarp(void) {
     } else {
         spd = STAR_SPEED_NORMAL + (s16)(((STAR_SPEED_WARP - STAR_SPEED_NORMAL) * (s32)wavePauseTimer) / (s32)warpArrive);
         lift = (s16)(((s32)WAVE_WARP_LIFT * (s32)wavePauseTimer) / (s32)warpArrive);
-        enemies_advanceEnter(wavePauseTimer, warpArrive, WAVE_WARP_ENTER);
+        if (boss_isWave(difficulty_wave())) {
+            boss_advanceEnter(wavePauseTimer, warpArrive, WAVE_WARP_ENTER);
+        } else {
+            enemies_advanceEnter(wavePauseTimer, warpArrive, WAVE_WARP_ENTER);
+        }
         if (wavePauseTimer < (warpArrive / 5)) {
             player_setWarpFlame(0);
         }
@@ -320,7 +335,11 @@ static void updateWaveWarp(void) {
 }
 
 static void finishWavePause(void) {
-    enemies_advanceEnter(0, 1, WAVE_WARP_ENTER);
+    if (boss_isWave(difficulty_wave())) {
+        boss_advanceEnter(0, 1, WAVE_WARP_ENTER);
+    } else {
+        enemies_advanceEnter(0, 1, WAVE_WARP_ENTER);
+    }
     stopWaveWarp();
     clearEndScreen();
     hud_updateScore(score, enemies_left(), player_lives());
@@ -335,6 +354,7 @@ static void resetGame() {
     difficulty_beginMatch();
     stopWaveWarp();
     enemies_reset();
+    boss_reset();
     explosions_reset();
     score = 0;
     clearEndScreen();
@@ -364,7 +384,9 @@ void game_state_update(void) {
                 updateWaveWarp();
             }
         } else {
-            if (enemies_update()) {
+            if (boss_isActive()) {
+                boss_update();
+            } else if (enemies_update()) {
                 showEndScreen(STATE_GAME_OVER);
             }
             {

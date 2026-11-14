@@ -3,6 +3,23 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Jefe nodriza cada 10 oleadas (AMH + Bimo)
+
+### Añadido
+- En las oleadas 10, 20, 30... aparece una nave nodriza en lugar de las
+  dos filas. Solo el núcleo central recibe daño (las alas detienen las
+  balas chicas; el disparo cargado las atraviesa y golpea el núcleo una
+  vez por pase). La vida empieza en 500 y se duplica en cada visita
+  (500, 1000, 2000, 4000) hasta un tope de 8000 a partir de la oleada
+  50, para que la barra y los cálculos en 16 bits no se desborden.
+- El daño por bala al núcleo es 30 en FÁCIL, 20 en NORMAL y 10 en
+  DIFÍCIL; el disparo cargado hace el triple. En dificultades más altas
+  se mueve y dispara más (1, 2 o 4 disparos por andanada). Hay una
+  barra "JEFE" de 16 teselas en la fila 2 (pasa a rojo bajo el 25%).
+  Al derrotarla se otorgan 500/1000/1500 puntos por aparición (x2, x3...)
+  y se recarga RapidFire. El gráfico es un placeholder: se puede
+  cambiar después.
+
 ## 2026-11-13 - RapidFire como power-up de cápsula (AMH + Bimo)
 
 ### Añadido

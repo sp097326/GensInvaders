@@ -187,16 +187,20 @@ void powerups_clearCapsule(void) {
     capsuleTick = 0;
 }
 
-static void collectCapsule(void) {
-    powerups_clearCapsule();
-    /* CH4, below the 1UP jingle, never on the shield hum channel. */
-    XGM_startPlayPCM(SFX_RAPID_PICK, 11, SOUND_PCM_CH4);
+void powerups_grantRapidFire(void) {
     applyTimings();
     bullets_setMaxPlayer(MAX_BULLETS);
     powerupTimer = rapidDuration;
     setShipRapidTint(1);
     powerOn = POWER_ON;
     rapidRefreshHud(1);
+}
+
+static void collectCapsule(void) {
+    powerups_clearCapsule();
+    /* CH4, below the 1UP jingle, never on the shield hum channel. */
+    XGM_startPlayPCM(SFX_RAPID_PICK, 11, SOUND_PCM_CH4);
+    powerups_grantRapidFire();
 }
 
 void powerups_tryDrop(s16 x, s16 y) {

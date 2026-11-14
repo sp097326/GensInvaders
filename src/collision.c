@@ -5,6 +5,7 @@
 #include "hud.h"
 #include "powerups.h"
 #include "explosions.h"
+#include "boss.h"
 
 int collideEntities(GameEntity* a, GameEntity* b) {
     return (a->x < b->x + b->w &&
@@ -76,6 +77,48 @@ u16 collision_update(int* score) {
             }
             if (enemies_left() == 0) {
                 return COLLISION_WIN;
+            }
+        }
+    }
+
+    /* Mothership: only the glowing core takes damage. Normal shots that
+     * hit a wing are blocked; the charged bolt flies through the hull
+     * and damages the core once per pass. */
+    if (boss_isActive()) {
+        for (i = 0; i < MAX_BULLETS; i++) {
+            b = bullets_playerAt(i);
+            if (b->health == 0) continue;
+            {
+                u16 r = boss_hitShot(b, 0);
+                if (r == 0) continue;
+                if (r == 1 || r == 2) {
+                    bullets_despawnPlayer(b);
+                }
+                if (r == 3) {
+                    bullets_despawnPlayer(b);
+                    *score += boss_points();
+                    {
+                        u16 gained = player_checkExtraLife(*score);
+                        hud_updateScore(*score, enemies_left(), player_lives());
+                        if (gained) hud_showExtraLife(gained);
+                    }
+                    return COLLISION_WIN;
+                }
+            }
+        }
+        {
+            GameEntity* c = bullets_charged();
+            if (c->health > 0) {
+                u16 r = boss_hitShot(c, 1);
+                if (r == 3) {
+                    *score += boss_points();
+                    {
+                        u16 gained = player_checkExtraLife(*score);
+                        hud_updateScore(*score, enemies_left(), player_lives());
+                        if (gained) hud_showExtraLife(gained);
+                    }
+                    return COLLISION_WIN;
+                }
             }
         }
     }

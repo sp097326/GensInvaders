@@ -1,6 +1,7 @@
 #include "hud.h"
 #include "difficulty.h"
 #include "config.h"
+#include "boss.h"
 
 #define SHIELD_LABEL_X     29
 #define SHIELD_BAR_X       32
@@ -33,6 +34,10 @@
 #define RAPID_BAR_X        32
 #define RAPID_BAR_Y        27
 #define RAPID_BAR_LEN       8
+#define BOSS_LABEL_X        9
+#define BOSS_BAR_X         14
+#define BOSS_BAR_Y          2
+#define BOSS_BAR_LEN       16
 
 static char hud_string[40] = "";
 static u16 shieldState = SHIELD_HUD_READY;
@@ -48,6 +53,10 @@ static u16 rapidActive = 0;
 static u16 rapidLevel = 0;
 static u16 rapidBarAttr[8];
 static u16 rapidBarDrawn = 0;
+static u16 bossBarActive = 0;
+static u16 bossBarLevel = 0;
+static u16 bossBarAttr[16];
+static u16 bossBarDrawn = 0;
 
 /* 8x8 silhouette of the player ship (PAL1: 1 blue, 2 orange, 3 white,
  * 4 black). Side columns stay empty so adjacent icons do not touch. */
@@ -173,7 +182,11 @@ void hud_init(void) {
 void hud_updateScore(int score, u16 enemiesLeft, u16 lives) {
     hudLives = (lives > LIVES_CAP) ? LIVES_CAP : lives;
 
-    sprintf(hud_string, "SCORE: %d  LEFT: %d", score, enemiesLeft);
+    if (boss_isActive()) {
+        sprintf(hud_string, "SCORE: %d  JEFE", score);
+    } else {
+        sprintf(hud_string, "SCORE: %d  LEFT: %d", score, enemiesLeft);
+    }
     VDP_clearText(0, 0, 40);
     VDP_drawText(hud_string, 0, 0);
     drawLivesIcons();
@@ -244,6 +257,74 @@ void hud_hideRapidBar(void) {
     drawRapidBar(1);
 }
 
+static void drawBossBar(u16 force) {
+    u16 i;
+    u16 base;
+
+    if (!bossBarActive) {
+        if (force || bossBarDrawn) {
+            VDP_clearText(0, BOSS_BAR_Y, 40);
+            bossBarDrawn = 0;
+        }
+        return;
+    }
+
+    if (force || !bossBarDrawn) {
+        VDP_drawText("JEFE", BOSS_LABEL_X, BOSS_BAR_Y);
+    }
+
+    /* Blue while healthy, red when under 25%. */
+    base = (bossBarLevel * 4 < BOSS_BAR_STEPS) ? TILE_BAR_RED1 : TILE_BAR_BLUE1;
+
+    for (i = 0; i < BOSS_BAR_LEN; i++) {
+        u16 px;
+        u16 idx;
+        u16 attr;
+        u16 start = i * 8;
+        if (bossBarLevel >= (start + 8)) px = 8;
+        else if (bossBarLevel > start) px = bossBarLevel - start;
+        else px = 0;
+        if (px == 0) idx = TILE_BAR_EMPTY;
+        else idx = base + (px - 1);
+        attr = TILE_ATTR_FULL(PAL1, 1, FALSE, FALSE, idx);
+        if (force || !bossBarDrawn || (bossBarAttr[i] != attr)) {
+            VDP_setTileMapXY(BG_A, attr, BOSS_BAR_X + i, BOSS_BAR_Y);
+            bossBarAttr[i] = attr;
+        }
+    }
+    bossBarDrawn = 1;
+}
+
+void hud_updateBossBar(u16 active, u16 hp, u16 hpMax) {
+    u16 level;
+
+    if (!active || hpMax == 0 || hp == 0) {
+        bossBarActive = 0;
+        bossBarLevel = 0;
+        drawBossBar(1);
+        return;
+    }
+    level = (u16)(((u32)hp * BOSS_BAR_STEPS + (u32)hpMax - 1) / (u32)hpMax);
+    if (level > BOSS_BAR_STEPS) level = BOSS_BAR_STEPS;
+    bossBarActive = 1;
+    if (bossBarActive == 1 && bossBarLevel == level && bossBarDrawn) {
+        /* still might need a colour swap at the 25% mark */
+        if (!((bossBarLevel * 4 < BOSS_BAR_STEPS) != (level * 4 < BOSS_BAR_STEPS))) {
+            bossBarLevel = level;
+            drawBossBar(0);
+            return;
+        }
+    }
+    bossBarLevel = level;
+    drawBossBar(0);
+}
+
+void hud_hideBossBar(void) {
+    bossBarActive = 0;
+    bossBarLevel = 0;
+    drawBossBar(1);
+}
+
 void hud_clear(void) {
     extraLifeTimer = 0;
     extraLifeGranted = 0;
@@ -252,8 +333,12 @@ void hud_clear(void) {
     rapidActive = 0;
     rapidLevel = 0;
     rapidBarDrawn = 0;
+    bossBarActive = 0;
+    bossBarLevel = 0;
+    bossBarDrawn = 0;
     VDP_clearText(0, 0, 40);
     VDP_clearText(0, 1, 40);
+    VDP_clearText(0, BOSS_BAR_Y, 40);
     VDP_clearText(0, LIVES_ICON_Y, 40);
     barDrawn = 0;
 }
