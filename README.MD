@@ -62,6 +62,7 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
 * RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
 * Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). Only the glowing core takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x). A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
+* Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
 * A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
 * C: activate the shield if it is charged. Duration and recharge depend on
         difficulty: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
@@ -238,6 +239,9 @@ HISTORY:
 *       13/11/26 - Mothership boss every 10 waves. 500 HP on wave 10,
                  doubling each return up to 8000 (wave 50+). Only the
                  center core takes damage. Tagged v0.3.57.
+*       13/11/26 - Title-screen code (UUDDLRLRBA) unlocks a start-wave
+                 selector (1-99). Practice runs from wave 2+ are not
+                 saved to the TOP 5. Tagged v0.3.58.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -294,6 +298,9 @@ TODO:
         - [Done 13/11/26] Mothership boss on waves 10, 20, 30... with
           500 HP on the first visit, doubling each return up to 8000.
           Damage only on the center core.
+        - [Done 13/11/26] Title-screen easter egg: UUDDLRLRBA unlocks a
+          start-wave selector (1-99). Runs that start at wave 2+ are
+          practice and are not written to the TOP 5.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -467,3 +474,6 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **Mothership boss (13/11/2026)**
 * Waves 10, 20, 30... replace the two enemy rows with a 64x24 mothership (placeholder art in `res/tiles/imgboss.bmp`, two frames, two hardware sprites). It slides in during the usual warp, under an "OLEADA N" + "JEFE" banner, and patrols horizontally at Y=40. Only the 16x16 glowing core takes damage; a normal shot that hits a wing is blocked with no damage, and the charged bolt flies through the hull and damages the core once per pass (3x a normal hit). On death the ship explodes, points are awarded, RapidFire is granted or refreshed, and the next regular wave starts.
 * HP starts at 500 on wave 10 and doubles each return (1000, 2000, 4000) up to a cap of 8000 from wave 50 onward. The cap fits in a u16 and the 16-tile bar uses 32-bit math (`hp * 128 / max`), so there is no overflow. Core damage is 30 / 20 / 10 on EASY / NORMAL / HARD; movement and fire also scale (speed 1/2/3, 1/2/4 shots every 90/60/40 frames). Base points are 500 / 1000 / 1500 times the appearance number. A "JEFE" label and bar sit on HUD row 2 (blue, then red under 25%). The sprite is a placeholder for Alberto to replace later. Hit ticks play on CH4 (they cannot cut the shield hum); the death boom is on CH2.
+**Start-wave easter egg (13/11/2026)**
+* On the title screen (not on the TOP 5 view), entering UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks a fourth menu line, `OLEADA INICIAL: NN` (1-99, wraps). The menu still moves while the code is entered; the sequence is tracked in parallel. A wrong button or a ~2 s gap (120 NTSC / 100 PAL frames) resets it; a stray UP after a mistake can start a new attempt. Completing the code on A does not also cycle difficulty or open PUNTAJES. A 1UP jingle plays and "TRUCO ACTIVADO" appears briefly under the logo. The unlock is RAM-only and lasts until power-off or reset; it is not saved in SRAM. Tip: enter it with the cursor on INICIAR so LEFT/RIGHT do not change the difficulty.
+* START on INICIAR or on the wave line begins the match at that wave, with the usual per-wave scaling and, on 10/20/30..., the mothership already in place (no warp, like wave 1) and the HP that visit should have. Starting at wave 1, even after unlocking, is a normal run and can go into the TOP 5. Starting at wave 2 or later is a practice run: it does not qualify for the table (no initials prompt), the pause screen shows PRACTICA, and GAME OVER says the score is not saved. That keeps the official leaderboard clean without punishing someone who only unlocked the selector and then played from wave 1.

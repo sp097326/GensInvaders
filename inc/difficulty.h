@@ -47,6 +47,8 @@ const char* difficulty_name(void);
 /* Wave 1 uses the table as-is. Later waves scale a runtime copy (see
  * difficulty.c). beginMatch resets to wave 1; nextWave advances it. */
 void difficulty_beginMatch(void);
+/* Like beginMatch, but start at `wave` (clamped 1-99) with that wave's scaling. */
+void difficulty_beginMatchAt(u16 wave);
 void difficulty_nextWave(void);
 u16  difficulty_wave(void);
 

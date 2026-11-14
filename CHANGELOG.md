@@ -3,6 +3,22 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Truco de oleada inicial en el título (AMH + Bimo)
+
+### Añadido
+- En la pantalla de título, la secuencia arriba, arriba, abajo, abajo,
+  izquierda, derecha, B, A desbloquea un selector "OLEADA INICIAL"
+  (1-99). El menú sigue funcionando mientras se introduce el código;
+  si te equivocas o pasan unos 2 s entre teclas, se reinicia. Al
+  acertarlo suena el jingle de 1UP y aparece "TRUCO ACTIVADO". El
+  desbloqueo dura hasta apagar o resetear, no se guarda en la SRAM.
+- Empezar en la oleada N aplica la dificultad de esa oleada (velocidad
+  y disparo) y, si es 10, 20, 30..., el jefe con la vida que le
+  corresponde. Si arrancas en la oleada 2 o posterior, el puntaje es
+  de práctica y no entra al TOP 5 (en pausa dice PRACTICA y al terminar
+  se avisa que no se guarda). Arrancar en la 1, aunque el truco esté
+  desbloqueado, sí puede entrar a la tabla.
+
 ## 2026-11-13 - Jefe nodriza cada 10 oleadas (AMH + Bimo)
 
 ### Añadido

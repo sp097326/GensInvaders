@@ -121,7 +121,7 @@ void boss_beginEnter(u16 offset) {
     boss.health = 1;
     boss.points = cfg->bossPoints * n;
     active = 1;
-    entering = 1;
+    entering = (offset != 0) ? 1 : 0;
     chargedHit = 0;
     fireTimer = cfg->bossShotInterval;
     animTick = 0;

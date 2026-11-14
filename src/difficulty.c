@@ -172,7 +172,13 @@ const char* difficulty_name(void) {
 }
 
 void difficulty_beginMatch(void) {
-    currentWave = 1;
+    difficulty_beginMatchAt(1);
+}
+
+void difficulty_beginMatchAt(u16 wave) {
+    if (wave < 1) wave = 1;
+    if (wave > 99) wave = 99;
+    currentWave = wave;
     applyWaveTuning();
 }
 

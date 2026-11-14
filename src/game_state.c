@@ -22,6 +22,7 @@ static u16 warpArrive = 0;
 static s16 starSpeed = STAR_SPEED_NORMAL;
 static s16 scoreHighlight = -1;
 static u16 scoreBlink = 0;
+static u16 practiceRun = 0;  /* started at wave 2+ via the title code; not saved to TOP 5 */
 
 static void resetGame(void);
 static void drawWaveBanner(void);
@@ -63,6 +64,18 @@ static void showEndScreen(GameState newState) {
         hud_drawCentered("PRESS START", 14);
         return;
     }
+    /* Practice runs (start wave > 1) are excluded from the TOP 5. */
+    if (practiceRun) {
+        scoreHighlight = -1;
+        gameState = STATE_GAME_OVER;
+        clearEndScreen();
+        hud_drawCentered("GAME OVER", 10);
+        hud_drawCentered("PUNTAJE DE PRACTICA", 11);
+        hud_drawCentered("NO SE GUARDA EN EL TOP 5", 12);
+        scores_drawTable(14, -1);
+        hud_drawCentered("PRESS START", 20);
+        return;
+    }
     /* Qualifying scores go through the 3-letter entry first. */
     if (scores_qualifies((u32)score)) {
         gameState = STATE_NAME_ENTRY;
@@ -94,6 +107,9 @@ static void pauseGame() {
     sprintf(line, "OLEADA %d", difficulty_wave());
     hud_drawCentered(line, 17);
     hud_drawCentered("PRESS START", 18);
+    if (practiceRun) {
+        hud_drawCentered("PRACTICA", 19);
+    }
 }
 
 static void resumeGame() {
@@ -146,13 +162,19 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
             }
             return;
         }
+        /* Sequence is tracked in parallel with the menu. Completing it
+         * on A must not also open PUNTAJES or cycle difficulty. */
+        if (title_onButton(changed, state)) {
+            title_drawMenu();
+            return;
+        }
         if (state & BUTTON_UP & changed) {
             if (title_cursor() > 0) {
                 title_setCursor(title_cursor() - 1);
                 title_drawMenu();
             }
         } else if (state & BUTTON_DOWN & changed) {
-            if (title_cursor() + 1 < TITLE_OPT_COUNT) {
+            if (title_cursor() + 1 < title_optionCount()) {
                 title_setCursor(title_cursor() + 1);
                 title_drawMenu();
             }
@@ -165,6 +187,16 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
             } else if (state & BUTTON_A & changed) {
                 title_cycleDifficulty(1);
             }
+        }
+        if (title_cursor() == TITLE_OPT_WAVE && title_cheatUnlocked()) {
+            if (state & BUTTON_LEFT & changed) {
+                title_cycleStartWave(-1);
+            } else if (state & BUTTON_RIGHT & changed) {
+                title_cycleStartWave(1);
+            } else if (state & BUTTON_START & changed) {
+                startGameFromMenu();
+            }
+            return;
         }
         if (title_cursor() == TITLE_OPT_SCORES) {
             if ((state & BUTTON_START & changed) || (state & BUTTON_A & changed)) {
@@ -351,10 +383,18 @@ static void resetGame() {
 
     player_reset();
 
-    difficulty_beginMatch();
+    difficulty_beginMatchAt(title_startWave());
+    practiceRun = (title_startWave() > 1) ? 1 : 0;
     stopWaveWarp();
-    enemies_reset();
-    boss_reset();
+    /* Wave 1 (and a cheat start) begin in place, with no warp. A boss
+     * start wave spawns the mothership already on screen. */
+    if (boss_isWave(difficulty_wave())) {
+        enemies_hideAll();
+        boss_beginEnter(0);
+    } else {
+        boss_reset();
+        enemies_reset();
+    }
     explosions_reset();
     score = 0;
     clearEndScreen();

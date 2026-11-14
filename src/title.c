@@ -3,14 +3,31 @@
 #include "hud.h"
 #include "difficulty.h"
 #include "game.h"
+#include "config.h"
 #include "scores.h"
 
 #define TILE_TITLE_FILL   TILE_USER_INDEX
 #define TILE_TITLE_SHADOW (TILE_USER_INDEX + 1)
+#define CODE_LEN 8
+#define CODE_FLASH_NTSC 90
+#define CODE_FLASH_PAL  75
+#define CODE_TIMEOUT_NTSC 120  /* ~2 s to enter the next button */
+#define CODE_TIMEOUT_PAL  100
 
 static u16 titleCursor = TITLE_OPT_START;
 static u16 titlePulseTick = 0;
 static u16 titleScoresView = 0;
+static u16 cheatUnlocked = 0;
+static u16 startWave = 1;
+static u16 codeStep = 0;
+static u16 codeTimer = 0;
+static u16 codeFlash = 0;
+
+/* UP UP DOWN DOWN LEFT RIGHT B A. Not stored in SRAM; lasts until reset. */
+static const u16 codeSeq[CODE_LEN] = {
+    BUTTON_UP, BUTTON_UP, BUTTON_DOWN, BUTTON_DOWN,
+    BUTTON_LEFT, BUTTON_RIGHT, BUTTON_B, BUTTON_A
+};
 
 /* Solid 8x8 block tiles for the title logo (palette index 1 = fill, 2 = shadow).
  * Drawn on plane A so a wide word like INVADERS does not hit the 20-sprites-per-
@@ -139,6 +156,14 @@ void title_drawMenu() {
     hud_drawCentered(line, 19);
     sprintf(line, "%c PUNTAJES (TOP 5)", (titleCursor == TITLE_OPT_SCORES) ? '>' : ' ');
     hud_drawCentered(line, 21);
+    if (cheatUnlocked) {
+        sprintf(line, "%c OLEADA INICIAL: %02u",
+            (titleCursor == TITLE_OPT_WAVE) ? '>' : ' ', startWave);
+        hud_drawCentered(line, 23);
+    }
+    if (codeFlash > 0) {
+        hud_drawCentered("TRUCO ACTIVADO", 13);
+    }
 }
 
 void title_cycleDifficulty(s16 dir) {
@@ -162,6 +187,18 @@ void title_updatePulse() {
     if ((titlePulseTick & 7) == 0) {
         PAL_setColor(49, colors[(titlePulseTick >> 3) & 7]);
     }
+    if (codeTimer > 0) {
+        codeTimer--;
+        if (codeTimer == 0) {
+            codeStep = 0;
+        }
+    }
+    if (codeFlash > 0) {
+        codeFlash--;
+        if (codeFlash == 0 && !titleScoresView) {
+            VDP_clearText(0, 13, 40);
+        }
+    }
 }
 
 void title_showScores(void) {
@@ -184,6 +221,9 @@ u16 title_isScoresView(void) {
 void title_show(void) {
     titleCursor = TITLE_OPT_START;
     titleScoresView = 0;
+    /* Keep the unlock and the chosen start wave; they last until reset. */
+    codeStep = 0;
+    codeTimer = 0;
     title_clear();
     loadTitleTiles();
     setTitlePalette();
@@ -196,5 +236,76 @@ u16 title_cursor(void) {
 }
 
 void title_setCursor(u16 cursor) {
+    u16 max = title_optionCount();
+    if (cursor >= max) cursor = max - 1;
     titleCursor = cursor;
+}
+
+u16 title_optionCount(void) {
+    return cheatUnlocked ? (TITLE_OPT_WAVE + 1) : TITLE_OPT_COUNT;
+}
+
+u16 title_cheatUnlocked(void) {
+    return cheatUnlocked;
+}
+
+u16 title_startWave(void) {
+    return cheatUnlocked ? startWave : 1;
+}
+
+void title_cycleStartWave(s16 dir) {
+    s16 w;
+    if (!cheatUnlocked) return;
+    w = (s16)startWave + dir;
+    if (w < START_WAVE_MIN) w = START_WAVE_MAX;
+    if (w > START_WAVE_MAX) w = START_WAVE_MIN;
+    startWave = (u16)w;
+    title_drawMenu();
+}
+
+u16 title_onButton(u16 changed, u16 state) {
+    static const u16 watch[8] = {
+        BUTTON_UP, BUTTON_DOWN, BUTTON_LEFT, BUTTON_RIGHT,
+        BUTTON_B, BUTTON_A, BUTTON_C, BUTTON_START
+    };
+    u16 pressed = changed & state;
+    u16 got = 0;
+    u16 n = 0;
+    u16 i;
+
+    if (cheatUnlocked || titleScoresView) return 0;
+    for (i = 0; i < 8; i++) {
+        if (pressed & watch[i]) {
+            got = watch[i];
+            n++;
+        }
+    }
+    if (n == 0) return 0;
+    if (n > 1 || got == BUTTON_START || got == BUTTON_C) {
+        codeStep = 0;
+        codeTimer = 0;
+        return 0;
+    }
+    if (got == codeSeq[codeStep]) {
+        codeStep++;
+        codeTimer = IS_PAL_SYSTEM ? CODE_TIMEOUT_PAL : CODE_TIMEOUT_NTSC;
+        if (codeStep >= CODE_LEN) {
+            cheatUnlocked = 1;
+            if (startWave < START_WAVE_MIN) startWave = START_WAVE_MIN;
+            codeStep = 0;
+            codeTimer = 0;
+            codeFlash = IS_PAL_SYSTEM ? CODE_FLASH_PAL : CODE_FLASH_NTSC;
+            XGM_startPlayPCM(SFX_1UP, 12, SOUND_PCM_CH4);
+            return 1;
+        }
+        return 0;
+    }
+    /* Wrong button: start over. A stray UP can begin a fresh attempt. */
+    codeStep = 0;
+    codeTimer = 0;
+    if (got == BUTTON_UP) {
+        codeStep = 1;
+        codeTimer = IS_PAL_SYSTEM ? CODE_TIMEOUT_PAL : CODE_TIMEOUT_NTSC;
+    }
+    return 0;
 }
