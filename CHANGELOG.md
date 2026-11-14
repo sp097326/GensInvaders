@@ -3,6 +3,27 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-13 - Jefe: daño visible y movimiento en la mitad superior (AMH + Bimo)
+
+### Corregido
+- El núcleo débil medía solo 16x16 (un cuarto del ancho de la nave) y
+  estaba un poco recortado arriba, mientras el brillo visible era más
+  ancho. Disparar al resplandor a menudo contaba como ala: la bala
+  desaparecía, la vida no bajaba y no había destello ni sonido, así
+  que parecía que el jefe no recibía daño o que la barra no se
+  actualizaba. El área débil ahora cubre el tercio central y toda
+  la altura del cuerpo (24x24).
+
+### Cambiado
+- Un golpe al núcleo hace parpadear la nave en blanco (solo la paleta
+  del jefe, no la del jugador) y suena el tic de impacto, también con
+  el disparo cargado. Un golpe en el ala suelta una chispa y no quita
+  vida. La barra JEFE se redibuja en cada cambio de vida.
+- El jefe ya no patrulla solo en horizontal a Y=40: se mueve en un
+  patrón suave (Lissajous) por toda la mitad superior, más rápido
+  según la dificultad, sin bajar de la mitad de la pantalla. Los
+  disparos y la barra lo siguen.
+
 ## 2026-11-13 - Truco de oleada inicial en el título (AMH + Bimo)
 
 ### Añadido

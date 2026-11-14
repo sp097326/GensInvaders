@@ -58,6 +58,8 @@ static u16 bossBarLevel = 0;
 static u16 bossBarAttr[16];
 static u16 bossBarDrawn = 0;
 
+static void drawBossBar(u16 force);
+
 /* 8x8 silhouette of the player ship (PAL1: 1 blue, 2 orange, 3 white,
  * 4 black). Side columns stay empty so adjacent icons do not touch. */
 static const u32 shipIconTile[8] = {
@@ -199,6 +201,11 @@ void hud_updateScore(int score, u16 enemiesLeft, u16 lives) {
     VDP_drawText(hud_string, 16, 1);
     barDrawn = 0;
     drawShieldBar(1);
+    /* Score/wave text only touches rows 0-1; force the JEFE bar on
+     * row 2 so a later score refresh cannot leave it stale. */
+    if (boss_isActive() && bossBarActive) {
+        drawBossBar(1);
+    }
 }
 
 void hud_updateShieldBar(u16 state, u16 level, u16 blink) {
@@ -299,24 +306,20 @@ void hud_updateBossBar(u16 active, u16 hp, u16 hpMax) {
     u16 level;
 
     if (!active || hpMax == 0 || hp == 0) {
-        bossBarActive = 0;
-        bossBarLevel = 0;
-        drawBossBar(1);
+        if (bossBarActive || bossBarDrawn) {
+            bossBarActive = 0;
+            bossBarLevel = 0;
+            drawBossBar(1);
+        }
         return;
     }
     level = (u16)(((u32)hp * BOSS_BAR_STEPS + (u32)hpMax - 1) / (u32)hpMax);
     if (level > BOSS_BAR_STEPS) level = BOSS_BAR_STEPS;
+    if (level < 1) level = 1;
+    if (bossBarActive && bossBarDrawn && bossBarLevel == level) return;
     bossBarActive = 1;
-    if (bossBarActive == 1 && bossBarLevel == level && bossBarDrawn) {
-        /* still might need a colour swap at the 25% mark */
-        if (!((bossBarLevel * 4 < BOSS_BAR_STEPS) != (level * 4 < BOSS_BAR_STEPS))) {
-            bossBarLevel = level;
-            drawBossBar(0);
-            return;
-        }
-    }
     bossBarLevel = level;
-    drawBossBar(0);
+    drawBossBar(1);
 }
 
 void hud_hideBossBar(void) {

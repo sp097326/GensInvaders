@@ -50,7 +50,7 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * collision.c/.h — AABB checks; player bullets vs enemies, enemy bullets vs the player, and fatal enemy-player body contact (or a ship reaching the visible bottom).
 * 	itle.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
 * powerups.c/.h — RapidFire capsule pickup and the Shield ability (C; duration and recharge come from the difficulty table).
-* boss.c/.h — mothership on waves 10, 20, 30... (500 HP, doubles each return up to 8000; damage only on the center core).
+* boss.c/.h — mothership on waves 10, 20, 30... (500 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half).
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
 * src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
 
@@ -61,7 +61,7 @@ owsOpposite movement, volleys, palettes, win/lose descent flag.
 * D-pad left/right: move the ship (during play).
 * B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
 * RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
-* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). Only the glowing core takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x). A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
+* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit flashes the ship white and plays a tick, a wing hit only sparks. It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
 * Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
 * A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
 * C: activate the shield if it is charged. Duration and recharge depend on
@@ -242,6 +242,11 @@ HISTORY:
 *       13/11/26 - Title-screen code (UUDDLRLRBA) unlocks a start-wave
                  selector (1-99). Practice runs from wave 2+ are not
                  saved to the TOP 5. Tagged v0.3.58.
+*       13/11/26 - Boss core hitbox enlarged to the center third and
+                 full body height, with a white flash and hit tick on
+                 a core hit and a spark on a wing hit. The mothership
+                 now roams the top half of the screen (Lissajous).
+                 Tagged v0.3.59.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -301,6 +306,10 @@ TODO:
         - [Done 13/11/26] Title-screen easter egg: UUDDLRLRBA unlocks a
           start-wave selector (1-99). Runs that start at wave 2+ are
           practice and are not written to the TOP 5.
+        - [Done 13/11/26] Boss damage feedback and top-half 2D roam:
+          larger core hitbox, white flash + hit tick on a core hit,
+          spark on a wing hit, Lissajous movement that never enters
+          the bottom half.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -477,3 +486,8 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 **Start-wave easter egg (13/11/2026)**
 * On the title screen (not on the TOP 5 view), entering UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks a fourth menu line, `OLEADA INICIAL: NN` (1-99, wraps). The menu still moves while the code is entered; the sequence is tracked in parallel. A wrong button or a ~2 s gap (120 NTSC / 100 PAL frames) resets it; a stray UP after a mistake can start a new attempt. Completing the code on A does not also cycle difficulty or open PUNTAJES. A 1UP jingle plays and "TRUCO ACTIVADO" appears briefly under the logo. The unlock is RAM-only and lasts until power-off or reset; it is not saved in SRAM. Tip: enter it with the cursor on INICIAR so LEFT/RIGHT do not change the difficulty.
 * START on INICIAR or on the wave line begins the match at that wave, with the usual per-wave scaling and, on 10/20/30..., the mothership already in place (no warp, like wave 1) and the HP that visit should have. Starting at wave 1, even after unlocking, is a normal run and can go into the TOP 5. Starting at wave 2 or later is a practice run: it does not qualify for the table (no initials prompt), the pause screen shows PRACTICA, and GAME OVER says the score is not saved. That keeps the official leaderboard clean without punishing someone who only unlocked the selector and then played from wave 1.
+
+
+**Boss hitbox, feedback and top-half roam (13/11/2026)**
+* The first mothership build only damaged a 16x16 core inset 4 px from the top, while the painted glow was wider, so shots at the obvious weak point often counted as a wing hit: the bullet vanished, HP did not drop, the JEFE bar did not move, and there was no flash or tick. That is why it felt like the boss took no damage. The weak zone is now the center third of the hull and the full 24 px body height (24x24 at offset 20,0). A core hit whites out the mothership for a few frames (PAL2 only, so the player ship is not bleached) and always plays the hit tick, including with the charged bolt. A wing hit spawns a spark and still deals no damage. The JEFE bar is force-redrawn on every HP change.
+* Horizontal-only patrol at Y=40 is gone. After the enter animation the mothership follows a smooth Lissajous path across the top half of the screen (Y 28-88, so the hull never crosses mid-screen into the player area). Speed scales with difficulty (`bossSpeed` 1/2/3). Volleys are still fired from the underside and the HP bar stays on HUD row 2.

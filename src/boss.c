@@ -17,6 +17,11 @@ static u16 animTick = 0;
 static u16 fireTimer = 0;
 static u16 chargedHit = 0;
 static u16 hitSfxCooldown = 0;
+static u16 flashTimer = 0;
+static u16 angX = 0;
+static u16 angY = 0;
+static u16 bossPal[16];
+static u16 bossPalSaved = 0;
 static s16 homeY = BOSS_HOME_Y;
 
 static u16 appearanceOf(u16 wave) {
@@ -40,10 +45,41 @@ static u16 hpForAppearance(u16 n) {
     return (u16)value;
 }
 
+/* PAL2 is free during a boss wave (no formation). A hit flash only
+ * whites out the mothership, not the player on PAL1. The snapshot is
+ * taken once at init so a RapidFire tint on PAL1 is not copied over. */
+static void captureBossPal(void) {
+    u16 i;
+
+    for (i = 0; i < 16; i++) {
+        bossPal[i] = PAL_getColor(32 + i);
+    }
+    bossPalSaved = 1;
+}
+
+static void restoreBossPal(void) {
+    u16 i;
+
+    if (!bossPalSaved) return;
+    for (i = 0; i < 16; i++) {
+        PAL_setColor(32 + i, bossPal[i]);
+    }
+    flashTimer = 0;
+}
+
+static void flashCore(void) {
+    /* White-out hull (1), accent (2) and core (3) on PAL2 only. */
+    PAL_setColor(33, RGB24_TO_VDPCOLOR(0xFCFCFC));
+    PAL_setColor(34, RGB24_TO_VDPCOLOR(0xFCFCFC));
+    PAL_setColor(35, RGB24_TO_VDPCOLOR(0xFCFCFC));
+    flashTimer = 6;
+}
+
 static void placeSprite(void) {
     if (boss.sprite == NULL) return;
     SPR_setPosition(boss.sprite, boss.x, boss.y);
-    SPR_setAnimAndFrame(boss.sprite, 0, (animTick >> 3) & 1);
+    /* Hold the bright frame while the core is flashing. */
+    SPR_setAnimAndFrame(boss.sprite, 0, (flashTimer > 0) ? 1 : ((animTick >> 3) & 1));
     SPR_setVisibility(boss.sprite, (boss.health > 0) ? VISIBLE : HIDDEN);
 }
 
@@ -72,10 +108,12 @@ u16 boss_points(void) {
 }
 
 void boss_hide(void) {
+    restoreBossPal();
     active = 0;
     entering = 0;
     chargedHit = 0;
     fireTimer = 0;
+    flashTimer = 0;
     if (boss.sprite != NULL) {
         killGameEntity(&boss);
     } else {
@@ -92,15 +130,17 @@ void boss_reset(void) {
 
 void boss_init(void) {
     /* 64x24 mothership: two 32x24 hardware sprites, 2 animation frames.
-     * High priority so it sits above the starfield. Placeholder art;
+     * PAL2 so the hit flash does not bleach the player (PAL1). High
+     * priority so it sits above the starfield. Placeholder art;
      * Alberto will swap in a final sheet later. */
     boss.w = BOSS_W;
     boss.h = BOSS_H;
-    boss.sprite = SPR_addSprite(&mothership, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    boss.sprite = SPR_addSprite(&mothership, 0, -40, TILE_ATTR(PAL2, 1, FALSE, FALSE));
     SPR_setAutoAnimation(boss.sprite, FALSE);
     SPR_setVisibility(boss.sprite, HIDDEN);
     boss.health = 0;
     active = 0;
+    captureBossPal();
 }
 
 void boss_beginEnter(u16 offset) {
@@ -111,10 +151,14 @@ void boss_beginEnter(u16 offset) {
     boss_hide();
     if (n == 0) return;
 
+    restoreBossPal();
     hpMax = hpForAppearance(n);
     hp = hpMax;
-    boss.x = (RIGHT_EDGE - BOSS_W) / 2;
+    /* Lissajous starts at the centre of the top-half roam box. */
+    angX = 0;
+    angY = 0;
     homeY = BOSS_HOME_Y;
+    boss.x = (RIGHT_EDGE - BOSS_W) / 2;
     boss.y = homeY - (s16)offset;
     boss.velx = (s16)cfg->bossSpeed;
     if (boss.velx == 0) boss.velx = 1;
@@ -123,6 +167,7 @@ void boss_beginEnter(u16 offset) {
     active = 1;
     entering = (offset != 0) ? 1 : 0;
     chargedHit = 0;
+    flashTimer = 0;
     fireTimer = cfg->bossShotInterval;
     animTick = 0;
     placeSprite();
@@ -140,6 +185,8 @@ void boss_advanceEnter(u16 remain, u16 total, u16 offset) {
     if (remain == 0) {
         entering = 0;
         boss.y = homeY;
+        angX = 0;
+        angY = 0;
         placeSprite();
     }
 }
@@ -170,6 +217,29 @@ static void fireVolley(void) {
     }
 }
 
+/* Smooth Lissajous roam: never leaves the top half of the screen.
+ * Speed scales with difficulty (bossSpeed 1/2/3). */
+static void roam(u16 speed) {
+    s16 xMid = (RIGHT_EDGE - BOSS_W) / 2;
+    s16 xAmp = xMid;
+    s16 yMid = BOSS_HOME_Y;
+    s16 yAmp = (BOSS_Y_MAX - BOSS_Y_MIN) / 2;
+    fix16 sx;
+    fix16 sy;
+
+    if (speed == 0) speed = 1;
+    angX = (angX + (u16)(4 * speed)) & 1023;
+    angY = (angY + (u16)(3 * speed)) & 1023;
+    sx = sinFix16(angX);
+    sy = sinFix16(angY);
+    boss.x = xMid + (s16)(((s32)sx * (s32)xAmp) / 64);
+    boss.y = yMid + (s16)(((s32)sy * (s32)yAmp) / 64);
+    if (boss.x < LEFT_EDGE) boss.x = LEFT_EDGE;
+    if (boss.x > RIGHT_EDGE - BOSS_W) boss.x = RIGHT_EDGE - BOSS_W;
+    if (boss.y < BOSS_Y_MIN) boss.y = BOSS_Y_MIN;
+    if (boss.y > BOSS_Y_MAX) boss.y = BOSS_Y_MAX;
+}
+
 void boss_update(void) {
     const DifficultyConfig* cfg;
 
@@ -177,6 +247,10 @@ void boss_update(void) {
 
     animTick++;
     if (hitSfxCooldown > 0) hitSfxCooldown--;
+    if (flashTimer > 0) {
+        flashTimer--;
+        if (flashTimer == 0) restoreBossPal();
+    }
     if (!bullets_chargedActive()) chargedHit = 0;
 
     if (entering) {
@@ -184,19 +258,12 @@ void boss_update(void) {
         return;
     }
 
-    boss.x += boss.velx;
-    if (boss.velx > 0 && (boss.x + BOSS_W >= RIGHT_EDGE)) {
-        boss.x = RIGHT_EDGE - BOSS_W;
-        boss.velx = -boss.velx;
-    } else if (boss.velx < 0 && boss.x <= LEFT_EDGE) {
-        boss.x = LEFT_EDGE;
-        boss.velx = -boss.velx;
-    }
+    cfg = difficulty_config();
+    roam((u16)cfg->bossSpeed);
     placeSprite();
 
     if (player_isExploding() || player_get()->health == 0) return;
 
-    cfg = difficulty_config();
     if (fireTimer > 0) fireTimer--;
     if (fireTimer == 0) {
         fireVolley();
@@ -224,8 +291,9 @@ u16 boss_hitShot(GameEntity* shot, u16 charged) {
     cx = boss.x + BOSS_CORE_OX;
     cy = boss.y + BOSS_CORE_OY;
     if (!overlaps(shot->x, shot->y, shot->w, shot->h, cx, cy, BOSS_CORE_W, BOSS_CORE_H)) {
-        /* Wing / hull: a normal shot is blocked with no damage; the
-         * charged bolt flies through, still without damaging. */
+        /* Wing / hull: spark, no damage. A normal shot is blocked;
+         * the charged bolt flies through, still without damaging. */
+        explosions_spawn(shot->x, shot->y);
         return 1;
     }
 
@@ -257,9 +325,11 @@ u16 boss_hitShot(GameEntity* shot, u16 charged) {
         return 3;
     }
 
-    if (!charged && hitSfxCooldown == 0) {
+    flashCore();
+    placeSprite();
+    if (hitSfxCooldown == 0) {
         XGM_startPlayPCM(SFX_BOSS_HIT, 8, SOUND_PCM_CH4);
-        hitSfxCooldown = 4;
+        hitSfxCooldown = 3;
     }
     return 2;
 }

@@ -55,11 +55,13 @@
 #define BOSS_CHARGED_MULT     3  /* charged bolt deals 3x a normal hit */
 #define BOSS_W               64
 #define BOSS_H               24
-#define BOSS_CORE_W          16
-#define BOSS_CORE_H          16
-#define BOSS_CORE_OX         24  /* (64-16)/2, center weak point */
-#define BOSS_CORE_OY          4
-#define BOSS_HOME_Y          40
+#define BOSS_CORE_W          24  /* ~1/3 of the 64 px hull, forgiving center */
+#define BOSS_CORE_H          24  /* full body height of the core */
+#define BOSS_CORE_OX         20  /* (64-24)/2 */
+#define BOSS_CORE_OY          0
+#define BOSS_Y_MIN           28  /* just below the JEFE bar (row 2) */
+#define BOSS_Y_MAX           (112 - BOSS_H)  /* 88: hull stays in the top half */
+#define BOSS_HOME_Y          ((BOSS_Y_MIN + BOSS_Y_MAX) / 2)  /* 58, roam center */
 #define BOSS_BAR_STEPS      128  /* 16 tiles x 8 px */
 
 #define POWER_ON 1

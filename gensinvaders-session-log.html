@@ -159,6 +159,7 @@
       <li><a href="#nov13-rapid">13/11/2026 - RapidFire capsule power-up</a></li>
       <li><a href="#nov13-boss">13/11/2026 - Mothership boss every 10 waves</a></li>
       <li><a href="#nov13-code">13/11/2026 - Title-screen start-wave code</a></li>
+      <li><a href="#nov13-bossfix">13/11/2026 - Boss damage feedback and top-half roam</a></li>
     </ol>
   </nav>
 
@@ -915,6 +916,22 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        scaling and, on 10/20/30..., the correct boss. Scores from
        wave 2 or later are practice and are not written to the TOP 5;
        a wave-1 start after unlocking still qualifies.</p>
+  </section>
+
+
+  <section class="card" id="nov13-bossfix">
+    <h2>13/11/2026 (with Bimo) - Boss damage feedback and top-half roam</h2>
+    <p>The mothership&rsquo;s weak core was only 16&times;16 (a quarter of
+       the hull, inset from the top) while the painted glow was wider,
+       so shots at the obvious bright area often counted as a wing hit:
+       the bullet vanished, HP did not drop, the JEFE bar did not move,
+       and there was no flash or sound. The core is now the center
+       third and the full body height (24&times;24). A core hit flashes
+       the ship white (PAL2 only) and plays the hit tick, including with
+       the charged shot; a wing hit only sparks. The JEFE bar redraws
+       on every HP change. The boss now follows a Lissajous path in the
+       top half of the screen (never below mid-screen), faster on harder
+       difficulties. Volleys and the HP bar follow it.</p>
   </section>
 
   <footer>
