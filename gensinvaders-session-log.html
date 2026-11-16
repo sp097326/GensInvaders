@@ -161,6 +161,7 @@
       <li><a href="#nov13-code">13/11/2026 - Title-screen start-wave code</a></li>
       <li><a href="#nov13-bossfix">13/11/2026 - Boss damage feedback and top-half roam</a></li>
       <li><a href="#nov13-bosscharge">13/11/2026 - Charged shot no longer skips the boss</a></li>
+      <li><a href="#nov16-macos">16/11/2026 - Build on macOS with build.sh</a></li>
     </ol>
   </nav>
 
@@ -947,6 +948,27 @@ void NO_INLINE XGM_setPCM(const u8 id, const u8 *sample, const u32 len) {
        the current wave is a boss wave, and the next wave cannot start if
        the mothership is still up. The fight ends only when its HP reaches
        0 (explosion, bonus, then warp). Regular waves are unchanged.</p>
+  </section>
+
+  <section class="card" id="nov16-macos">
+    <h2>16/11/2026 (with Bimo) - Build on macOS with build.sh</h2>
+    <p>New <code class="inline">build.sh</code> at the repo root, the
+       macOS/Linux counterpart of <code class="inline">run.bat</code>:
+       <code class="inline">./build.sh build</code> writes
+       <code class="inline">src/version.h</code> exactly like
+       <code class="inline">run.bat</code> (V0.3.&lt;commit count&gt;, CRLF),
+       deletes <code class="inline">out/src/*.o</code> and compiles with
+       SGDK 2.11; <code class="inline">clean</code> and
+       <code class="inline">run</code> are also supported and can be chained.</p>
+    <p>The existing <code class="inline">/opt/toolchains/mars</code> install
+       on the MacBook Pro is an Intel build (GCC 13.1, SGDK 2.00) that does not
+       run on Apple Silicon. A new toolchain was set up in
+       <code class="inline">~/Desktop/retrodev/mars-sgdk211</code> with
+       marsdev's native arm64 m68k-elf GCC 14.2 and SGDK 2.11
+       (<code class="inline">libmd.a</code>, rescomp, xgmtool, sjasm, bintos,
+       convsym), without <code class="inline">sudo</code>. BlastEm 1.0 was
+       installed with Homebrew; Genesis Plus is the fallback. GCC 14 builds
+       the game with 0 warnings and no game code changes (V0.3.61, 384 KB).</p>
   </section>
 
   <footer>

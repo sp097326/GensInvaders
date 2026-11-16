@@ -3,6 +3,32 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-16 - Compilación en macOS con build.sh (AMH + Bimo)
+
+### Agregado
+- `build.sh` en la raíz: equivalente de `run.bat` para macOS y Linux.
+  `./build.sh build` escribe `src/version.h` igual que `run.bat`
+  (`V0.3.<commits>`, mínimo 2 dígitos, terminado en CRLF), borra
+  `out/src/*.o` y compila con el `makefile.gen` de SGDK 2.11.
+  `./build.sh clean` limpia `out/` y `./build.sh run` abre
+  `out/rom.bin`. Sin argumentos solo corre la ROM, como `run.bat`, y
+  los comandos se pueden encadenar (`./build.sh clean build run`).
+- Toolchain para Mac con Apple Silicon en
+  `~/Desktop/retrodev/mars-sgdk211`: GCC 14.2 m68k-elf nativo arm64
+  (compilado desde el marsdev de Alberto) más SGDK 2.11 (`libmd.a`,
+  `libmd_debug.a`, `rescomp`, `xgmtool`, `sjasm`, `bintos`, `convsym`).
+  Todo en carpetas del usuario, sin `sudo`. La ruta se puede cambiar
+  con la variable `GENS_GDK`.
+- Emulador: `run` usa BlastEm 1.0 (`brew install blastem`) y, si no
+  está, Genesis Plus (`open -a "Genesis Plus"`).
+
+### Notas
+- Con GCC 14 el juego compila con 0 warnings y sin cambios en el código
+  del juego. La ROM queda en `out/rom.bin` (384 KB) con V0.3.61.
+- El Mars instalado en `/opt/toolchains/mars` (GCC 13.1, SGDK 2.00) es
+  un binario Intel que depende de Homebrew en `/usr/local`, y no corre
+  en esta Mac. No se modificó.
+
 ## 2026-11-13 - El disparo cargado ya no salta la pelea del jefe (AMH + Bimo)
 
 ### Corregido

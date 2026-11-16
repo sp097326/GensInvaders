@@ -35,6 +35,25 @@ BlastEm default keys: arrows = D-pad, S = B (shoot), D = C (shield), Enter = STA
 Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
 does not affect the ROM.
 
+### Compilar en macOS
+Requirements (macOS, Apple Silicon):
+* Toolchain at `~/Desktop/retrodev/mars-sgdk211/m68k-elf`: native arm64 m68k-elf GCC 14.2 plus
+  SGDK 2.11 (headers, `libmd.a`, `makefile.gen`, `rescomp.jar`, `sjasm`...), built from marsdev
+  without `sudo`. Another location can be used with `GENS_GDK=/path/to/m68k-elf`.
+* Java (Homebrew `openjdk`) on the PATH for `rescomp.jar` and `sizebnd.jar`.
+* BlastEm 1.0 (`brew install blastem`); if it is missing, `Genesis Plus.app` is used.
+
+From the project folder:
+
+    ./build.sh build        # writes src/version.h (same V0.3.xx as run.bat) and compiles
+    ./build.sh run          # opens out/rom.bin in BlastEm (or Genesis Plus)
+    ./build.sh clean        # removes out/
+    ./build.sh build run    # commands can be chained; no argument = run
+
+The ROM builds with GCC 14 with 0 warnings and no game code changes. Do not use the older
+`/opt/toolchains/mars` install for this game: it ships SGDK 2.00 and is an Intel build that
+does not run on this Mac.
+
 ## Estructura del código
 Public headers live in inc/; implementation in src/. SGDK's makefile.gen already compiles every src/*.c (except oot/rom_head.c) and adds -Iinc -Isrc. Module data is static inside each .c; only shared types and accessors are exported. src/main.c is init, the starfield, and the main-loop dispatch.
 
@@ -104,7 +123,7 @@ CODER:
 INITIAL_DATE: 
 *   07/16/2021
 LAST_MODIFY_DATE:
-*   11/12/2026
+*   11/16/2026
 
 HISTORY:
 *       16/07/21 - Created template and helloworld type code.
@@ -252,6 +271,11 @@ HISTORY:
                  ships left; that count must not clear the wave.
                  The mothership now leaves only when its HP hits 0
                  (explosion, bonus, then warp). Tagged v0.3.60.
+*       16/11/26 - macOS build: build.sh (build / clean / run, same
+                 version stamp as run.bat) with a native arm64 m68k-elf
+                 GCC 14.2 + SGDK 2.11 toolchain in
+                 ~/Desktop/retrodev/mars-sgdk211 and BlastEm 1.0 from
+                 Homebrew. No game code changes. Tagged v0.3.61.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -318,6 +342,8 @@ TODO:
         - [Done 13/11/26] Charged shot no longer ends a boss wave:
           enemiesLeft is already 0 with the rows hidden, so that
           count is ignored until the mothership's HP reaches 0.
+        - [Done 16/11/26] Build on macOS too: ./build.sh build|clean|run
+          with SGDK 2.11 and a native Apple Silicon m68k-elf GCC 14.2.
 
 ## Work log - 10/11/2026 (with Bimo)
 Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
@@ -502,3 +528,12 @@ Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.
 
 **Charged shot no longer skips the boss (13/11/2026)**
 * On a boss wave the two rows are hidden and `enemiesLeft` is 0 for the whole fight. The charged-bolt path treated "bolt in flight and no ships left" as a wave clear, so releasing a charged shot (even a miss) returned `COLLISION_WIN`, hid the mothership without the defeat explosion or bonus, and jumped to the next wave. Normal shots did not trip it because they only checked the count after an actual kill. The formation-clear check is now ignored while the boss is active or the current wave is a boss wave; `game_state` also refuses to start the next wave if the mothership is still up. The fight ends only when boss HP reaches 0, through the usual explosion, points, RapidFire grant and warp. Regular waves are unchanged.
+
+## Work log - 16/11/2026 (with Bimo)
+Everything below was done on Nov 16, 2026 (V0.3.61). Details are in `CHANGELOG.md`.
+
+**macOS build (16/11/2026)**
+* New `build.sh` at the repo root, the macOS/Linux counterpart of `run.bat`. `./build.sh build` writes `src/version.h` byte for byte like `run.bat` (`#define GAME_VERSION "V0.3.xx"` + CRLF, xx = `git rev-list --count HEAD`, at least 2 digits), deletes `out/src/*.o` because several modules include the version through `game.h`, and runs SGDK 2.11's `makefile.gen`. `./build.sh clean` runs makefile.gen's clean and `./build.sh run` opens `out/rom.bin`. With no argument it only runs the ROM, like `run.bat`; commands can be chained (`./build.sh clean build run`).
+* Toolchain: Alberto's MacBook Pro (Apple Silicon) had marsdev installed in `/opt/toolchains/mars`, but that install is an Intel build (GCC 13.1, SGDK 2.00) linked against Homebrew libraries in `/usr/local`, so its compiler does not run there. marsdev's own arm64 rebuild of m68k-elf GCC 14.2.0 + binutils did work, so it was copied to `~/Desktop/retrodev/mars-sgdk211/m68k-elf` together with SGDK 2.11 (tag v2.11). `libmd.a` and `libmd_debug.a` were built there with 0 warnings; `bintos`, `xgmtool`, `sjasm` and `convsym` were compiled natively, and the SGDK jars were copied. `common.mk` is SGDK 2.11's with absolute paths to the `m68k-elf-*` tools and the GCC 14.2 LTO plugin / libgcc. Everything lives in user folders; no `sudo` was needed and the old `/opt` install was left untouched. `GENS_GDK` overrides the path.
+* Emulator: BlastEm 1.0.0 from Homebrew (`brew install blastem`, native arm64). `run` falls back to `open -a "Genesis Plus"` if BlastEm is not installed.
+* Result: GCC 14 builds the game with 0 warnings and no game code changes; `out/rom.bin` is 384 KB and shows V0.3.61.
