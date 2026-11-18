@@ -279,6 +279,11 @@ HISTORIAL:
 *       18/11/26 - README unificado: README.MD queda completo en español
                  y README.en.md es la versión en inglés, con un
                  selector de idioma al inicio de ambos.
+*       18/11/26 - Nuevo sprite temporal del jefe (64x56, 2 cuadros, paleta
+                 propia en PAL2, tinte rojo al golpear, núcleo de 24x40) y
+                 segundo ataque: abanico de 3 balas dirigido al jugador, al
+                 azar con más del 50% de vida y alternado con la ráfaga normal
+                 con 50% o menos. V0.3.66.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -547,3 +552,9 @@ Todo lo siguiente se hizo el 18 de noviembre de 2026. Los detalles están en `CH
 **Documentación (18/11/2026)**
 * Este `README.MD` mezclaba inglés y español. Ahora está completo en español, y `README.en.md` es la versión completa en inglés, con la misma estructura. GitHub no tiene un selector de idioma integrado para los README, así que ambos archivos empiezan con una línea (`Español | English`) que enlaza al otro.
 * El contenido, los comandos, las rutas, los identificadores, las versiones y las fechas no cambian. Se restauraron algunos caracteres que una edición anterior había convertido en caracteres de control en la lista de la estructura del código (`bullets.c`, `enemies.c`, `title.c`, `boot/rom_head.c`, `reviveGameEntity`, `rowsOpposite`).
+
+**Jefe: nuevo sprite y segundo disparo (18/11/2026)**
+* Sprite temporal de Alberto: es/tiles/imgboss.png, 64x56 con 2 cuadros (el fuego de los cohetes parpadea). Usa su propia paleta en PAL2 durante la oleada del jefe y al terminar se restaura la del fondo. Al golpear el núcleo el cuerpo se tiñe de rojo, porque un destello blanco no se notaba sobre el color crema.
+* Hitbox: solo el cuerpo central (24x40, desplazado 20,8) recibe daño; los cohetes bloquean los disparos. El recorrido vertical se redujo (Y 28 a 56) porque el sprite mide más del doble de alto.
+* Segundo ataque: abanico de 3 balas diagonales dirigido hacia el jugador. Con más del 50% de vida sale al azar (1 de cada 4 disparos); con 50% o menos alterna siempre con la ráfaga normal. Para esto las balas enemigas ahora tienen velocidad horizontal (ullets_shootEnemyXYV). Los ajustes están en BOSS_FAN_* en inc/config.h.
+* Pendiente: sprites propios para los disparos del jefe.

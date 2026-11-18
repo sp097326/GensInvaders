@@ -10,7 +10,7 @@ SPRITE enemyexp "tiles/imgenemyexp.bmp" 2 2 FAST 0
 SPRITE shield "tiles/imgshield.bmp" 4 4 FAST 6
 SPRITE flame "tiles/imgflame.bmp" 1 1 FAST 0
 SPRITE capsuleSpr "tiles/imgcapsule.bmp" 1 1 FAST 0
-SPRITE mothership "tiles/imgboss.bmp" 8 3 FAST 0
+SPRITE mothership "tiles/imgboss.png" 8 7 FAST 0
 WAV laser "sounds/laser.wav" XGM
 WAV xplosion "sounds/explosion.wav" XGM
 WAV intro "music/intro_short.wav" XGM

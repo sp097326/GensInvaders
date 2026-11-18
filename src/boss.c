@@ -23,6 +23,7 @@ static u16 angY = 0;
 static u16 bossPal[16];
 static u16 bossPalSaved = 0;
 static s16 homeY = BOSS_HOME_Y;
+static u16 lastWasFan = 0;
 
 static u16 appearanceOf(u16 wave) {
     if (wave < BOSS_WAVE_EVERY) return 0;
@@ -67,11 +68,18 @@ static void restoreBossPal(void) {
     flashTimer = 0;
 }
 
+/* Load the boss sprite's own 16 colors into PAL2 for the boss wave. */
+static void applyBossPal(void) {
+    PAL_setColors(32, mothership.palette->data, 16, CPU);
+    flashTimer = 0;
+}
+
 static void flashCore(void) {
-    /* White-out hull (1), accent (2) and core (3) on PAL2 only. */
-    PAL_setColor(33, RGB24_TO_VDPCOLOR(0xFCFCFC));
-    PAL_setColor(34, RGB24_TO_VDPCOLOR(0xFCFCFC));
-    PAL_setColor(35, RGB24_TO_VDPCOLOR(0xFCFCFC));
+    /* Red tint on the body colors (1-3) on PAL2 only. The body is
+     * cream, so a white flash would barely show. */
+    PAL_setColor(33, RGB24_TO_VDPCOLOR(0xFC6C6C));
+    PAL_setColor(34, RGB24_TO_VDPCOLOR(0xFC6C6C));
+    PAL_setColor(35, RGB24_TO_VDPCOLOR(0xFC6C6C));
     flashTimer = 6;
 }
 
@@ -129,10 +137,11 @@ void boss_reset(void) {
 }
 
 void boss_init(void) {
-    /* 64x24 mothership: two 32x24 hardware sprites, 2 animation frames.
-     * PAL2 so the hit flash does not bleach the player (PAL1). High
-     * priority so it sits above the starfield. Placeholder art;
-     * Alberto will swap in a final sheet later. */
+    /* 64x56 boss (temporary art from Alberto, 2 frames: flame flicker).
+     * Uses its own palette in PAL2 during the boss wave; boss_hide puts
+     * the background palette back for the formation. PAL2 so the hit
+     * tint does not touch the player (PAL1). High priority so it sits
+     * above the starfield. */
     boss.w = BOSS_W;
     boss.h = BOSS_H;
     boss.sprite = SPR_addSprite(&mothership, 0, -40, TILE_ATTR(PAL2, 1, FALSE, FALSE));
@@ -151,7 +160,7 @@ void boss_beginEnter(u16 offset) {
     boss_hide();
     if (n == 0) return;
 
-    restoreBossPal();
+    applyBossPal();
     hpMax = hpForAppearance(n);
     hp = hpMax;
     /* Lissajous starts at the centre of the top-half roam box. */
@@ -169,6 +178,7 @@ void boss_beginEnter(u16 offset) {
     chargedHit = 0;
     flashTimer = 0;
     fireTimer = cfg->bossShotInterval;
+    lastWasFan = 0;
     animTick = 0;
     placeSprite();
     refreshBar();
@@ -217,6 +227,34 @@ static void fireVolley(void) {
     }
 }
 
+/* Second attack: 3 diagonal bullets from the belly, tilted toward the
+ * player (left, straight or right) and a bit faster than the volley. */
+static void fireFan(void) {
+    const DifficultyConfig* cfg = difficulty_config();
+    s16 mx = boss.x + (BOSS_W / 2) - 4;
+    s16 my = boss.y + BOSS_H - 4;
+    s16 dx = player_get()->x - mx;
+    s16 aim = 0;
+    s16 vy = (s16)cfg->bulletSpeed + 1;
+
+    if (dx > BOSS_FAN_AIM_ZONE) aim = 1;
+    else if (dx < -BOSS_FAN_AIM_ZONE) aim = -1;
+    bullets_shootEnemyXYV(mx, my, aim, vy);
+    bullets_shootEnemyXYV(mx, my, aim - BOSS_FAN_SPREAD, vy);
+    bullets_shootEnemyXYV(mx, my, aim + BOSS_FAN_SPREAD, vy);
+}
+
+/* Below half HP: alternate fan and volley. Otherwise: random fan. */
+static void fireAttack(void) {
+    u16 useFan;
+
+    if ((u32)hp * 2 <= (u32)hpMax) useFan = lastWasFan ? 0 : 1;
+    else useFan = ((random() % BOSS_FAN_CHANCE) == 0) ? 1 : 0;
+    if (useFan) fireFan();
+    else fireVolley();
+    lastWasFan = useFan;
+}
+
 /* Smooth Lissajous roam: never leaves the top half of the screen.
  * Speed scales with difficulty (bossSpeed 1/2/3). */
 static void roam(u16 speed) {
@@ -249,7 +287,7 @@ void boss_update(void) {
     if (hitSfxCooldown > 0) hitSfxCooldown--;
     if (flashTimer > 0) {
         flashTimer--;
-        if (flashTimer == 0) restoreBossPal();
+        if (flashTimer == 0) applyBossPal();
     }
     if (!bullets_chargedActive()) chargedHit = 0;
 
@@ -266,7 +304,7 @@ void boss_update(void) {
 
     if (fireTimer > 0) fireTimer--;
     if (fireTimer == 0) {
-        fireVolley();
+        fireAttack();
         fireTimer = cfg->bossShotInterval;
         if (fireTimer == 0) fireTimer = 60;
     }

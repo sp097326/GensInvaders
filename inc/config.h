@@ -54,15 +54,21 @@
 #define BOSS_HP_CAP        8000  /* wave 50+: 500, 1000, 2000, 4000, 8000 */
 #define BOSS_CHARGED_MULT     3  /* charged bolt deals 3x a normal hit */
 #define BOSS_W               64
-#define BOSS_H               24
-#define BOSS_CORE_W          24  /* ~1/3 of the 64 px hull, forgiving center */
-#define BOSS_CORE_H          24  /* full body height of the core */
+#define BOSS_H               56
+#define BOSS_CORE_W          24  /* body between the two rockets */
+#define BOSS_CORE_H          40  /* body below the ears, above the feet */
 #define BOSS_CORE_OX         20  /* (64-24)/2 */
-#define BOSS_CORE_OY          0
+#define BOSS_CORE_OY          8
 #define BOSS_Y_MIN           28  /* just below the JEFE bar (row 2) */
-#define BOSS_Y_MAX           (112 - BOSS_H)  /* 88: hull stays in the top half */
-#define BOSS_HOME_Y          ((BOSS_Y_MIN + BOSS_Y_MAX) / 2)  /* 58, roam center */
+#define BOSS_Y_MAX           (112 - BOSS_H)  /* 56: sprite stays in the top half */
+#define BOSS_HOME_Y          ((BOSS_Y_MIN + BOSS_Y_MAX) / 2)  /* 42, roam center */
 #define BOSS_BAR_STEPS      128  /* 16 tiles x 8 px */
+/* Second boss attack: a 3-bullet fan aimed toward the player.
+ * Above 50% HP it is a random pick (1 in BOSS_FAN_CHANCE volleys);
+ * at 50% HP or less it alternates with the normal volley. */
+#define BOSS_FAN_CHANCE       4
+#define BOSS_FAN_SPREAD       2  /* px/frame sideways between fan bullets */
+#define BOSS_FAN_AIM_ZONE    32  /* player offset (px) that tilts the fan */
 
 #define POWER_ON 1
 #define POWER_OFF 0

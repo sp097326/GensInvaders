@@ -3,6 +3,40 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-18 - Nuevo sprite del jefe y segundo disparo en abanico (AMH + Bimo) - V0.3.66
+
+### Cambiado
+- Sprite del jefe (nave nodriza): nuevo arte temporal de Alberto,
+  es/tiles/imgboss.png (indexado, 16 colores, 2 cuadros de 64x56; el
+  segundo intercambia los tonos del fuego para que las llamas parpadeen).
+  Se eliminó es/tiles/imgboss.bmp. En es/resources.res:
+  SPRITE mothership "tiles/imgboss.png" 8 7 FAST 0.
+- El jefe carga su propia paleta en PAL2 durante su oleada
+  (pplyBossPal); oss_hide regresa la paleta del fondo para la
+  formación.
+- Al recibir un golpe en el núcleo, el cuerpo se tiñe de rojo (colores
+  33-35 a 0xFC6C6C) en lugar de blanco, porque el cuerpo crema hacía
+  invisible el destello blanco.
+- inc/config.h: BOSS_H 24 a 56; núcleo de 24x40 con desplazamiento
+  (20, 8) (BOSS_CORE_H 40, BOSS_CORE_OY 8). Los cohetes bloquean los
+  disparos sin hacer daño. Con el sprite más alto, el recorrido vertical
+  queda entre Y 28 y 56 (centro 42).
+
+### Agregado
+- Segundo ataque del jefe: abanico de 3 balas en diagonal desde la parte
+  inferior, un poco más rápidas que la ráfaga normal e inclinadas hacia
+  el jugador (izquierda, centro o derecha). Con más del 50% de vida se
+  elige al azar (1 de cada BOSS_FAN_CHANCE = 4 disparos); con 50% o
+  menos alterna siempre con la ráfaga normal. Ajustes en config.h:
+  BOSS_FAN_CHANCE, BOSS_FAN_SPREAD, BOSS_FAN_AIM_ZONE.
+- ullets_shootEnemyXYV(x, y, vx, vy): bala enemiga con velocidad
+  horizontal. Las balas enemigas ahora suman elx y desaparecen al
+  salir por los bordes laterales; los disparos existentes usan elx = 0.
+
+### Pendiente
+- Sprites propios para los disparos del jefe (los está haciendo el
+  equipo de Alberto); por ahora usan el sprite de bala enemiga actual.
+
 ## 2026-11-18 - README unificado en español y README.en.md en inglés (AMH + Bimo)
 
 ### Cambiado

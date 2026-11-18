@@ -20,6 +20,8 @@ void bullets_shootEnemy(GameEntity* shooter);
 /* Like shootEnemy, but at an explicit muzzle and up to MAX_ENEMY_BULLETS
  * (used by the boss, whose volley can exceed the formation cap). */
 void bullets_shootEnemyXY(s16 x, s16 y);
+/* Boss fan shot: explicit muzzle and velocity. Returns 1 if fired. */
+u16  bullets_shootEnemyXYV(s16 x, s16 y, s16 vx, s16 vy);
 GameEntity* bullets_charged(void);
 
 void bullets_tickShot(void);

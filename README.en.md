@@ -279,6 +279,11 @@ HISTORY:
 *       18/11/26 - README unified: README.MD is now entirely in Spanish
                  and README.en.md is the English version, with a
                  language switcher at the top of both.
+*       18/11/26 - New temporary boss sprite (64x56, 2 frames, own palette
+                 in PAL2, red hit tint, 24x40 core) and a second attack:
+                 a 3-bullet fan aimed at the player, random above 50% HP
+                 and alternating with the normal volley at 50% or less.
+                 V0.3.66.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -547,3 +552,9 @@ Everything below was done on Nov 18, 2026. Details are in `CHANGELOG.md`.
 **Documentation (18/11/2026)**
 * `README.MD` mixed English and Spanish. It is now entirely in Spanish, and this file, `README.en.md`, is the complete English version with the same structure. GitHub has no built-in language toggle for READMEs, so both files start with a switcher line (`Español | English`) that links to the other one.
 * Content, commands, paths, identifiers, versions and dates are unchanged. A few characters that an earlier edit had turned into control characters in the code-structure list (`bullets.c`, `enemies.c`, `title.c`, `boot/rom_head.c`, `reviveGameEntity`, `rowsOpposite`) were restored.
+
+**Boss: new sprite and second attack (18/11/2026)**
+* Temporary art from Alberto: es/tiles/imgboss.png, 64x56 with 2 frames (the rocket flames flicker). It loads its own palette into PAL2 during the boss wave and the background palette is restored afterwards. A core hit tints the body red, because a white flash did not show on the cream body.
+* Hitbox: only the central body (24x40 at offset 20,8) takes damage; the rockets block shots. The vertical roam was reduced (Y 28 to 56) because the sprite is more than twice as tall.
+* Second attack: a fan of 3 diagonal bullets aimed toward the player. Above 50% HP it is picked at random (1 in 4 volleys); at 50% or less it always alternates with the normal volley. Enemy bullets now have horizontal speed (ullets_shootEnemyXYV). Tuning lives in BOSS_FAN_* in inc/config.h.
+* To do: dedicated sprites for the boss shots.

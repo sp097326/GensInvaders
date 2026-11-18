@@ -112,8 +112,9 @@ void bullets_update(void) {
     {
         bllt = &enemyBullets[i];
         if (bllt->health > 0) {
+            bllt->x += bllt->velx;
             bllt->y += bllt->vely;
-            if (bllt->y > BOTTOM_EDGE) {
+            if (bllt->y > BOTTOM_EDGE || bllt->x < LEFT_EDGE - 8 || bllt->x > RIGHT_EDGE) {
                 killGameEntity(bllt);
                 enemyBulletsOnScreen--;
             } else {
@@ -192,6 +193,7 @@ void bullets_shootEnemy(GameEntity* shooter) {
         if (bullet->health == 0) {
             bullet->x = shooter->x + 4;
             bullet->y = shooter->y;
+            bullet->velx = 0;
             bullet->vely = cfg->bulletSpeed;
             reviveGameEntity(bullet);
             SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
@@ -214,6 +216,7 @@ void bullets_shootEnemyXY(s16 x, s16 y) {
         if (bullet->health == 0) {
             bullet->x = x;
             bullet->y = y;
+            bullet->velx = 0;
             bullet->vely = cfg->bulletSpeed;
             reviveGameEntity(bullet);
             SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
@@ -221,6 +224,31 @@ void bullets_shootEnemyXY(s16 x, s16 y) {
             break;
         }
     }
+}
+
+/* Boss fan shot: explicit muzzle and velocity (diagonal bullets).
+ * Returns 1 if a free slot was found. */
+u16 bullets_shootEnemyXYV(s16 x, s16 y, s16 vx, s16 vy) {
+    GameEntity* bullet;
+    u16 i;
+
+    if (enemyBulletsOnScreen >= MAX_ENEMY_BULLETS) {
+        return 0;
+    }
+    for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
+        bullet = &enemyBullets[i];
+        if (bullet->health == 0) {
+            bullet->x = x;
+            bullet->y = y;
+            bullet->velx = vx;
+            bullet->vely = vy;
+            reviveGameEntity(bullet);
+            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
+            enemyBulletsOnScreen++;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void bullets_tickShot(void) {
