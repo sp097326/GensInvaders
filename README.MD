@@ -54,7 +54,7 @@ Desde la carpeta del proyecto:
 
 La ROM compila con GCC 14 con 0 warnings y sin cambios en el código del juego. No uses la
 instalación anterior de `/opt/toolchains/mars` para este juego: trae SGDK 2.00 y es un binario Intel que
-no corre en esta Mac.
+no corre en Silicón Apple.
 
 ## Estructura del código
 Los headers públicos viven en inc/; la implementación, en src/. El makefile.gen de SGDK ya compila todos los src/*.c (excepto boot/rom_head.c) y agrega -Iinc -Isrc. Los datos de cada módulo son static dentro de su .c; solo se exportan los tipos compartidos y las funciones de acceso. src/main.c contiene la inicialización, el fondo de estrellas y el despacho del ciclo principal.
