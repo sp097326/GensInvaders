@@ -3,6 +3,13 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-17 - Comentario de inicialización en main.c (AMH + Bimo)
+
+### Cambiado
+- `src/main.c`: el comentario antes de `SYS_disableInts()` ahora explica
+  que es el bloque de inicialización y que las interrupciones se apagan
+  para evitar corrupción de los datos hacia la cola de DMA.
+
 ## 2026-11-16 - Compilación en macOS con build.sh (AMH + Bimo)
 
 ### Agregado

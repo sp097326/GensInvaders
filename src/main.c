@@ -68,7 +68,7 @@ int main(bool hard)
     XGM_setPCM(SFX_RAPID_PICK, rapidpick, sizeof(rapidpick));
     XGM_setPCM(SFX_BOSS_HIT, bosshit, sizeof(bosshit));
     XGM_setPCM(SFX_BOSS_DIE, bossdie, sizeof(bossdie));
-    //note to this: read the url for the effects.
+    /* Bloque de inicialización: se apagan las interrupciones para evitar que el manejador de VBlank corrompa los datos enviados a la cola de DMA mientras se cargan tiles, paletas y sprites. */
     SYS_disableInts();
     VDP_loadTileSet(background.tileset,1,DMA);
     PAL_setPalette(PAL1, background.palette->data, DMA); //changed from VDP_setPalette
