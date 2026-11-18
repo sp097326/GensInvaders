@@ -1,539 +1,549 @@
 # Gens Invaders
-Second Game for the Sega Genesis 16-Bit machine. This time with the intention of learning
-better sprite work before moving to something more complex. Again as GensPong this is code
-derived directly from the tutorial on Ohsat page:
+**Español** | [English](README.en.md)
+
+Segundo juego para la consola Sega Genesis de 16 bits. Esta vez con la intención de aprender
+a trabajar mejor los sprites antes de pasar a algo más complejo. Igual que GensPong, este código
+deriva directamente del tutorial de la página de Ohsat:
 https://www.ohsat.com/tutorial/megalaga/megalaga-1/
 
-He provides everything required for the code to work, including a really easy, step by step
-and intuitive solution.
+Ahí se proporciona todo lo necesario para que el código funcione, con una solución muy sencilla,
+paso a paso e intuitiva.
 
-Again I'll be modifing and deriving code from the tutorial but the actual base is credit to 
-OHSAT. This time notes and information will reside on this README.MD file instead of the
-initial portion of the main.c file.
+De nuevo voy a modificar y derivar código del tutorial, pero el crédito de la base es de
+OHSAT. Esta vez las notas y la información van en este archivo README.MD en lugar de la
+parte inicial del archivo main.c.
 
-So, Gens Invaders is a simple clone of the space invaders formula with a 16-Bit Genesis
-graphics flavour.
+En resumen, Gens Invaders es un clon sencillo de la fórmula de Space Invaders con el estilo
+gráfico de 16 bits de la Genesis.
 
-## How to build
-Requirements (Windows):
-* SGDK 2.11 installed at `C:\tools\SGDK` with the `GDK` environment variable pointing to it.
-* Java 21 (Eclipse Temurin) on the PATH; SGDK's `rescomp.jar` and `sizebnd.jar` need it.
+## Cómo compilar
+Requisitos (Windows):
+* SGDK 2.11 instalado en `C:\tools\SGDK`, con la variable de entorno `GDK` apuntando ahí.
+* Java 21 (Eclipse Temurin) en el PATH; lo necesitan `rescomp.jar` y `sizebnd.jar` de SGDK.
 
-From the project folder:
+Desde la carpeta del proyecto:
 
     %GDK%\bin\make -f %GDK%\makefile.gen
 
-The ROM ends up in `out/rom.bin` (256 KB).
+La ROM queda en `out/rom.bin` (256 KB).
 
-To play it, run `run.bat` from the project root (or `run.bat build` to compile first).
-`run.bat build` also writes `src/version.h` with the version `V0.3.xx`, where xx is the
-total number of git commits (`git rev-list --count HEAD`); the 0.2 prefix marks this
-stage of the game, and the last number is not reset. Build after committing so the
-version matches GitHub. If `version.h` is missing, the game shows `V0.3.DEV`.
-It opens the ROM in BlastEm 0.6.2, installed at `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
-BlastEm default keys: arrows = D-pad, S = B (shoot), D = C (shield), Enter = START.
-Note: the line `Error 127 (ignored)` during linking is a known SGDK/LTO quirk on Windows and
-does not affect the ROM.
+Para jugar, ejecuta `run.bat` desde la raíz del proyecto (o `run.bat build` para compilar antes).
+`run.bat build` también escribe `src/version.h` con la versión `V0.3.xx`, donde xx es el
+total de commits de git (`git rev-list --count HEAD`); el prefijo 0.2 marca esta
+etapa del juego y el último número no se reinicia. Compila después de hacer commit para que la
+versión coincida con GitHub. Si falta `version.h`, el juego muestra `V0.3.DEV`.
+Abre la ROM en BlastEm 0.6.2, instalado en `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
+Teclas predeterminadas de BlastEm: flechas = D-pad, S = B (disparar), D = C (escudo), Enter = START.
+Nota: la línea `Error 127 (ignored)` durante el enlazado es una peculiaridad conocida de SGDK/LTO en Windows y
+no afecta la ROM.
 
 ### Compilar en macOS
-Requirements (macOS, Apple Silicon):
-* Toolchain at `~/Desktop/retrodev/mars-sgdk211/m68k-elf`: native arm64 m68k-elf GCC 14.2 plus
-  SGDK 2.11 (headers, `libmd.a`, `makefile.gen`, `rescomp.jar`, `sjasm`...), built from marsdev
-  without `sudo`. Another location can be used with `GENS_GDK=/path/to/m68k-elf`.
-* Java (Homebrew `openjdk`) on the PATH for `rescomp.jar` and `sizebnd.jar`.
-* BlastEm 1.0 (`brew install blastem`); if it is missing, `Genesis Plus.app` is used.
+Requisitos (macOS, Apple Silicon):
+* Toolchain en `~/Desktop/retrodev/mars-sgdk211/m68k-elf`: GCC 14.2 m68k-elf nativo arm64 más
+  SGDK 2.11 (headers, `libmd.a`, `makefile.gen`, `rescomp.jar`, `sjasm`...), compilado desde marsdev
+  sin `sudo`. Se puede usar otra ubicación con `GENS_GDK=/path/to/m68k-elf`.
+* Java (`openjdk` de Homebrew) en el PATH para `rescomp.jar` y `sizebnd.jar`.
+* BlastEm 1.0 (`brew install blastem`); si no está, se usa `Genesis Plus.app`.
 
-From the project folder:
+Desde la carpeta del proyecto:
 
     ./build.sh build        # writes src/version.h (same V0.3.xx as run.bat) and compiles
     ./build.sh run          # opens out/rom.bin in BlastEm (or Genesis Plus)
     ./build.sh clean        # removes out/
     ./build.sh build run    # commands can be chained; no argument = run
 
-The ROM builds with GCC 14 with 0 warnings and no game code changes. Do not use the older
-`/opt/toolchains/mars` install for this game: it ships SGDK 2.00 and is an Intel build that
-does not run on this Mac.
+La ROM compila con GCC 14 con 0 warnings y sin cambios en el código del juego. No uses la
+instalación anterior de `/opt/toolchains/mars` para este juego: trae SGDK 2.00 y es un binario Intel que
+no corre en esta Mac.
 
 ## Estructura del código
-Public headers live in inc/; implementation in src/. SGDK's makefile.gen already compiles every src/*.c (except oot/rom_head.c) and adds -Iinc -Isrc. Module data is static inside each .c; only shared types and accessors are exported. src/main.c is init, the starfield, and the main-loop dispatch.
+Los headers públicos viven en inc/; la implementación, en src/. El makefile.gen de SGDK ya compila todos los src/*.c (excepto boot/rom_head.c) y agrega -Iinc -Isrc. Los datos de cada módulo son static dentro de su .c; solo se exportan los tipos compartidos y las funciones de acceso. src/main.c contiene la inicialización, el fondo de estrellas y el despacho del ciclo principal.
 
-* inc/config.h — shared gameplay constants (formation size, edges, bullet caps, lives, SFX ids). Tunables that change by difficulty stay in the difficulty table.
-* inc/game.h — GameEntity, GameState, killGameEntity / 
-eviveGameEntity, and GAME_VERSION (includes git-ignored src/version.h when present, otherwise V0.3.DEV).
-* difficulty.c/.h — DifficultyConfig table, names, current difficulty, difficulty_config() / difficulty_cycle().
-* ullets.c/.h — player and enemy bullet pools, shooting, movement and despawn.
-* hud.c/.h — score / ships / difficulty lines, shield bar (ESC + 8 tiles), centered text, overlay clear.
-* nemies.c/.h — two-row formation, 
-owsOpposite movement, volleys, palettes, win/lose descent flag.
-* player.c/.h — ship sprite, movement bounds, lives, respawn and invulnerability blink.
-* collision.c/.h — AABB checks; player bullets vs enemies, enemy bullets vs the player, and fatal enemy-player body contact (or a ship reaching the visible bottom).
-* 	itle.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
-* powerups.c/.h — RapidFire capsule pickup and the Shield ability (C; duration and recharge come from the difficulty table).
-* boss.c/.h — mothership on waves 10, 20, 30... (500 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half).
-* game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
-* src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
+* inc/config.h — constantes de juego compartidas (tamaño de la formación, bordes, límites de balas, vidas, ids de SFX). Los valores ajustables que cambian según la dificultad se quedan en la tabla de dificultad.
+* inc/game.h — GameEntity, GameState, killGameEntity / reviveGameEntity y GAME_VERSION (incluye src/version.h, ignorado por git, cuando existe; si no, V0.3.DEV).
+* difficulty.c/.h — tabla DifficultyConfig, nombres, dificultad actual, difficulty_config() / difficulty_cycle().
+* bullets.c/.h — pools de balas del jugador y de los enemigos, disparo, movimiento y eliminación.
+* hud.c/.h — líneas de puntaje / naves / dificultad, barra del escudo (ESC + 8 tiles), texto centrado, limpieza de overlays.
+* enemies.c/.h — formación de dos filas, movimiento rowsOpposite, ráfagas, paletas, bandera de descenso para ganar/perder.
+* player.c/.h — sprite de la nave, límites de movimiento, vidas, reaparición y parpadeo de invulnerabilidad.
+* collision.c/.h — revisiones AABB; balas del jugador contra enemigos, balas enemigas contra el jugador y contacto fatal de cuerpo enemigo-jugador (o una nave que llega al fondo visible).
+* title.c/.h — logo de bloques, menú, pulso dorado; GAME_VERSION bajo el logo.
+* powerups.c/.h — cápsula RapidFire y la habilidad de escudo (C; la duración y la recarga vienen de la tabla de dificultad).
+* boss.c/.h — nave nodriza en las oleadas 10, 20, 30... (500 HP, se duplica en cada regreso hasta 8000; daño en el tercio central, a toda la altura del núcleo; recorrido Lissajous en la mitad superior).
+* game_state.c/.h — título / juego / pausa / GAME OVER / YOU WIN, manejador del control, reinicio y texto de las pantallas finales.
+* src/main.c — inicialización del toolchain, fondo de estrellas (drawStarfield + scroll vertical de offset) y el ciclo que llama a game_state_update(). El fondo de estrellas se quedó en main.c porque no había un módulo de fondo en el plan.
 
-## Controls
-* Title screen: UP/DOWN move the cursor between START GAME (INICIAR) and DIFFICULTY.
-        LEFT/RIGHT (or START / A on DIFFICULTY) cycle EASY / NORMAL / HARD.
-        START on START GAME begins the match with the chosen difficulty (default NORMAL).
-* D-pad left/right: move the ship (during play).
-* B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
-* RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
-* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit flashes the ship white and plays a tick, a wing hit only sparks. It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
-* Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
-* A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
-* C: activate the shield if it is charged. Duration and recharge depend on
-        difficulty: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
-        Starts ready at the beginning of a match. Not usable while exploding, dead,
-        paused, or recharging. On BlastEm the default key for C is D.
-        The HUD shows ESC and a bar on the right of line 2: blue draining while
-        active, dark red filling while recharging, green (brief blue blink) when ready.
-* START: during play, pause / resume (the pause screen shows the game version and the
-        current difficulty). After GAME OVER or YOU WIN, returns to the title screen
-        with the last difficulty preselected.
-* You get 3 ships; after a bullet hit the ship respawns and blinks for ~2 s (can't be hit by bullets).
-* Rules: a bullet hit costs one life. An enemy ship touching the player is always
-        GAME OVER after the explosion, even with lives or a shield left (the shield
-        still blocks bullets). If invaders slip past without touching and reach the
-        bottom of the screen, that is also GAME OVER, so the match cannot stall.
+## Controles
+* Pantalla de título: UP/DOWN mueven el cursor entre START GAME (INICIAR) y DIFFICULTY.
+        LEFT/RIGHT (o START / A sobre DIFFICULTY) alternan EASY / NORMAL / HARD.
+        START sobre START GAME inicia la partida con la dificultad elegida (NORMAL por defecto).
+* D-pad izquierda/derecha: mueve la nave (durante el juego).
+* B: disparar (mantén ~1 s para el disparo cargado perforante; un toque corto es el disparo normal de 8x8).
+* RapidFire: recoge una cápsula "R" que cae de los enemigos destruidos (10% de probabilidad, garantizada tras 10 derribos sin cápsula; 10 s en EASY, 8 s en NORMAL/HARD). La nave se pone roja y una barra RF en la esquina inferior derecha muestra el tiempo restante. Recoger otra reinicia el temporizador. El botón A ya no lo activa.
+* Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 500 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 50+). El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo hace destellar la nave en blanco y suena un tic, un golpe en el ala solo saca chispas. Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional.
+* Easter egg (pantalla de título): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A desbloquea OLEADA INICIAL (1-99). Ingrésalo con el cursor en INICIAR para que LEFT/RIGHT no cambien la dificultad. Empezar en la oleada 2+ es práctica y no se guarda en el TOP 5. El desbloqueo dura hasta reiniciar (no se guarda en SRAM). En BlastEm el botón B es S y A es A.
+* A: sin uso durante el juego (RapidFire sale de una cápsula que cae). Se sigue usando en el menú de título y en la captura de iniciales.
+* C: activa el escudo si está cargado. La duración y la recarga dependen de la
+        dificultad: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
+        Empieza listo al inicio de la partida. No se puede usar mientras explotas, estás muerto,
+        en pausa o recargando. En BlastEm la tecla predeterminada para C es D.
+        El HUD muestra ESC y una barra a la derecha de la línea 2: azul que se vacía mientras
+        está activo, rojo oscuro que se llena mientras recarga, verde (con un breve parpadeo azul) cuando está listo.
+* START: durante el juego, pausa / reanuda (la pantalla de pausa muestra la versión del juego y la
+        dificultad actual). Después de GAME OVER o YOU WIN, regresa a la pantalla de título
+        con la última dificultad preseleccionada.
+* Tienes 3 naves; tras un impacto de bala la nave reaparece y parpadea ~2 s (las balas no la dañan).
+* Reglas: un impacto de bala cuesta una vida. Una nave enemiga que toca al jugador siempre es
+        GAME OVER después de la explosión, aunque queden vidas o escudo (el escudo
+        sigue bloqueando balas). Si los invasores pasan sin tocarlo y llegan al
+        fondo de la pantalla, también es GAME OVER, para que la partida no se estanque.
 
-## Change log
-Detailed changes live in `CHANGELOG.md`. The June 2026 repair session is documented in
+## Registro de cambios
+Los cambios detallados están en `CHANGELOG.md`. La sesión de reparación de junio de 2026 está documentada en
 `gensinvaders-session-log.html`.
 
-NOTES SECTION
--- OK, I really abandoned this for quite a while, I'll try to get something done before the
-    en of the month, can't promise to much, guess I bit a little more than I can chew...
--- AFTER QUITE A WHILE I finally found the time to do somehting. Little surprise though...
-    since version 1.80 of the SGDK several things are not working or playinly breaking
-    compilation. I'll try to see If I can sort through it but my lack of C knowledge coupled
-    with my lack of Genesis (68000 CPU, VDP and Sound) knowledge make turn this into an 
-    excersice on futility. Fixed at least one problem though....
--- Moving along with more code, for some reason it's really slow. I don't know if it's my code
-    or something to do with the computer setup.
--- Once again my time is not proportional to the speed of the SDGK development and alas here
-    we are in version 2.0 for the SGDK. Code seems to work as it is, still haven't unraveled
-    the sound problem and the sprite animation issues.
--- Nov 2026: back at it with help from Bimo. Updated to SGDK 2.11, the game builds cleanly
-    again and now has an actual ending (GAME OVER / YOU WIN) with restart.
+SECCIÓN DE NOTAS
+-- OK, de verdad abandoné esto por un buen rato. Intentaré tener algo listo antes del
+    fin de mes, no puedo prometer mucho; creo que abarqué más de lo que podía apretar...
+-- DESPUÉS DE UN BUEN RATO por fin encontré tiempo para hacer algo. Pequeña sorpresa, eso sí...
+    desde la versión 1.80 de SGDK varias cosas no funcionan o de plano rompen la
+    compilación. Voy a ver si puedo resolverlo, pero mi poco conocimiento de C, sumado
+    a mi poco conocimiento de la Genesis (CPU 68000, VDP y sonido), puede convertir esto en un
+    ejercicio de futilidad. Al menos arreglé un problema...
+-- Avanzando con más código; por alguna razón va muy lento. No sé si es mi código
+    o algo de la configuración de la computadora.
+-- Una vez más mi tiempo no es proporcional a la velocidad del desarrollo de SGDK y, en fin, aquí
+    estamos en la versión 2.0 de SGDK. El código parece funcionar tal como está; todavía no he resuelto
+    el problema del sonido ni los problemas de animación de sprites.
+-- Nov 2026: de vuelta con ayuda de Bimo. Actualizado a SGDK 2.11, el juego vuelve a compilar
+    sin problemas y ahora tiene un final real (GAME OVER / YOU WIN) con reinicio.
 
-CODER: 
+PROGRAMADOR: 
 *   AMH - MANZANAS
-INITIAL_DATE: 
+FECHA_INICIAL: 
 *   07/16/2021
-LAST_MODIFY_DATE:
-*   11/16/2026
+FECHA_ÚLTIMA_MODIFICACIÓN:
+*   11/18/2026
 
-HISTORY:
-*       16/07/21 - Created template and helloworld type code.
-*   	21/06/23 - Added space bkgnd and initial user sprite.
-*       22/06/23 - Added enemies, enemies sprites and enemies initial animation, implemented basic 
-                joy handler and player positioning, implemented bullets and it's animation.
-*       23/06/23 - Added collision detection routines and collition result as such.
-*       28/06/23 - Added enemy fire, collision for both enemy and player
-*       30/06/23 - Added sounds -- btw not working *, also changed emulator
-*       06/07/23 - Added code to trigger powerup code, still on the works, checking working funcionallity and 
-                VDP to PAL code translation.
-*       21/08/23 - Added code for an intro song, still trying to debug why sfx won't play
-*       22/08/23 - Changed rom header information to show gamename
-*       26/06/26 - Repair session: fixed powerup toggle/RapidFire/palette crash, powerup auto-expire,
-                updated sega.s boot stub, WAV driver changed to XGM. Builds again.
-*       10/11/26 - SGDK 2.11 + Java 21 toolchain. Added game states (GAME OVER / YOU WIN) and restart
-                with START, fixed enemy bullet not freed on player hit, interrupts never re-enabled,
-                player name overflow; removed global i, renamed handleCollisions. Added CHANGELOG.md.
-                Later: intro trimmed to 5 s, explosion on its own PCM channel, ROM header renamed to
-                GENS INVADERS, run.bat to launch BlastEm. Then: 3 lives with respawn and blinking
-                invulnerability, starfield background drawn once, enemies move as a formation.
-                Pause screen on START showing the game version (V0.1.xx = git commit count).
-*       12/11/26 - Formation steps down 8 px on each edge bounce; GAME OVER if it reaches
-                the player's row. START still resets the formation to Y = 32.
-*       12/11/26 - Difficulty menu (EASY / NORMAL / HARD) and a dedicated enemy bullet pool
-                so two distinct enemies can fire at once. Tuning is data-driven
-                (difficultyTable). After GAME OVER / YOU WIN, START returns to the menu.
-*       12/11/26 - Retuned difficulties: the table now also has shotInterval, enemySpeed
-                and bulletSpeed. EASY fires regularly every 90 frames; NORMAL is unchanged;
-                HARD moves and fires twice as fast (step 16, interval 60, speed 2).
-*       12/11/26 - Title screen with a large blocky GENS / INVADERS logo (solid tiles on
-                plane A, with shadow and a gold color pulse) and a 2-option menu:
-                START GAME (INICIAR) and DIFFICULTY. The version is shown under the logo.
-*       12/11/26 - Second row of 7 enemies (14 total), one formation; bottom row uses a
-                tinted palette and is worth 10 points, top row 20. Firing prefers the
-                lowest living ship in each column.
-*       12/11/26 - On HARD, rows move in opposite directions and bounce independently
-                (rowsOpposite flag; set it to 1 on NORMAL to enable it there too). A row
-                will not step down if it would come within 24 px of the row below.
-*       12/11/26 - Opposite-row movement enabled on NORMAL as well (rowsOpposite=1);
-                EASY still moves as a single formation.
-*       12/11/26 - Refactor of src/main.c into modules (config/game headers,
+HISTORIAL:
+*       16/07/21 - Se creó la plantilla y un código tipo helloworld.
+*   	21/06/23 - Se agregó el fondo espacial y el sprite inicial del jugador.
+*       22/06/23 - Se agregaron enemigos, sus sprites y su animación inicial; se implementó un manejador básico
+                del control y el posicionamiento del jugador; se implementaron las balas y su animación.
+*       23/06/23 - Se agregaron rutinas de detección de colisiones y el resultado de cada colisión.
+*       28/06/23 - Se agregó el disparo enemigo y la colisión tanto para enemigos como para el jugador.
+*       30/06/23 - Se agregaron sonidos -- por cierto, no funcionan *; también se cambió de emulador.
+*       06/07/23 - Se agregó código para activar el power-up; sigue en proceso, revisando la funcionalidad y
+                la traducción de código del VDP a PAL.
+*       21/08/23 - Se agregó código para una canción de intro; sigo depurando por qué no suenan los sfx.
+*       22/08/23 - Se cambió la información del encabezado de la ROM para mostrar el nombre del juego.
+*       26/06/26 - Sesión de reparación: se corrigió el crash del toggle de power-up/RapidFire/paleta, el power-up
+                expira solo, se actualizó el stub de arranque sega.s y el driver WAV cambió a XGM. Vuelve a compilar.
+*       10/11/26 - Toolchain SGDK 2.11 + Java 21. Se agregaron estados de juego (GAME OVER / YOU WIN) y reinicio
+                con START; se corrigió la bala enemiga que no se liberaba al golpear al jugador, las interrupciones que nunca
+                se reactivaban y el desbordamiento del nombre del jugador; se quitó la global i y se renombró handleCollisions. Se agregó CHANGELOG.md.
+                Después: intro recortada a 5 s, explosión en su propio canal PCM, encabezado de la ROM renombrado a
+                GENS INVADERS, run.bat para lanzar BlastEm. Luego: 3 vidas con reaparición e invulnerabilidad
+                con parpadeo, fondo de estrellas dibujado una sola vez, los enemigos se mueven en formación.
+                Pantalla de pausa con START que muestra la versión del juego (V0.1.xx = número de commits de git).
+*       12/11/26 - La formación baja 8 px en cada rebote contra un borde; GAME OVER si llega
+                a la fila del jugador. START sigue regresando la formación a Y = 32.
+*       12/11/26 - Menú de dificultad (EASY / NORMAL / HARD) y un pool exclusivo de balas enemigas
+                para que dos enemigos distintos puedan disparar a la vez. El ajuste se hace por datos
+                (difficultyTable). Después de GAME OVER / YOU WIN, START regresa al menú.
+*       12/11/26 - Reajuste de dificultades: la tabla ahora también tiene shotInterval, enemySpeed
+                y bulletSpeed. EASY dispara con regularidad cada 90 frames; NORMAL no cambia;
+                HARD se mueve y dispara el doble de rápido (paso 16, intervalo 60, velocidad 2).
+*       12/11/26 - Pantalla de título con un logo grande de bloques GENS / INVADERS (tiles sólidos en
+                el plano A, con sombra y un pulso de color dorado) y un menú de 2 opciones:
+                START GAME (INICIAR) y DIFFICULTY. La versión se muestra bajo el logo.
+*       12/11/26 - Segunda fila de 7 enemigos (14 en total), una sola formación; la fila inferior usa una
+                paleta teñida y vale 10 puntos, la superior 20. El disparo prefiere la
+                nave viva más baja de cada columna.
+*       12/11/26 - En HARD, las filas se mueven en direcciones opuestas y rebotan de forma independiente
+                (bandera rowsOpposite; ponla en 1 en NORMAL para activarlo ahí también). Una fila
+                no baja si quedaría a menos de 24 px de la fila de abajo.
+*       12/11/26 - Movimiento de filas opuestas activado también en NORMAL (rowsOpposite=1);
+                EASY sigue moviéndose como una sola formación.
+*       12/11/26 - Refactorización de src/main.c en módulos (headers config/game,
                 difficulty, bullets, hud, enemies, player, collision, title,
-                powerups, game_state). No gameplay changes. main.c is init
-                and dispatch; the starfield stays there.
-*       12/11/26 - NORMAL fireChance set to 10 so every 120-frame volley
-                actually fires (2 shots, cap 2). EASY and HARD unchanged.
-*       12/11/26 - Enemy volleys pick random distinct columns and avoid
-                repeating the previous volley columns when others remain.
-                RNG is re-seeded when START begins a match (title frame
-                count + vtimer + getTick()). Difficulty table unchanged.
-*       12/11/26 - Player explosion on hit: 6-frame 16x16 sheet
-                (flash, fireball, debris, fade) at the ship position
-                for 48 frames (~0.8 s). Input and enemy fire freeze
-                during it; then respawn or GAME OVER as before. Brief
-                starfield shake and PAL1 flash.
-*       12/11/26 - Shield ability on button C (B is shoot, A is still
-                RapidFire). 5 s blue/white bubble around the ship
-                (blocks enemy bullets), then 30 s recharge. Starts
-                charged. HUD shows ESC: LISTO / ON n / ns. Recharge
-                state is kept on death; a new match starts ready.
-*       12/11/26 - Shield duration and recharge now follow the difficulty
-                table: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
-                Seconds are converted to frames with IS_PAL_SYSTEM
-                (x60 NTSC, x50 PAL). The HUD still shows remaining seconds.
-*       12/11/26 - Version prefix raised to 0.2. The last number is still
-                the total git commit count (this release is V0.2.42).
-                Fallback label is V0.2.DEV. Tagged v0.2.42.
-*       12/11/26 - Shield HUD is now a short ESC label plus an 8-tile bar
-                (64 steps) on the right of line 2: blue emptying while
-                active, dark red filling while recharging, green when
-                ready (brief blue blink when the recharge finishes).
-*       12/11/26 - GAME OVER on invasion is now a body collision with the
-                player (explosion, then GAME OVER, even with lives left).
-                Reaching the player's row without touching is no longer
-                enough. If a ship slips past and hits the visible bottom,
-                the same fatal explosion applies.
-*       12/11/26 - Enemy ships play a distinct 6-frame 16x16 burst
-                 (compact white/yellow flash, green sparks flying out)
-                 for 24 frames (~0.4 s) when destroyed. Drawn with PAL3
-                 so it stays different from the player's orange/red
-                 fireball. A pool of 6 simultaneous bursts; the ship
-                 vanishes at once and the explosion takes its place.
-                 On a crash into the player, both explode before GAME OVER.
-*       13/11/26 - Endless waves: clearing both rows no longer ends the
-                 match. A brief OLEADA N banner (~1.5 s) plays and two
-                 new rows spawn at the top. Score, lives and the shield
-                 state are kept. Each wave scales movement and fire rate
-                 from the difficulty's base values, with caps. Version
-                 prefix raised to 0.3; the last number is still the
-                 total commit count (this release is V0.3.46). Fallback
-                 is V0.3.DEV. Tagged v0.3.46.
-*       13/11/26 - TOP 5 high-score table saved in cartridge SRAM.
-                 After GAME OVER, a qualifying score (beats 5th place)
-                 asks for 3 arcade initials, then the table is shown
-                 under the GAME OVER text (rank, initials, score, wave,
-                 difficulty letter F/N/D). One shared table. Also
-                 reachable from the title menu (PUNTAJES). Tagged v0.3.47.
-*       13/11/26 - Extra life every 1000 points (1000, 2000, 3000...),
-                 cap of 9 ships so the HUD stays one digit. A blinking
-                 "+1 NAVE" appears for ~1 s and a short two-note 1UP
-                 jingle plays on PCM channel 4. Same threshold on all
-                 difficulties; resets each match. Tagged v0.3.48.
-*       13/11/26 - Points per destroyed ship now follow the difficulty
-                 table: EASY 10, NORMAL 20, HARD 30 (both rows). A full
-                 wave is worth 140 / 280 / 420. Extra lives stay every
-                 1000 points. Tagged v0.3.49.
-*       13/11/26 - Lives are now up to 9 miniature ships on the right of
-                 the HUD (plane tiles, not sprites). The "+1 NAVE" banner
-                 stays solid and readable for ~1 s; the new icon blinks.
-                 Tagged v0.3.50.
-*       13/11/26 - Life icons moved to the bottom-left corner (row 27,
-                 just below the shield). "+1 NAVE" sits next to them;
-                 the top-right of the HUD is clear again. Tagged v0.3.51.
-*       13/11/26 - Short between-wave warp: faster stars, engine flame,
-                 ship lifts a little, then the next two rows slide in
-                 from the top under the OLEADA N banner (~2.5 s).
-                 Tagged v0.3.52.
-*       13/11/26 - Shield hum lasts for the whole active duration
-                 (2 s sample on CH1, retriggered on EASY/NORMAL). The
-                 old 0.16 s blip was just too short. Tagged v0.3.53.
-*       13/11/26 - Charged shot: hold B ~1 s, release a 24x24 piercing
-                 bolt. A short tap still fires the normal 8x8 shot.
-                 Tagged v0.3.54.
-*       13/11/26 - Charged-shot release sound is louder and lower
-                 (a bass boom, distinct from the normal laser).
-                 Tagged v0.3.55.
-*       13/11/26 - RapidFire is now a falling "R" capsule, not a debug
-                 A-button toggle. 10% drop (pity after 10 kills), 10 s
-                 on EASY and 8 s on NORMAL/HARD, RF bar at the bottom
-                 right. Tagged v0.3.56.
-*       13/11/26 - Mothership boss every 10 waves. 500 HP on wave 10,
-                 doubling each return up to 8000 (wave 50+). Only the
-                 center core takes damage. Tagged v0.3.57.
-*       13/11/26 - Title-screen code (UUDDLRLRBA) unlocks a start-wave
-                 selector (1-99). Practice runs from wave 2+ are not
-                 saved to the TOP 5. Tagged v0.3.58.
-*       13/11/26 - Boss core hitbox enlarged to the center third and
-                 full body height, with a white flash and hit tick on
-                 a core hit and a spark on a wing hit. The mothership
-                 now roams the top half of the screen (Lissajous).
-                 Tagged v0.3.59.
-*       13/11/26 - A charged shot no longer skips the boss fight.
-                 On a boss wave the hidden formation already has 0
-                 ships left; that count must not clear the wave.
-                 The mothership now leaves only when its HP hits 0
-                 (explosion, bonus, then warp). Tagged v0.3.60.
-*       16/11/26 - macOS build: build.sh (build / clean / run, same
-                 version stamp as run.bat) with a native arm64 m68k-elf
-                 GCC 14.2 + SGDK 2.11 toolchain in
-                 ~/Desktop/retrodev/mars-sgdk211 and BlastEm 1.0 from
-                 Homebrew. No game code changes. Tagged v0.3.61.
+                powerups, game_state). Sin cambios de jugabilidad. main.c queda con la inicialización
+                y el despacho; el fondo de estrellas se queda ahí.
+*       12/11/26 - fireChance de NORMAL en 10 para que cada ráfaga de 120 frames
+                realmente dispare (2 disparos, límite 2). EASY y HARD sin cambios.
+*       12/11/26 - Las ráfagas enemigas eligen columnas distintas al azar y evitan
+                repetir las columnas de la ráfaga anterior cuando quedan otras.
+                El RNG se vuelve a sembrar cuando START inicia una partida (conteo de
+                frames del título + vtimer + getTick()). Tabla de dificultad sin cambios.
+*       12/11/26 - Explosión del jugador al recibir un impacto: hoja de 6 frames de 16x16
+                (destello, bola de fuego, escombros, desvanecido) en la posición de la nave
+                durante 48 frames (~0.8 s). El control y el disparo enemigo se congelan
+                mientras dura; luego reaparición o GAME OVER como antes. Breve
+                sacudida del fondo de estrellas y destello de PAL1.
+*       12/11/26 - Habilidad de escudo en el botón C (B dispara, A sigue siendo
+                RapidFire). Burbuja azul/blanca de 5 s alrededor de la nave
+                (bloquea balas enemigas), luego 30 s de recarga. Empieza
+                cargado. El HUD muestra ESC: LISTO / ON n / ns. El estado de recarga
+                se conserva al morir; una partida nueva empieza lista.
+*       12/11/26 - La duración y la recarga del escudo ahora siguen la tabla
+                de dificultad: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
+                Los segundos se convierten a frames con IS_PAL_SYSTEM
+                (x60 NTSC, x50 PAL). El HUD sigue mostrando los segundos restantes.
+*       12/11/26 - El prefijo de versión sube a 0.2. El último número sigue siendo
+                el total de commits de git (esta versión es V0.2.42).
+                La etiqueta de respaldo es V0.2.DEV. Tag v0.2.42.
+*       12/11/26 - El HUD del escudo ahora es una etiqueta corta ESC más una barra de 8 tiles
+                (64 pasos) a la derecha de la línea 2: azul que se vacía mientras
+                está activo, rojo oscuro que se llena mientras recarga, verde cuando
+                está listo (breve parpadeo azul al terminar la recarga).
+*       12/11/26 - El GAME OVER por invasión ahora es una colisión de cuerpo con el
+                jugador (explosión y luego GAME OVER, aunque queden vidas).
+                Ya no basta con llegar a la fila del jugador sin tocarlo.
+                Si una nave se cuela y llega al fondo visible,
+                se aplica la misma explosión fatal.
+*       12/11/26 - Las naves enemigas muestran una explosión propia de 6 frames de 16x16
+                 (destello blanco/amarillo compacto, chispas verdes que salen volando)
+                 durante 24 frames (~0.4 s) al ser destruidas. Se dibuja con PAL3
+                 para distinguirla de la bola de fuego naranja/roja
+                 del jugador. Un pool de 6 explosiones simultáneas; la nave
+                 desaparece de inmediato y la explosión ocupa su lugar.
+                 Si una choca con el jugador, ambos explotan antes del GAME OVER.
+*       13/11/26 - Oleadas infinitas: limpiar ambas filas ya no termina la
+                 partida. Aparece un breve letrero OLEADA N (~1.5 s) y dos
+                 filas nuevas surgen arriba. Se conservan el puntaje, las vidas y el estado
+                 del escudo. Cada oleada escala el movimiento y la cadencia de disparo
+                 desde los valores base de la dificultad, con topes. El prefijo
+                 de versión sube a 0.3; el último número sigue siendo el
+                 total de commits (esta versión es V0.3.46). La de respaldo
+                 es V0.3.DEV. Tag v0.3.46.
+*       13/11/26 - Tabla de récords TOP 5 guardada en la SRAM del cartucho.
+                 Después de GAME OVER, un puntaje que califica (supera el 5.º lugar)
+                 pide 3 iniciales estilo arcade y luego se muestra la tabla
+                 bajo el texto de GAME OVER (lugar, iniciales, puntaje, oleada,
+                 letra de dificultad F/N/D). Una sola tabla compartida. También
+                 accesible desde el menú de título (PUNTAJES). Tag v0.3.47.
+*       13/11/26 - Vida extra cada 1000 puntos (1000, 2000, 3000...),
+                 tope de 9 naves para que el HUD siga en un dígito. Aparece un
+                 "+1 NAVE" parpadeante por ~1 s y suena una breve melodía 1UP
+                 de dos notas en el canal PCM 4. Mismo umbral en todas las
+                 dificultades; se reinicia en cada partida. Tag v0.3.48.
+*       13/11/26 - Los puntos por nave destruida ahora siguen la tabla de
+                 dificultad: EASY 10, NORMAL 20, HARD 30 (ambas filas). Una oleada
+                 completa vale 140 / 280 / 420. Las vidas extra siguen cada
+                 1000 puntos. Tag v0.3.49.
+*       13/11/26 - Las vidas ahora son hasta 9 naves en miniatura a la derecha del
+                 HUD (tiles del plano, no sprites). El letrero "+1 NAVE"
+                 se queda fijo y legible ~1 s; el ícono nuevo parpadea.
+                 Tag v0.3.50.
+*       13/11/26 - Los íconos de vida se movieron a la esquina inferior izquierda (fila 27,
+                 justo debajo del escudo). "+1 NAVE" va junto a ellos;
+                 la esquina superior derecha del HUD vuelve a quedar libre. Tag v0.3.51.
+*       13/11/26 - Breve warp entre oleadas: estrellas más rápidas, flama del motor,
+                 la nave sube un poco y luego las dos filas siguientes entran deslizándose
+                 desde arriba bajo el letrero OLEADA N (~2.5 s).
+                 Tag v0.3.52.
+*       13/11/26 - El zumbido del escudo dura todo el tiempo que está activo
+                 (muestra de 2 s en CH1, se vuelve a disparar en EASY/NORMAL). El
+                 blip anterior de 0.16 s era demasiado corto. Tag v0.3.53.
+*       13/11/26 - Disparo cargado: mantén B ~1 s y suelta un rayo perforante
+                 de 24x24. Un toque corto sigue disparando la bala normal de 8x8.
+                 Tag v0.3.54.
+*       13/11/26 - El sonido al soltar el disparo cargado es más fuerte y más grave
+                 (un estruendo de bajos, distinto del láser normal).
+                 Tag v0.3.55.
+*       13/11/26 - RapidFire ahora es una cápsula "R" que cae, no un toggle de
+                 depuración en el botón A. 10% de probabilidad (garantizada tras 10 derribos), 10 s
+                 en EASY y 8 s en NORMAL/HARD, barra RF abajo a la
+                 derecha. Tag v0.3.56.
+*       13/11/26 - Jefe nave nodriza cada 10 oleadas. 500 HP en la oleada 10,
+                 el doble en cada regreso hasta 8000 (oleada 50+). Solo el
+                 núcleo central recibe daño. Tag v0.3.57.
+*       13/11/26 - Un código en la pantalla de título (UUDDLRLRBA) desbloquea un selector
+                 de oleada inicial (1-99). Las partidas de práctica desde la oleada 2+ no
+                 se guardan en el TOP 5. Tag v0.3.58.
+*       13/11/26 - El hitbox del núcleo del jefe se amplió al tercio central y
+                 a toda la altura del cuerpo, con destello blanco y tic al golpear
+                 el núcleo y una chispa al golpear un ala. La nave nodriza
+                 ahora recorre la mitad superior de la pantalla (Lissajous).
+                 Tag v0.3.59.
+*       13/11/26 - El disparo cargado ya no se salta la pelea del jefe.
+                 En una oleada de jefe la formación oculta ya tiene 0
+                 naves restantes; ese conteo no debe dar por limpia la oleada.
+                 La nave nodriza ahora solo se va cuando sus HP llegan a 0
+                 (explosión, bono y luego warp). Tag v0.3.60.
+*       16/11/26 - Compilación en macOS: build.sh (build / clean / run, mismo
+                 sello de versión que run.bat) con un toolchain nativo arm64 m68k-elf
+                 GCC 14.2 + SGDK 2.11 en
+                 ~/Desktop/retrodev/mars-sgdk211 y BlastEm 1.0 de
+                 Homebrew. Sin cambios en el código del juego. Tag v0.3.61.
+*       18/11/26 - README unificado: README.MD queda completo en español
+                 y README.en.md es la versión en inglés, con un
+                 selector de idioma al inicio de ambos.
 
-TODO:
-*       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
-*       Start a list of where to take the base "game" to make something better, here's some ideas:
-        - [Done 12/11/26] Add more enemies, control a second row.
-        - Change sprites, use a different one for enemies, maybe 2.
-          The per-row EnemyRowType is ready: drop a 16x16 sheet in res/tiles/ and
-          point the row's spriteDef at it in resources.res / enemies.c. The bottom
-          row already uses a different palette as a stand-in.
-        - [Done 12/11/26] Add an explosion sprite for the player when hit by enemy fire.
-        - [Done 12/11/26] Can two enemies fire at once?
-        - Difficulty values are data-driven (difficultyTable in difficulty.c): step down, max
-          enemy bullets, shots per volley, fire chance, shot interval, enemy speed,
-          bullet speed, rowsOpposite, and shield duration / recharge (seconds)
-          can be tuned there without changing the movement or fire code. On in
-          NORMAL and HARD; set EASY's rowsOpposite to 1 to enable it there too.
-          Shield times: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
-        - [Done 12/11/26] Title screen with a 2-option menu: START GAME and DIFFICULTY (EASY / NORMAL / HARD).
-          Large blocky GENS / INVADERS logo drawn with solid tiles on plane A.
-        - [Done 12/11/26] Shield power-up (button C). Duration and recharge follow
-          the difficulty table (EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s).
-          Ready at the start of a match. HUD shows ESC plus a bar (blue / dark red / green).
-        - [Done 13/11/26] RapidFire is a capsule pickup (not a debug
-          A-button toggle). 10% drop, pity after 10 kills, 10 s on EASY
-          and 8 s on NORMAL/HARD, with an RF timer bar.
-        - More powerups: ship speed up? a bomb?
-        - [Done 12/11/26] Formation steps down on each turn (classic invaders). GAME OVER if an enemy ship collides with the player, or reaches the visible bottom after slipping past.
-        - [Done 12/11/26] Distinct explosion animation when an enemy ship
-          is destroyed (and when one crashes into the player). Smaller and
-          faster than the player's (~0.4 s, green/yellow sparks, pool of 6).
-        - [Done 13/11/26] Endless waves: clearing a pair of rows spawns
-          the next wave a bit faster (movement and fire rate), with caps
-          per difficulty. The match no longer ends with YOU WIN.
-        - [Done 13/11/26] TOP 5 high-score table in SRAM, initials entry
-          after GAME OVER, and a PUNTAJES option on the title screen.
-        - [Done 13/11/26] Extra life every 1000 points, cap 9, with a
-          short 1UP jingle and a "+1 NAVE" banner.
-        - [Done 13/11/26] Points per enemy depend on difficulty
-          (EASY 10, NORMAL 20, HARD 30); both rows use the same value.
-        - [Done 13/11/26] HUD lives are miniature ships (up to 9) and
-          the "+1 NAVE" banner is a solid, readable plane-A message.
-        - [Done 13/11/26] Life icons sit in the bottom-left corner,
-          with the "+1 NAVE" banner beside them.
-        - [Done 13/11/26] Between-wave transition: starfield warp,
-          engine flame, and the next formation sliding in from the top.
-        - [Done 13/11/26] Shield sound lasts for the whole active
-          duration (2 s hum on CH1, not a 0.16 s blip).
-        - [Done 13/11/26] Charged shot (hold B ~1 s) fires a piercing
-          24x24 bolt; taps still shoot the normal 8x8 bullet.
-        - [Done 13/11/26] Charged-shot release SFX is a louder, deeper boom.
-        - [Done 13/11/26] RapidFire is a capsule pickup (not a debug
-          A-button toggle). 10% drop, pity after 10 kills, 10 s on EASY
-          and 8 s on NORMAL/HARD, with an RF timer bar.
-        - [Done 13/11/26] Mothership boss on waves 10, 20, 30... with
-          500 HP on the first visit, doubling each return up to 8000.
-          Damage only on the center core.
-        - [Done 13/11/26] Title-screen easter egg: UUDDLRLRBA unlocks a
-          start-wave selector (1-99). Runs that start at wave 2+ are
-          practice and are not written to the TOP 5.
-        - [Done 13/11/26] Boss damage feedback and top-half 2D roam:
-          larger core hitbox, white flash + hit tick on a core hit,
-          spark on a wing hit, Lissajous movement that never enters
-          the bottom half.
-        - [Done 13/11/26] Charged shot no longer ends a boss wave:
-          enemiesLeft is already 0 with the rows hidden, so that
-          count is ignored until the mothership's HP reaches 0.
-        - [Done 16/11/26] Build on macOS too: ./build.sh build|clean|run
-          with SGDK 2.11 and a native Apple Silicon m68k-elf GCC 14.2.
+PENDIENTES:
+*       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
+*       Empezar una lista de hacia dónde llevar el "juego" base para hacer algo mejor; aquí van algunas ideas:
+        - [Hecho 12/11/26] Agregar más enemigos, controlar una segunda fila.
+        - Cambiar sprites, usar uno distinto para los enemigos, quizá 2.
+          El EnemyRowType por fila ya está listo: pon una hoja de 16x16 en res/tiles/ y
+          apunta el spriteDef de la fila a ella en resources.res / enemies.c. La fila
+          inferior ya usa una paleta distinta como sustituto.
+        - [Hecho 12/11/26] Agregar un sprite de explosión para el jugador cuando lo alcanza el fuego enemigo.
+        - [Hecho 12/11/26] ¿Pueden disparar dos enemigos a la vez?
+        - Los valores de dificultad se manejan por datos (difficultyTable en difficulty.c): descenso, máximo
+          de balas enemigas, disparos por ráfaga, probabilidad de disparo, intervalo de disparo, velocidad enemiga,
+          velocidad de bala, rowsOpposite y duración / recarga del escudo (segundos)
+          se pueden ajustar ahí sin cambiar el código de movimiento o disparo. Activo en
+          NORMAL y HARD; pon el rowsOpposite de EASY en 1 para activarlo ahí también.
+          Tiempos del escudo: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
+        - [Hecho 12/11/26] Pantalla de título con menú de 2 opciones: START GAME y DIFFICULTY (EASY / NORMAL / HARD).
+          Logo grande de bloques GENS / INVADERS dibujado con tiles sólidos en el plano A.
+        - [Hecho 12/11/26] Power-up de escudo (botón C). La duración y la recarga siguen
+          la tabla de dificultad (EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s).
+          Listo al inicio de la partida. El HUD muestra ESC más una barra (azul / rojo oscuro / verde).
+        - [Hecho 13/11/26] RapidFire es una cápsula que se recoge (no un toggle de
+          depuración en el botón A). 10% de probabilidad, garantizada tras 10 derribos, 10 s en EASY
+          y 8 s en NORMAL/HARD, con una barra de tiempo RF.
+        - Más power-ups: ¿más velocidad para la nave? ¿una bomba?
+        - [Hecho 12/11/26] La formación baja en cada giro (invaders clásico). GAME OVER si una nave enemiga choca con el jugador, o si llega al fondo visible después de colarse.
+        - [Hecho 12/11/26] Animación de explosión propia cuando se destruye una nave
+          enemiga (y cuando una choca con el jugador). Más pequeña y
+          rápida que la del jugador (~0.4 s, chispas verdes/amarillas, pool de 6).
+        - [Hecho 13/11/26] Oleadas infinitas: limpiar un par de filas genera
+          la siguiente oleada un poco más rápida (movimiento y cadencia de disparo), con topes
+          por dificultad. La partida ya no termina con YOU WIN.
+        - [Hecho 13/11/26] Tabla de récords TOP 5 en SRAM, captura de iniciales
+          después de GAME OVER y una opción PUNTAJES en la pantalla de título.
+        - [Hecho 13/11/26] Vida extra cada 1000 puntos, tope 9, con un
+          jingle 1UP corto y un letrero "+1 NAVE".
+        - [Hecho 13/11/26] Los puntos por enemigo dependen de la dificultad
+          (EASY 10, NORMAL 20, HARD 30); ambas filas usan el mismo valor.
+        - [Hecho 13/11/26] Las vidas del HUD son naves en miniatura (hasta 9) y
+          el letrero "+1 NAVE" es un mensaje sólido y legible en el plano A.
+        - [Hecho 13/11/26] Los íconos de vida están en la esquina inferior izquierda,
+          con el letrero "+1 NAVE" a un lado.
+        - [Hecho 13/11/26] Transición entre oleadas: warp del fondo de estrellas,
+          flama del motor y la siguiente formación entrando deslizándose desde arriba.
+        - [Hecho 13/11/26] El sonido del escudo dura todo el tiempo
+          que está activo (zumbido de 2 s en CH1, no un blip de 0.16 s).
+        - [Hecho 13/11/26] El disparo cargado (mantener B ~1 s) lanza un rayo
+          perforante de 24x24; los toques siguen disparando la bala normal de 8x8.
+        - [Hecho 13/11/26] El SFX al soltar el disparo cargado es un estruendo más fuerte y grave.
+        - [Hecho 13/11/26] RapidFire es una cápsula que se recoge (no un toggle de
+          depuración en el botón A). 10% de probabilidad, garantizada tras 10 derribos, 10 s en EASY
+          y 8 s en NORMAL/HARD, con una barra de tiempo RF.
+        - [Hecho 13/11/26] Jefe nave nodriza en las oleadas 10, 20, 30... con
+          500 HP en la primera visita, el doble en cada regreso hasta 8000.
+          Daño solo en el núcleo central.
+        - [Hecho 13/11/26] Easter egg en la pantalla de título: UUDDLRLRBA desbloquea un
+          selector de oleada inicial (1-99). Las partidas que empiezan en la oleada 2+ son
+          de práctica y no se escriben en el TOP 5.
+        - [Hecho 13/11/26] Retroalimentación de daño del jefe y recorrido 2D en la mitad superior:
+          hitbox del núcleo más grande, destello blanco + tic al golpear el núcleo,
+          chispa al golpear un ala, movimiento Lissajous que nunca entra
+          a la mitad inferior.
+        - [Hecho 13/11/26] El disparo cargado ya no termina una oleada de jefe:
+          enemiesLeft ya vale 0 con las filas ocultas, así que ese
+          conteo se ignora hasta que los HP de la nave nodriza llegan a 0.
+        - [Hecho 16/11/26] Compilar también en macOS: ./build.sh build|clean|run
+          con SGDK 2.11 y un GCC 14.2 m68k-elf nativo para Apple Silicon.
 
-## Work log - 10/11/2026 (with Bimo)
-Everything below was done on Nov 10, 2026 (up to V0.1.16). Details per change are in `CHANGELOG.md`.
+## Bitácora de trabajo - 10/11/2026 (con Bimo)
+Todo lo siguiente se hizo el 10 de noviembre de 2026 (hasta V0.1.16). El detalle de cada cambio está en `CHANGELOG.md`.
 
-**Toolchain and build**
-* Moved to SGDK 2.11 and installed Java 21 (Eclipse Temurin), needed by `rescomp`; the project compiles with no warnings.
-* `run.bat` launches the ROM in BlastEm 0.6.2; `run.bat build` writes `src/version.h` (V0.1.xx, xx = git commit count), compiles and launches.
-* Fixed `run.bat build` reusing a stale `main.o`, which made the pause screen show `V0.1.DEV`.
-* `.gitignore` now ignores `out/`, `src/boot/sega.s`, `src/boot/*.bak` and `src/version.h`; `src/boot/rom_head.c` is tracked.
+**Toolchain y compilación**
+* Se migró a SGDK 2.11 y se instaló Java 21 (Eclipse Temurin), que necesita `rescomp`; el proyecto compila sin warnings.
+* `run.bat` lanza la ROM en BlastEm 0.6.2; `run.bat build` escribe `src/version.h` (V0.1.xx, xx = número de commits de git), compila y lanza.
+* Se corrigió que `run.bat build` reutilizara un `main.o` viejo, lo que hacía que la pantalla de pausa mostrara `V0.1.DEV`.
+* `.gitignore` ahora ignora `out/`, `src/boot/sega.s`, `src/boot/*.bak` y `src/version.h`; `src/boot/rom_head.c` sí se versiona.
 
-**Gameplay**
-* Game states: playing, paused, GAME OVER and YOU WIN; START restarts after the game ends.
-* 3 ships: after a hit the ship respawns and blinks for about 2 seconds, without taking damage.
-* Enemies move as a formation: when one reaches an edge, all of them turn around together (they no longer overlap).
-* Pause screen on START showing "PAUSED", "GENS INVADERS V0.1.xx" and "PRESS START".
-* HUD shows score, enemies left and ships left.
+**Jugabilidad**
+* Estados de juego: jugando, en pausa, GAME OVER y YOU WIN; START reinicia cuando termina el juego.
+* 3 naves: tras un impacto la nave reaparece y parpadea unos 2 segundos, sin recibir daño.
+* Los enemigos se mueven en formación: cuando uno llega a un borde, todos dan la vuelta juntos (ya no se enciman).
+* Pantalla de pausa con START que muestra "PAUSED", "GENS INVADERS V0.1.xx" y "PRESS START".
+* El HUD muestra el puntaje, los enemigos restantes y las naves restantes.
 
-**Graphics and sound**
-* Starfield background (the commented-out code) now works; it is drawn once instead of every frame, which fixed the slowdown.
-* Intro trimmed to a 5 second placeholder with fade (`music/intro_short.wav`); the original `Intro.wav` is kept.
-* Player explosion plays on its own PCM channel so the laser no longer cuts it off.
-* ROM header shows "GENS INVADERS" instead of the SGDK "SAMPLE PROGRAM".
+**Gráficos y sonido**
+* El fondo de estrellas (el código que estaba comentado) ya funciona; se dibuja una sola vez en lugar de en cada frame, lo que corrigió la lentitud.
+* Intro recortada a un placeholder de 5 segundos con fade (`music/intro_short.wav`); se conserva el `Intro.wav` original.
+* La explosión del jugador suena en su propio canal PCM para que el láser ya no la corte.
+* El encabezado de la ROM muestra "GENS INVADERS" en lugar del "SAMPLE PROGRAM" de SGDK.
 
-**Bug fixes and cleanup**
-* Enemy bullet not freed when it hit the player; interrupts never re-enabled; player name buffer overflow.
-* Removed unused globals (`i`, `thex`, `they`, `val`) and renamed the collision routine to `handleCollisions`.
+**Corrección de errores y limpieza**
+* Bala enemiga que no se liberaba al golpear al jugador; interrupciones que nunca se reactivaban; desbordamiento del buffer del nombre del jugador.
+* Se quitaron globales sin uso (`i`, `thex`, `they`, `val`) y se renombró la rutina de colisiones a `handleCollisions`.
 
-## Work log - 12/11/2026 (with Bimo)
-Everything below was done on Nov 12, 2026. Details per change are in `CHANGELOG.md`.
+## Bitácora de trabajo - 12/11/2026 (con Bimo)
+Todo lo siguiente se hizo el 12 de noviembre de 2026. El detalle de cada cambio está en `CHANGELOG.md`.
 
-**Gameplay**
-* Formation descent (README TODO #7): when any living enemy reaches an edge, the whole group turns around and steps down 8 pixels (`ENEMY_STEP_DOWN`).
-* GAME OVER if any living enemy's sprite reaches the player's row (the bottom of the sprite meets `PLAYER_START_Y`). Uses the existing `showEndScreen(STATE_GAME_OVER)` path.
-* Restart with START still resets the formation to Y = 32 via `placeEnemies()` and restores `enemyDir`.
-* Enemy bullets and collisions are unchanged; they keep using the updated positions.
+**Jugabilidad**
+* Descenso de la formación (TODO #7 del README): cuando cualquier enemigo vivo llega a un borde, todo el grupo da la vuelta y baja 8 píxeles (`ENEMY_STEP_DOWN`).
+* GAME OVER si el sprite de cualquier enemigo vivo llega a la fila del jugador (la parte inferior del sprite alcanza `PLAYER_START_Y`). Usa la ruta existente `showEndScreen(STATE_GAME_OVER)`.
+* Reiniciar con START sigue regresando la formación a Y = 32 mediante `placeEnemies()` y restaura `enemyDir`.
+* Las balas enemigas y las colisiones no cambian; siguen usando las posiciones actualizadas.
 
-**Difficulty and enemy fire (later on Nov 12)**
-* Data-driven difficulty table (`DifficultyConfig difficultyTable`): EASY (no descent, 1 enemy bullet), NORMAL (8 px step, up to 2 bullets, two enemies fire together), HARD (16 px step, two fire together, up to 4 bullets on screen). `fireChance` is in the table for later tuning.
-* Dedicated enemy bullet pool (`enemyBullets`, 4 sprites). Each bullet collides with the player on its own and is freed on hit, off-screen, or reset. Player bullets stay in their own pool. Lives, respawn and invulnerability are unchanged.
-* Pre-game menu "SELECT DIFFICULTY": UP/DOWN to choose, START to confirm (default NORMAL). After GAME OVER or YOU WIN, START returns to that menu with the last choice preselected. Current difficulty is shown on the HUD (`DIFF:`) and on the pause screen.
-* The standalone SELECT DIFFICULTY menu was later replaced by the title screen (see below).
+**Dificultad y disparo enemigo (más tarde el 12 de noviembre)**
+* Tabla de dificultad basada en datos (`DifficultyConfig difficultyTable`): EASY (sin descenso, 1 bala enemiga), NORMAL (paso de 8 px, hasta 2 balas, dos enemigos disparan juntos), HARD (paso de 16 px, dos disparan juntos, hasta 4 balas en pantalla). `fireChance` está en la tabla para ajustarlo después.
+* Pool exclusivo de balas enemigas (`enemyBullets`, 4 sprites). Cada bala colisiona con el jugador por su cuenta y se libera al impactar, al salir de pantalla o al reiniciar. Las balas del jugador se quedan en su propio pool. Vidas, reaparición e invulnerabilidad sin cambios.
+* Menú previo al juego "SELECT DIFFICULTY": UP/DOWN para elegir, START para confirmar (NORMAL por defecto). Después de GAME OVER o YOU WIN, START regresa a ese menú con la última elección preseleccionada. La dificultad actual se muestra en el HUD (`DIFF:`) y en la pantalla de pausa.
+* El menú independiente SELECT DIFFICULTY después se reemplazó por la pantalla de título (ver abajo).
 
-**Difficulty retune (later still on Nov 12)**
-* Root cause of HARD feeling like NORMAL: `currentDiff` was applied correctly, but HARD shared the 120-frame fire interval and 1 px horizontal speed, and the 4-bullet cap almost never filled because bullets left the screen in ~38 frames. No frame-drop evidence.
-* The table now also has `shotInterval`, `enemySpeed` and `bulletSpeed`.
-* EASY: fires every 90 frames with `fireChance` 10 (1 bullet). NORMAL: unchanged (120, 2 shots, cap 2, step 8, speed 1, bullet 5). HARD: interval 60, cap 4, step 16, horizontal speed 2, bullet speed 6.
+**Reajuste de dificultad (todavía más tarde el 12 de noviembre)**
+* Causa raíz de que HARD se sintiera como NORMAL: `currentDiff` se aplicaba bien, pero HARD compartía el intervalo de disparo de 120 frames y la velocidad horizontal de 1 px, y el límite de 4 balas casi nunca se llenaba porque las balas salían de la pantalla en ~38 frames. No hubo evidencia de frames perdidos.
+* La tabla ahora también tiene `shotInterval`, `enemySpeed` y `bulletSpeed`.
+* EASY: dispara cada 90 frames con `fireChance` 10 (1 bala). NORMAL: sin cambios (120, 2 disparos, límite 2, paso 8, velocidad 1, bala 5). HARD: intervalo 60, límite 4, paso 16, velocidad horizontal 2, velocidad de bala 6.
 
-**Title screen (later still on Nov 12)**
-* Replaced the standalone SELECT DIFFICULTY menu with a title screen (`STATE_TITLE`).
-* Large two-row logo, GENS (5x5 blocks) over INVADERS (4x5 blocks), drawn as solid 8x8 tiles on plane A with a drop shadow, so it stays within the 20-sprites-per-scanline limit. The fill color pulses gold/orange. `V0.1.xx` is shown under the logo. The starfield keeps scrolling on plane B; game sprites are hidden.
-* Menu: START GAME (INICIAR) and DIFFICULTY: EASY/NORMAL/HARD. UP/DOWN move the cursor; LEFT/RIGHT (and START or A on DIFFICULTY) cycle the level; START on START GAME begins the match. After GAME OVER / YOU WIN, START returns here with the last difficulty preselected.
+**Pantalla de título (todavía más tarde el 12 de noviembre)**
+* Se reemplazó el menú independiente SELECT DIFFICULTY por una pantalla de título (`STATE_TITLE`).
+* Logo grande de dos renglones, GENS (bloques de 5x5) sobre INVADERS (bloques de 4x5), dibujado con tiles sólidos de 8x8 en el plano A con sombra, para no rebasar el límite de 20 sprites por línea de barrido. El color de relleno pulsa entre dorado y naranja. `V0.1.xx` se muestra bajo el logo. El fondo de estrellas sigue desplazándose en el plano B; los sprites del juego se ocultan.
+* Menú: START GAME (INICIAR) y DIFFICULTY: EASY/NORMAL/HARD. UP/DOWN mueven el cursor; LEFT/RIGHT (y START o A sobre DIFFICULTY) alternan el nivel; START sobre START GAME inicia la partida. Después de GAME OVER / YOU WIN, START regresa aquí con la última dificultad preseleccionada.
 
-**Second enemy row (later still on Nov 12)**
-* Two rows of 7 (14 ships) move, bounce and step down as one formation. GAME OVER uses the lowest living enemy; YOU WIN when both rows are cleared. Volleys pick the bottom-most living ship in each column.
-* Per-row `EnemyRowType` (sprite, palette, points). For now both rows reuse `ship`; the bottom row is tinted green/yellow on PAL3 and is worth 10 points, the top row 20. A different 16x16 graphic later is just a new `SPRITE` in `resources.res` and a pointer change — same size has no extra performance cost.
-* Sprite budget: 14 enemies + 1 player + 6 player bullets + 4 enemy bullets = 25 software sprites. In hardware sprites (16x16 = 4 cells, 8x8 = 1): 14*4 + 4 + 6 + 4 = 70 of 80. Per scanline, one full row uses 14 of 20 (rows are 24 px apart so they do not share a line).
+**Segunda fila de enemigos (todavía más tarde el 12 de noviembre)**
+* Dos filas de 7 (14 naves) se mueven, rebotan y bajan como una sola formación. GAME OVER usa el enemigo vivo más bajo; YOU WIN cuando se limpian ambas filas. Las ráfagas eligen la nave viva más baja de cada columna.
+* `EnemyRowType` por fila (sprite, paleta, puntos). Por ahora ambas filas reutilizan `ship`; la fila inferior va teñida de verde/amarillo en PAL3 y vale 10 puntos, la superior 20. Un gráfico distinto de 16x16 más adelante es solo un nuevo `SPRITE` en `resources.res` y un cambio de puntero — del mismo tamaño no tiene costo extra de rendimiento.
+* Presupuesto de sprites: 14 enemigos + 1 jugador + 6 balas del jugador + 4 balas enemigas = 25 sprites de software. En sprites de hardware (16x16 = 4 celdas, 8x8 = 1): 14*4 + 4 + 6 + 4 = 70 de 80. Por línea de barrido, una fila completa usa 14 de 20 (las filas están separadas 24 px, así que no comparten línea).
 
-**Opposite rows on HARD (later still on Nov 12)**
-* New `rowsOpposite` flag in the difficulty table: 0 on EASY and NORMAL (both rows still move as one formation), 1 on HARD. Set NORMAL's flag to 1 to enable the same behavior there.
-* On HARD, the top row starts right and the bottom row starts left (shifted to the right so it is not already on the left edge). Each row bounces on its own living ships and only that row steps down. A row will not drop if it would come within 24 px of the next living row below; it just reverses. If the bottom row is gone, the top row can descend freely. GAME OVER still uses the lowest living enemy.
+**Filas opuestas en HARD (todavía más tarde el 12 de noviembre)**
+* Nueva bandera `rowsOpposite` en la tabla de dificultad: 0 en EASY y NORMAL (ambas filas siguen moviéndose como una formación), 1 en HARD. Pon la bandera de NORMAL en 1 para activar el mismo comportamiento ahí.
+* En HARD, la fila superior arranca hacia la derecha y la inferior hacia la izquierda (desplazada a la derecha para que no empiece ya pegada al borde izquierdo). Cada fila rebota según sus propias naves vivas y solo esa fila baja. Una fila no baja si quedaría a menos de 24 px de la siguiente fila viva de abajo; solo se invierte. Si la fila inferior ya no existe, la superior puede bajar libremente. GAME OVER sigue usando el enemigo vivo más bajo.
 
-**Opposite rows on NORMAL too (later still on Nov 12)**
-* NORMAL now also has `rowsOpposite=1`. Its other values are unchanged (step 8, speed 1, interval 120, cap 2). EASY stays 0 (both rows move together). HARD is unchanged.
+**Filas opuestas también en NORMAL (todavía más tarde el 12 de noviembre)**
+* NORMAL ahora también tiene `rowsOpposite=1`. Sus demás valores no cambian (paso 8, velocidad 1, intervalo 120, límite 2). EASY se queda en 0 (ambas filas se mueven juntas). HARD sin cambios.
 
-**Modular refactor (later still on Nov 12)**
-* Split src/main.c (1226 lines at V0.1.25) into modules with no behavior change. Public headers in inc/; SGDK already compiles every src/*.c and includes -Iinc.
-* New modules: `config.h` / `game.h`, `difficulty`, `bullets`, `hud`, `enemies`, `player`, `collision`, `title`, `powerups`, `game_state`. `main.c` is now init + starfield + loop dispatch (~91 lines).
-* GAME_VERSION is included from game.h so title and pause still show V0.1.xx. After header changes, delete out/src/*.o before rebuilding.
-* Not moved: starfield (drawStarfield and offset scroll) stays in main.c (no background module was planned).
+**Refactorización modular (todavía más tarde el 12 de noviembre)**
+* Se dividió src/main.c (1226 líneas en V0.1.25) en módulos sin cambios de comportamiento. Headers públicos en inc/; SGDK ya compila todos los src/*.c e incluye -Iinc.
+* Módulos nuevos: `config.h` / `game.h`, `difficulty`, `bullets`, `hud`, `enemies`, `player`, `collision`, `title`, `powerups`, `game_state`. `main.c` ahora es inicialización + fondo de estrellas + despacho del ciclo (~91 líneas).
+* GAME_VERSION se incluye desde game.h, así que el título y la pausa siguen mostrando V0.1.xx. Después de cambiar headers, borra out/src/*.o antes de recompilar.
+* No se movió: el fondo de estrellas (drawStarfield y el scroll de offset) se queda en main.c (no se planeó un módulo de fondo).
 
-**NORMAL always fires its volley (later still on Nov 12)**
-* After the refactor Alberto noticed that on NORMAL the ships barely seemed to shoot. A diff against V0.1.25 showed no regression: same ticker, pool, getters and table. NORMAL had `fireChance` 8, so about 1 in 5 volleys was skipped and two misses in a row meant 4-6 seconds with no bullets (EASY and HARD already fire every attempt).
-* `fireChance` on NORMAL is now 10: every 120-frame volley (~2 s) fires two shots, still capped at 2. Interval, speed, step, cap and `rowsOpposite` are unchanged. EASY and HARD are unchanged.
+**NORMAL siempre dispara su ráfaga (todavía más tarde el 12 de noviembre)**
+* Después de la refactorización, Alberto notó que en NORMAL las naves casi no parecían disparar. Un diff contra V0.1.25 no mostró regresión: mismo ticker, pool, getters y tabla. NORMAL tenía `fireChance` 8, así que aproximadamente 1 de cada 5 ráfagas se saltaba y dos fallas seguidas significaban 4-6 segundos sin balas (EASY y HARD ya disparaban en cada intento).
+* `fireChance` en NORMAL ahora es 10: cada ráfaga de 120 frames (~2 s) dispara dos balas, todavía con límite de 2. Intervalo, velocidad, paso, límite y `rowsOpposite` sin cambios. EASY y HARD sin cambios.
 
-**More varied enemy shooters (later still on Nov 12)**
-* On NORMAL the volley rate was correct (2 ships every ~2 s) but it was almost always the same ships.
-* Root causes: SGDK only auto-seeds `random()` on the first button of the session (often a menu tap right after boot, with a similar tick); `random() % n` used the low bits of the 16-bit xorshift and could clump columns; the picker did not avoid the previous volley columns.
-* START that begins a match now calls `setRandomSeed` with a title-screen frame counter, `vtimer` and `getTick()`. Each volley still fires the bottom-most living ship in a column, but columns are chosen at random, stay distinct within the volley, and skip the previous volley columns when other eligible ones exist. Uses high bits of `random()` (`randRange`). Applies to all difficulties; table values are unchanged.
+**Tiradores enemigos más variados (todavía más tarde el 12 de noviembre)**
+* En NORMAL la cadencia de ráfagas era correcta (2 naves cada ~2 s), pero casi siempre eran las mismas naves.
+* Causas raíz: SGDK solo siembra `random()` automáticamente con el primer botón de la sesión (a menudo un toque en el menú justo después de arrancar, con un tick parecido); `random() % n` usaba los bits bajos del xorshift de 16 bits y podía agrupar columnas; el selector no evitaba las columnas de la ráfaga anterior.
+* El START que inicia una partida ahora llama a `setRandomSeed` con un contador de frames de la pantalla de título, `vtimer` y `getTick()`. Cada ráfaga sigue disparando con la nave viva más baja de una columna, pero las columnas se eligen al azar, son distintas dentro de la ráfaga y se saltan las columnas de la ráfaga anterior cuando hay otras elegibles. Usa los bits altos de `random()` (`randRange`). Aplica a todas las dificultades; los valores de la tabla no cambian.
 
-**Player explosion (later still on Nov 12)**
-* New 6-frame 16x16 indexed sheet `res/tiles/imgexplosion.bmp` (96x16, color 0 transparent, same PAL1 as `space.bmp`: white flash, expanding orange/red fireball, debris, fade). `SPRITE explosion` in `resources.res` (2x2, FAST, anim speed 0; frames are advanced by hand so it does not loop).
-* On hit the player ship is hidden and the explosion plays at that position for 48 frames (~0.8 s, 8 ticks per visual frame). Input is already blocked while health is 0; pause is also blocked. Enemy fire and the shot ticker are skipped (`player_isExploding`); enemies and bullets already on screen keep moving. A short decaying horizontal shake on the starfield (BG_B) and a 4-frame flash of PAL1 color 2 to white, then restored.
-* If lives remain, the remaining `RESPAWN_DELAY` (42 frames) runs after the explosion so total dead time stays ~90 frames, then the usual blinking invulnerability. If no lives are left, GAME OVER waits until the explosion finishes (`player_update` returns 1). Logic lives in the player module. Hardware-sprite budget stays at 70: the 16x16 explosion (4 cells) replaces the hidden ship.
+**Explosión del jugador (todavía más tarde el 12 de noviembre)**
+* Nueva hoja indexada de 6 frames de 16x16 `res/tiles/imgexplosion.bmp` (96x16, color 0 transparente, la misma PAL1 que `space.bmp`: destello blanco, bola de fuego naranja/roja que se expande, escombros, desvanecido). `SPRITE explosion` en `resources.res` (2x2, FAST, velocidad de animación 0; los frames se avanzan a mano para que no se repita en ciclo).
+* Al recibir un impacto, la nave del jugador se oculta y la explosión se reproduce en esa posición durante 48 frames (~0.8 s, 8 ticks por frame visual). El control ya está bloqueado mientras la salud es 0; la pausa también se bloquea. Se omiten el disparo enemigo y el ticker de disparo (`player_isExploding`); los enemigos y las balas que ya están en pantalla siguen moviéndose. Una breve sacudida horizontal que se amortigua en el fondo de estrellas (BG_B) y un destello de 4 frames del color 2 de PAL1 a blanco, que luego se restaura.
+* Si quedan vidas, el resto de `RESPAWN_DELAY` (42 frames) corre después de la explosión para que el tiempo total muerto siga en ~90 frames, y luego viene la invulnerabilidad con parpadeo de siempre. Si no quedan vidas, el GAME OVER espera a que termine la explosión (`player_update` regresa 1). La lógica vive en el módulo player. El presupuesto de sprites de hardware se queda en 70: la explosión de 16x16 (4 celdas) reemplaza a la nave oculta.
 
-**Shield power-up (later still on Nov 12)**
-* Button C activates a shield (B is already shoot, A is still the RapidFire toggle). It starts charged at the beginning of a match, lasts 5 s, then recharges for 30 s and cannot be retriggered until then. NTSC uses 300 / 1800 frames; on PAL, `IS_PAL_SYSTEM` selects 250 / 1500 so the wall-clock time stays 5 s / 30 s. The project had no PAL timing before this.
-* While active, a 32x32 4-frame pulsing blue/white bubble (`res/tiles/imgshield.bmp`, same PAL1, color 0 transparent) follows the ship. Enemy bullets that touch the 32x32 box are destroyed and do no damage. This game has no ship-vs-enemy body collision, so the shield only has to stop bullets. Short PCM blips play on channel 1 when the shield goes up and when the recharge finishes.
-* Cannot be used during the player explosion, while dead, while paused, or during recharge. The timer only ticks in STATE_PLAYING, so pause freezes it. On life loss the recharge (or LISTO) state is kept; a bullet cannot kill the player while the shield is up, so in practice the recharge just keeps running through the explosion and respawn. `powerups_reset` on a new match sets it back to ready. HUD field on the right of line 2: `ESC: LISTO`, `ESC: ON n`, or `ESC: ns`, redrawn with the score line so the layout stays intact.
-* One extra hardware sprite (32x32 = 1 VDP sprite, 16 tiles). Real sprite count is about 27 of 80. The earlier "70" budget counted each 16x16 ship as 4 sprites; this ability adds one real VDP sprite, not 16.
+**Power-up de escudo (todavía más tarde el 12 de noviembre)**
+* El botón C activa un escudo (B ya es disparar, A sigue siendo el toggle de RapidFire). Empieza cargado al inicio de la partida, dura 5 s, luego recarga durante 30 s y no se puede volver a activar hasta entonces. NTSC usa 300 / 1800 frames; en PAL, `IS_PAL_SYSTEM` selecciona 250 / 1500 para que el tiempo real siga siendo 5 s / 30 s. El proyecto no tenía tiempos para PAL antes de esto.
+* Mientras está activo, una burbuja azul/blanca de 32x32 que pulsa en 4 frames (`res/tiles/imgshield.bmp`, misma PAL1, color 0 transparente) sigue a la nave. Las balas enemigas que tocan la caja de 32x32 se destruyen y no hacen daño. Este juego no tiene colisión de cuerpo nave contra enemigo, así que el escudo solo tiene que detener balas. Suenan blips PCM cortos en el canal 1 cuando el escudo se activa y cuando termina la recarga.
+* No se puede usar durante la explosión del jugador, mientras está muerto, en pausa ni durante la recarga. El temporizador solo avanza en STATE_PLAYING, así que la pausa lo congela. Al perder una vida se conserva el estado de recarga (o LISTO); una bala no puede matar al jugador mientras el escudo está activo, así que en la práctica la recarga simplemente sigue corriendo durante la explosión y la reaparición. `powerups_reset` en una partida nueva lo regresa a listo. Campo del HUD a la derecha de la línea 2: `ESC: LISTO`, `ESC: ON n` o `ESC: ns`, que se redibuja con la línea del puntaje para que el diseño se mantenga intacto.
+* Un sprite de hardware extra (32x32 = 1 sprite del VDP, 16 tiles). El conteo real de sprites es de unos 27 de 80. El presupuesto anterior de "70" contaba cada nave de 16x16 como 4 sprites; esta habilidad agrega un sprite real del VDP, no 16.
 
-**Shield times by difficulty (later still on Nov 12)**
-* After playtesting, 5 s of shield felt too long. Duration and recharge moved into the difficulty table (`shieldDurationSec` / `shieldRechargeSec`): EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
-* `powerups` still converts those seconds to frames with `IS_PAL_SYSTEM` (x60 NTSC, x50 PAL) at reset, so the wall-clock time is the same on both systems. The HUD continues to show remaining seconds (`ESC: ON n`, `ESC: ns`). The fixed `SHIELD_DURATION_*` / `SHIELD_RECHARGE_*` macros were removed from `config.h`.
+**Tiempos del escudo por dificultad (todavía más tarde el 12 de noviembre)**
+* Después de probarlo, 5 s de escudo se sentían demasiado. La duración y la recarga se movieron a la tabla de dificultad (`shieldDurationSec` / `shieldRechargeSec`): EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
+* `powerups` sigue convirtiendo esos segundos a frames con `IS_PAL_SYSTEM` (x60 NTSC, x50 PAL) al reiniciar, así que el tiempo real es el mismo en ambos sistemas. El HUD sigue mostrando los segundos restantes (`ESC: ON n`, `ESC: ns`). Se quitaron de `config.h` las macros fijas `SHIELD_DURATION_*` / `SHIELD_RECHARGE_*`.
 
-**Version 0.2 (later still on Nov 12)**
-* The version prefix is now 0.2. The last number is still the total commit count (`git rev-list --count HEAD`), not a count from a 0.2 base tag, so this release is V0.2.42 (the next commit after V0.1.41). The fallback without `src/version.h` is `V0.2.DEV`. Annotated tag `v0.2.42`.
-* `run.bat build` writes `V0.2.xx` to `src/version.h` with Python so `echo` no longer leaves a trailing space, and it deletes every `out/src/*.o` before compiling because several modules include the version through `game.h`.
+**Versión 0.2 (todavía más tarde el 12 de noviembre)**
+* El prefijo de versión ahora es 0.2. El último número sigue siendo el total de commits (`git rev-list --count HEAD`), no un conteo desde un tag base 0.2, así que esta versión es V0.2.42 (el commit siguiente a V0.1.41). El respaldo sin `src/version.h` es `V0.2.DEV`. Tag anotado `v0.2.42`.
+* `run.bat build` escribe `V0.2.xx` en `src/version.h` con Python para que `echo` ya no deje un espacio al final, y borra todos los `out/src/*.o` antes de compilar porque varios módulos incluyen la versión a través de `game.h`.
 
-**Shield HUD bar (later still on Nov 12)**
-* Replaced the numeric shield HUD (`ESC: LISTO` / `ESC: ON n` / `ESC: ns`) with a short `ESC` label and an 8-tile bar (64 levels, eighth-block tiles) on the right of line 2, leaving SCORE and DIFF untouched.
-* While the shield is up the bar is blue (PAL1) and drains with the time left. During recharge it fills in dark red (PAL1). When it is ready it is full and green (PAL3 color 1, the same green as the bottom enemy row) and flashes blue for about half a second when the recharge finishes, along with the existing ready SFX.
-* Plane A is only rewritten when the level, state or blink phase changes. The tiles are generated in code and loaded at `TILE_USER_INDEX + 2` (title still uses the first two user tiles). No new palette or BMP; fill colors already exist in PAL1 / PAL3. The empty part of the bar is a black track (palette index 4).
+**Barra del escudo en el HUD (todavía más tarde el 12 de noviembre)**
+* Se reemplazó el HUD numérico del escudo (`ESC: LISTO` / `ESC: ON n` / `ESC: ns`) por una etiqueta corta `ESC` y una barra de 8 tiles (64 niveles, tiles de octavos de bloque) a la derecha de la línea 2, sin tocar SCORE ni DIFF.
+* Mientras el escudo está activo la barra es azul (PAL1) y se vacía con el tiempo restante. Durante la recarga se llena en rojo oscuro (PAL1). Cuando está listo queda llena y verde (color 1 de PAL3, el mismo verde de la fila inferior de enemigos) y parpadea en azul durante medio segundo al terminar la recarga, junto con el SFX de listo que ya existía.
+* El plano A solo se reescribe cuando cambia el nivel, el estado o la fase del parpadeo. Los tiles se generan en código y se cargan en `TILE_USER_INDEX + 2` (el título sigue usando los dos primeros tiles de usuario). Sin paleta ni BMP nuevos; los colores de relleno ya existen en PAL1 / PAL3. La parte vacía de la barra es un riel negro (índice de paleta 4).
 
-**Invasion GAME OVER on body contact (later still on Nov 12)**
-* The match no longer ends just because a living enemy reaches the player's row (`PLAYER_START_Y`) without touching the ship. `collision` now tests enemy-player body overlap: that is always GAME OVER after the player's explosion (`player_hitFatal`), even if lives remain. Classic invasion: you do not just lose one ship.
-* The shield and post-respawn invulnerability do not protect against that contact (they still stop enemy bullets).
-* If a ship steps past the player's height without overlapping in X, the formation keeps marching. When any living enemy reaches the visible bottom (`y + h >= BOTTOM_EDGE`, 224), the same fatal explosion and GAME OVER apply, so the game cannot stall with invaders sitting below the gun. They do not bounce or freeze.
+**GAME OVER por invasión al contacto de cuerpos (todavía más tarde el 12 de noviembre)**
+* La partida ya no termina solo porque un enemigo vivo llegue a la fila del jugador (`PLAYER_START_Y`) sin tocar la nave. `collision` ahora revisa si el cuerpo de un enemigo se encima con el del jugador: eso siempre es GAME OVER después de la explosión del jugador (`player_hitFatal`), aunque queden vidas. Invasión clásica: no solo pierdes una nave.
+* El escudo y la invulnerabilidad después de reaparecer no protegen contra ese contacto (siguen deteniendo las balas enemigas).
+* Si una nave baja más allá de la altura del jugador sin encimarse en X, la formación sigue marchando. Cuando cualquier enemigo vivo llega al fondo visible (`y + h >= BOTTOM_EDGE`, 224), se aplican la misma explosión fatal y el GAME OVER, para que el juego no se estanque con invasores quietos debajo del cañón. No rebotan ni se congelan.
 
-**Enemy explosions (later still on Nov 12)**
-* New 6-frame 16x16 indexed sheet `res/tiles/imgenemyexp.bmp` (96x16, color 0 transparent, same palette as `space.bmp`). The burst is smaller than the player's fireball: a tight white/yellow flash, then green sparks that fly outward and fade. `SPRITE enemyexp` in `resources.res` (2x2, FAST, anim speed 0; frames are advanced by hand). Drawn with PAL3 during play (green/yellow/white) so it stays clearly different from the player's PAL1 orange/red/white explosion.
-* Duration is 24 frames (~0.4 s at 60 Hz, 4 ticks per visual frame). The enemy ship is hidden immediately (`killGameEntity`) and the burst plays at that `x,y`. Explosions are independent sprites: they do not collide and they do not affect formation movement.
-* Pool of 6 (`MAX_ENEMY_EXPLOSIONS` in `inc/explosions.h` / `src/explosions.c`). If all slots are busy, the oldest (lowest remaining timer) is reused. Each burst is 1 VDP sprite (16x16). Peak hardware count is about 33 of 80 (14 enemies + player + player explosion + shield + 6 player bullets + 4 enemy bullets + 6 enemy bursts). Dead ships are already hidden, so a scanline holds bursts rather than a full live row and stays under the 20-sprite limit.
-* Hooked from `collision`: a player bullet that kills a ship spawns a burst, then the existing score / YOU WIN path. A body crash into the player (or a landing at `BOTTOM_EDGE`) spawns a burst on every overlapping (or landed) ship, kills them without awarding score or YOU WIN, and then `player_hitFatal` so both explosions play before GAME OVER. The enemy burst can finish under the YOU WIN / GAME OVER text; pause freezes it like the other timers.
-* Optional short high pop SFX (`res/sounds/enemyexp.wav`, PCM id 69, ~0.10 s) on channel 3 at moderate priority, so it can play at the same time as the player's explosion on channel 2 during an invasion crash.
+**Explosiones enemigas (todavía más tarde el 12 de noviembre)**
+* Nueva hoja indexada de 6 frames de 16x16 `res/tiles/imgenemyexp.bmp` (96x16, color 0 transparente, la misma paleta que `space.bmp`). La explosión es más pequeña que la bola de fuego del jugador: un destello blanco/amarillo compacto y luego chispas verdes que salen hacia fuera y se desvanecen. `SPRITE enemyexp` en `resources.res` (2x2, FAST, velocidad de animación 0; los frames se avanzan a mano). Se dibuja con PAL3 durante el juego (verde/amarillo/blanco) para que se distinga claramente de la explosión naranja/roja/blanca del jugador en PAL1.
+* Dura 24 frames (~0.4 s a 60 Hz, 4 ticks por frame visual). La nave enemiga se oculta de inmediato (`killGameEntity`) y la explosión se reproduce en ese `x,y`. Las explosiones son sprites independientes: no colisionan ni afectan el movimiento de la formación.
+* Pool de 6 (`MAX_ENEMY_EXPLOSIONS` en `inc/explosions.h` / `src/explosions.c`). Si todos los espacios están ocupados, se reutiliza el más antiguo (el de menor tiempo restante). Cada explosión es 1 sprite del VDP (16x16). El pico de sprites de hardware es de unos 33 de 80 (14 enemigos + jugador + explosión del jugador + escudo + 6 balas del jugador + 4 balas enemigas + 6 explosiones enemigas). Las naves muertas ya están ocultas, así que una línea de barrido contiene explosiones en lugar de una fila viva completa y se mantiene bajo el límite de 20 sprites.
+* Se engancha desde `collision`: una bala del jugador que mata una nave genera una explosión y luego sigue la ruta existente de puntaje / YOU WIN. Un choque de cuerpo contra el jugador (o un aterrizaje en `BOTTOM_EDGE`) genera una explosión en cada nave que se encima (o que aterrizó), las mata sin dar puntaje ni YOU WIN, y luego llama a `player_hitFatal` para que ambas explosiones se vean antes del GAME OVER. La explosión enemiga puede terminar debajo del texto de YOU WIN / GAME OVER; la pausa la congela igual que los demás temporizadores.
+* SFX opcional de un pop agudo y corto (`res/sounds/enemyexp.wav`, PCM id 69, ~0.10 s) en el canal 3 con prioridad moderada, para que pueda sonar al mismo tiempo que la explosión del jugador en el canal 2 durante un choque por invasión.
 
-**Endless waves and version 0.3 (13/11/2026)**
-* Clearing both rows no longer shows YOU WIN. The game stays in STATE_PLAYING, shows a centered `OLEADA N` banner for about 1.5 s (90 NTSC frames / 75 PAL), then respawns two rows at `ENEMY_START_Y`. Score, lives, RapidFire and the shield (including mid-recharge) are kept. Enemy bullets and the volley ticker are cleared; player bullets and any enemy explosions already playing continue. The player can still move, shoot and use the shield during the banner; pause freezes the timer and redraws the banner on resume.
-* Wave 1 is an exact copy of the existing difficulty table. Later waves scale a runtime `DifficultyConfig` (`difficulty_beginMatch` / `difficulty_nextWave` in `difficulty.c`). Per-difficulty increments and caps:
-  * EASY: interval 90 down by 10 to a floor of 45; speed 1 to 3 every 3 waves; volley/cap stay 1 until wave 4, then 2 (never more); bullet speed 5 to 7 every 3 waves; no descent (stepDown stays 0).
-  * NORMAL: interval 120 to 40; speed 1 to 3 every 3 waves; volley and bullet cap grow from 2 to 4 every 3 waves; bullet speed 5 to 7; stepDown 8 to 16 (+4 every 4 waves). Rows still move in opposite directions; column picking is unchanged.
-  * HARD: interval 60 to 30; speed 2 to 3 every 3 waves; volley 2 to 4 every 2 waves (the bullet cap is already 4); bullet speed 6 to 7; stepDown 16 to 20 (+4 every 5 waves).
-  The enemy bullet pool stays at 4, so the hardware-sprite budget does not grow with the wave number.
-* The HUD shows `OLEADA n` on line 2 at column 16, after `DIFF:` and before the `ESC` bar (fits even with 3-digit waves). The pause screen also shows the wave.
-* Version prefix is now 0.3. The last number is still the total commit count (`git rev-list --count HEAD`), not a count from a 0.3 base tag, so this release is V0.3.46. Fallback without `src/version.h` is `V0.3.DEV`. `run.bat build` writes `V0.3.xx`. Annotated tag `v0.3.46`. GAME OVER rules are unchanged; the shield still only stops bullets.
+**Oleadas infinitas y versión 0.3 (13/11/2026)**
+* Limpiar ambas filas ya no muestra YOU WIN. El juego se queda en STATE_PLAYING, muestra un letrero centrado `OLEADA N` durante unos 1.5 s (90 frames NTSC / 75 PAL) y luego vuelve a generar dos filas en `ENEMY_START_Y`. Se conservan el puntaje, las vidas, RapidFire y el escudo (incluso a mitad de la recarga). Se limpian las balas enemigas y el ticker de ráfagas; las balas del jugador y las explosiones enemigas que ya se estén reproduciendo continúan. El jugador puede seguir moviéndose, disparando y usando el escudo durante el letrero; la pausa congela el temporizador y redibuja el letrero al reanudar.
+* La oleada 1 es una copia exacta de la tabla de dificultad existente. Las oleadas siguientes escalan un `DifficultyConfig` en tiempo de ejecución (`difficulty_beginMatch` / `difficulty_nextWave` en `difficulty.c`). Incrementos y topes por dificultad:
+  * EASY: intervalo de 90 baja de 10 en 10 hasta un mínimo de 45; velocidad de 1 a 3 cada 3 oleadas; ráfaga/límite se quedan en 1 hasta la oleada 4, luego 2 (nunca más); velocidad de bala de 5 a 7 cada 3 oleadas; sin descenso (stepDown se queda en 0).
+  * NORMAL: intervalo de 120 a 40; velocidad de 1 a 3 cada 3 oleadas; la ráfaga y el límite de balas crecen de 2 a 4 cada 3 oleadas; velocidad de bala de 5 a 7; stepDown de 8 a 16 (+4 cada 4 oleadas). Las filas siguen moviéndose en direcciones opuestas; la selección de columnas no cambia.
+  * HARD: intervalo de 60 a 30; velocidad de 2 a 3 cada 3 oleadas; ráfaga de 2 a 4 cada 2 oleadas (el límite de balas ya es 4); velocidad de bala de 6 a 7; stepDown de 16 a 20 (+4 cada 5 oleadas).
+  El pool de balas enemigas se queda en 4, así que el presupuesto de sprites de hardware no crece con el número de oleada.
+* El HUD muestra `OLEADA n` en la línea 2, columna 16, después de `DIFF:` y antes de la barra `ESC` (cabe incluso con oleadas de 3 dígitos). La pantalla de pausa también muestra la oleada.
+* El prefijo de versión ahora es 0.3. El último número sigue siendo el total de commits (`git rev-list --count HEAD`), no un conteo desde un tag base 0.3, así que esta versión es V0.3.46. El respaldo sin `src/version.h` es `V0.3.DEV`. `run.bat build` escribe `V0.3.xx`. Tag anotado `v0.3.46`. Las reglas de GAME OVER no cambian; el escudo sigue deteniendo solo balas.
 
-**TOP 5 high scores (13/11/2026)**
-* One shared table of 5 entries is stored in cartridge SRAM (magic `GIHS`, format 1, 16-bit checksum). Each row keeps 3 initials, the score, the wave reached and a difficulty letter (F/N/D). A single table with a difficulty column was preferred over three separate lists, so scores from Easy, Normal and Hard can be compared at a glance. If the SRAM block is missing or fails the checksum, defaults are written: GEN 1000, INV 800, UDL 600, AMH 400, BIM 200 (wave 1).
-* After GAME OVER, a score that beats the current 5th place (ties stay out) opens a 3-letter initials entry: up/down cycle A-Z, space and `.`; left/right move the cursor; A or START confirm. The table is then drawn under `GAME OVER` (rows 12-16) with a blinking `>` on the new row, and `PRESS START` still returns to the title. A score that does not qualify skips the entry prompt and just shows the table. The player explosion still finishes before this screen.
-* The title menu has a third option, `PUNTAJES (TOP 5)`. START or A opens the table under the logo; START or B returns to the menu.
-* The ROM header already declared SRAM (`RA`, 0xF820, 0x200000-0x20FFFF) in `rom_head.c`; a comment was added. In BlastEm the file is `%LOCALAPPDATA%\blastem\rom\save.sram` because the ROM is launched as `out\rom.bin`. Deleting that file and relaunching restores the defaults.
+**Récords TOP 5 (13/11/2026)**
+* Una sola tabla compartida de 5 entradas se guarda en la SRAM del cartucho (magic `GIHS`, formato 1, checksum de 16 bits). Cada renglón guarda 3 iniciales, el puntaje, la oleada alcanzada y una letra de dificultad (F/N/D). Se prefirió una sola tabla con columna de dificultad en lugar de tres listas separadas, para poder comparar de un vistazo los puntajes de Fácil, Normal y Difícil. Si el bloque de SRAM no existe o falla el checksum, se escriben valores predeterminados: GEN 1000, INV 800, UDL 600, AMH 400, BIM 200 (oleada 1).
+* Después de GAME OVER, un puntaje que supera el 5.º lugar actual (los empates se quedan fuera) abre la captura de 3 iniciales: arriba/abajo recorren A-Z, espacio y `.`; izquierda/derecha mueven el cursor; A o START confirman. Luego la tabla se dibuja bajo `GAME OVER` (renglones 12-16) con un `>` parpadeante en el renglón nuevo, y `PRESS START` sigue regresando al título. Un puntaje que no califica se salta la captura y solo muestra la tabla. La explosión del jugador sigue terminando antes de esta pantalla.
+* El menú de título tiene una tercera opción, `PUNTAJES (TOP 5)`. START o A abren la tabla bajo el logo; START o B regresan al menú.
+* El encabezado de la ROM ya declaraba SRAM (`RA`, 0xF820, 0x200000-0x20FFFF) en `rom_head.c`; se agregó un comentario. En BlastEm el archivo es `%LOCALAPPDATA%\blastem\rom\save.sram` porque la ROM se lanza como `out\rom.bin`. Borrar ese archivo y volver a lanzar restaura los valores predeterminados.
 
-**Extra life every 1000 points (13/11/2026)**
-* A ship is awarded at 1000, 2000, 3000... (`EXTRA_LIFE_SCORE` in `config.h`, same on all difficulties). If one kill crosses more than one threshold, every crossed mark is counted. Lives are capped at 9 (`LIVES_CAP`) so `SHIPS: n` on the HUD stays one digit; past the cap no ship is added but the next threshold still advances (no queued 1UPs). Starting lives stay at 3 (`MAX_LIVES`). The counter resets in `player_reset` at the start of a match.
-* On a grant, `SHIPS` is updated immediately and a blinking `+1 NAVE` (or `+n NAVE`) appears for about 1 s (60 NTSC / 50 PAL frames) on row 2, under the HUD and clear of the wave banner. A short two-note ding (`res/sounds/oneup.wav`, PCM id 70, ~0.22 s) plays on channel 4 so it does not cut the laser (CH3) or the player explosion (CH2).
-* No award on the GAME OVER / initials screens (score no longer increases there). A 1UP earned during the death explosion of the last ship from a bullet cancels the pending GAME OVER and the player respawns. An invasion or bottom-edge fatal hit still ends the match even if a threshold is crossed while the explosion plays; the threshold advances but no ship is added.
+**Vida extra cada 1000 puntos (13/11/2026)**
+* Se otorga una nave en 1000, 2000, 3000... (`EXTRA_LIFE_SCORE` en `config.h`, igual en todas las dificultades). Si un solo derribo cruza más de un umbral, se cuentan todas las marcas cruzadas. Las vidas tienen tope de 9 (`LIVES_CAP`) para que `SHIPS: n` en el HUD siga en un dígito; pasado el tope no se agrega nave, pero el siguiente umbral sí avanza (no se acumulan 1UP pendientes). Las vidas iniciales siguen en 3 (`MAX_LIVES`). El contador se reinicia en `player_reset` al inicio de la partida.
+* Al otorgarla, `SHIPS` se actualiza de inmediato y aparece un `+1 NAVE` (o `+n NAVE`) parpadeante durante 1 s aproximadamente (60 frames NTSC / 50 PAL) en la fila 2, bajo el HUD y sin estorbar al letrero de oleada. Un ding corto de dos notas (`res/sounds/oneup.wav`, PCM id 70, ~0.22 s) suena en el canal 4 para no cortar el láser (CH3) ni la explosión del jugador (CH2).
+* No se otorgan vidas en las pantallas de GAME OVER / iniciales (ahí el puntaje ya no sube). Un 1UP ganado durante la explosión de la última nave por una bala cancela el GAME OVER pendiente y el jugador reaparece. Un golpe fatal por invasión o por el borde inferior sigue terminando la partida aunque se cruce un umbral mientras se reproduce la explosión; el umbral avanza pero no se agrega nave.
 
-**Points per ship by difficulty (13/11/2026)**
-* The only score source remains a player bullet destroying an enemy (no wave bonus; an invasion crash still awards nothing). Previously both difficulties used a fixed per-row split: top row 20, bottom row 10, so a full wave of 14 was always 210 points.
-* Points now come from `enemyPoints` in the difficulty table, the same for every ship: EASY 10, NORMAL 20, HARD 30. A cleared wave is worth 140 / 280 / 420. Extra lives stay at every 1000 points on all difficulties, so the first 1UP arrives around wave 8 on EASY (7 waves = 980), wave 4 on NORMAL (3 waves = 840) and wave 3 on HARD (2 waves = 840).
-* The shared TOP 5 table is unchanged, including the placeholder entries. Hard scores will climb faster than Easy ones; the difficulty letter (F/N/D) still shows which run it was.
+**Puntos por nave según la dificultad (13/11/2026)**
+* La única fuente de puntaje sigue siendo que una bala del jugador destruya a un enemigo (sin bono por oleada; un choque por invasión sigue sin dar puntos). Antes ambas dificultades usaban un reparto fijo por fila: fila superior 20, inferior 10, así que una oleada completa de 14 siempre valía 210 puntos.
+* Los puntos ahora vienen de `enemyPoints` en la tabla de dificultad, iguales para todas las naves: EASY 10, NORMAL 20, HARD 30. Una oleada limpia vale 140 / 280 / 420. Las vidas extra siguen cada 1000 puntos en todas las dificultades, así que el primer 1UP llega alrededor de la oleada 8 en EASY (7 oleadas = 980), la oleada 4 en NORMAL (3 oleadas = 840) y la oleada 3 en HARD (2 oleadas = 840).
+* La tabla compartida TOP 5 no cambia, incluidas las entradas de ejemplo. Los puntajes de Difícil subirán más rápido que los de Fácil; la letra de dificultad (F/N/D) sigue indicando de qué partida se trata.
 
-**HUD ship icons and readable 1UP banner (13/11/2026)**
-* The "+1 NAVE" glitch was not the 20-sprite-per-scanline limit. The banner was already plane-A text on row 2 (above the enemies, which start at Y=32). Two things made it hard to read: `hud_updateExtraLife` cleared and redrew the whole row every frame during active display, which produced flickering horizontal lines on the VDP, and the text used low priority, so player bullets climbing off the top punched holes in it. The 8-on/8-off blink also left the message invisible half of the ~1 s window.
-* The banner is now drawn once, stays solid for the same ~1 s (60 NTSC / 50 PAL frames), and uses high-priority plane-A tiles (`VDP_setTextPriority`) so sprites pass behind it. Tiles are only touched when the banner appears or disappears.
-* `SHIPS: n` is gone. Up to 9 miniature 8x8 ships (a downscaled silhouette of the player ship, PAL1, plane A, not sprites) sit in the top-right corner, columns 31-39, left-aligned so a new life appears to the right of the ones already there. All 9 fit, so there is no "x9" overflow form. They update when a life is lost or gained. During the 1UP banner the newly awarded icon blinks; the others stay solid. `SCORE` and `LEFT` remain on the left of row 0, with a gap before the icons.
+**Íconos de naves en el HUD y letrero 1UP legible (13/11/2026)**
+* La falla de "+1 NAVE" no era el límite de 20 sprites por línea de barrido. El letrero ya era texto del plano A en la fila 2 (arriba de los enemigos, que empiezan en Y=32). Dos cosas lo hacían difícil de leer: `hud_updateExtraLife` borraba y redibujaba toda la fila en cada frame durante la zona visible, lo que producía líneas horizontales parpadeantes en el VDP, y el texto usaba prioridad baja, así que las balas del jugador que salían por arriba le hacían hoyos. Además, el parpadeo de 8 encendido/8 apagado dejaba el mensaje invisible la mitad de la ventana de ~1 s.
+* Ahora el letrero se dibuja una sola vez, se queda fijo durante el mismo ~1 s (60 frames NTSC / 50 PAL) y usa tiles del plano A de alta prioridad (`VDP_setTextPriority`), así que los sprites pasan por detrás. Los tiles solo se tocan cuando el letrero aparece o desaparece.
+* Ya no existe `SHIPS: n`. Hasta 9 naves en miniatura de 8x8 (una silueta reducida de la nave del jugador, PAL1, plano A, no sprites) quedan en la esquina superior derecha, columnas 31-39, alineadas a la izquierda para que una vida nueva aparezca a la derecha de las que ya están. Caben las 9, así que no hay forma de desborde "x9". Se actualizan cuando se pierde o se gana una vida. Durante el letrero 1UP el ícono recién otorgado parpadea; los demás se quedan fijos. `SCORE` y `LEFT` siguen a la izquierda de la fila 0, con un espacio antes de los íconos.
 
-**Life icons moved to the bottom-left (13/11/2026)**
-* The nine 8x8 ship icons left the top-right of row 0 (the top HUD was already busy with SCORE, LEFT, DIFF, OLEADA and the ESC bar) and now sit at the bottom-left of the visible plane: row 27, pixels 216-223, columns 0-8, still left-aligned so a new life appears to the right. They remain high-priority plane-A tiles, not sprites.
-* That row is just below the 32px shield (which ends at Y=216) and does not overlap the player ship (Y=192-207, only moves horizontally), so `PLAYER_START_Y` was left at 192. Enemy bullets and a late invasion in that corner pass behind the icons. Explosions stay at the ship's Y and do not cover the row.
-* The solid `+1 NAVE` banner moved to the same row, starting at column 10, just after the nine icon slots, so the top of the screen is no longer used for it. Clearing the banner does not wipe the icons. The newly awarded icon still blinks while the banner is up. `SCORE` / `LEFT` once again use the full width of row 0.
+**Íconos de vida movidos abajo a la izquierda (13/11/2026)**
+* Los nueve íconos de nave de 8x8 dejaron la esquina superior derecha de la fila 0 (el HUD superior ya estaba ocupado con SCORE, LEFT, DIFF, OLEADA y la barra ESC) y ahora están abajo a la izquierda del plano visible: fila 27, píxeles 216-223, columnas 0-8, todavía alineados a la izquierda para que una vida nueva aparezca a la derecha. Siguen siendo tiles del plano A de alta prioridad, no sprites.
+* Esa fila queda justo debajo del escudo de 32 px (que termina en Y=216) y no se encima con la nave del jugador (Y=192-207, solo se mueve en horizontal), así que `PLAYER_START_Y` se quedó en 192. Las balas enemigas y una invasión tardía en esa esquina pasan por detrás de los íconos. Las explosiones se quedan a la altura Y de la nave y no cubren la fila.
+* El letrero fijo `+1 NAVE` se movió a la misma fila, a partir de la columna 10, justo después de los nueve espacios de íconos, así que ya no ocupa la parte de arriba de la pantalla. Borrar el letrero no borra los íconos. El ícono recién otorgado sigue parpadeando mientras el letrero está visible. `SCORE` / `LEFT` vuelven a usar todo el ancho de la fila 0.
 
-**Between-wave warp animation (13/11/2026)**
-* Clearing a wave no longer jumps straight to the next formation after a 1.5 s banner. There is now a ~2.5 s transition (150 NTSC / 125 PAL frames) with `OLEADA N` on screen the whole time. Enemy bullets are cleared; score, lives, the shield (including its timers) and RapidFire are kept. Player bullets already in the air can finish; new shots, RapidFire toggles and a fresh shield are blocked. Horizontal movement and pause still work. The 1UP banner and life icons are unchanged (the 8x8 flame sits at Y=208-215, just above the icons on row 27).
-* The ship rises 8 pixels and an 8x8 two-frame exhaust flame (`res/tiles/imgflame.bmp`, PAL1, one hardware sprite) flickers under the hull. The starfield step ramps from 2 to 14 and back down. For the first ~1.25 s the next two rows wait fully above the screen; in the last 1.25 s they slide into their home slots (80 px) as the stars slow and the flame goes out. Wave 1 still starts in place, with no warp.
-* Sprite budget: one extra 8x8 sprite (35 allocated, still well under 80). The flame does not share a scanline with the 16x16 ship and only overlaps the bottom of the shield if it is already on, so the 20-sprites-per-line limit is not a concern.
+**Animación de warp entre oleadas (13/11/2026)**
+* Limpiar una oleada ya no salta directo a la siguiente formación después de un letrero de 1.5 s. Ahora hay una transición de ~2.5 s (150 frames NTSC / 125 PAL) con `OLEADA N` en pantalla todo el tiempo. Se limpian las balas enemigas; se conservan el puntaje, las vidas, el escudo (incluidos sus temporizadores) y RapidFire. Las balas del jugador que ya van en el aire pueden terminar; se bloquean los disparos nuevos, los toggles de RapidFire y activar el escudo. El movimiento horizontal y la pausa siguen funcionando. El letrero 1UP y los íconos de vida no cambian (la flama de 8x8 queda en Y=208-215, justo arriba de los íconos de la fila 27).
+* La nave sube 8 píxeles y una flama de escape de 8x8 con dos frames (`res/tiles/imgflame.bmp`, PAL1, un sprite de hardware) parpadea bajo el casco. El paso del fondo de estrellas sube de 2 a 14 y vuelve a bajar. Durante el primer ~1.25 s las dos filas siguientes esperan completamente arriba de la pantalla; en el último 1.25 s entran deslizándose a sus posiciones (80 px) mientras las estrellas frenan y la flama se apaga. La oleada 1 sigue empezando en su lugar, sin warp.
+* Presupuesto de sprites: un sprite extra de 8x8 (35 asignados, todavía muy por debajo de 80). La flama no comparte línea de barrido con la nave de 16x16 y solo se encima con la parte baja del escudo si ya está activo, así que el límite de 20 sprites por línea no es problema.
 
-**Shield hum while active (13/11/2026)**
-* The activation sound seemed to cut off, but nothing was stealing its channel. `shield_on.wav` is only 0.16 s; shots (CH3), explosions (CH2) and the 1UP jingle (CH4) already use other PCM channels. A new 2 s hum (`res/sounds/shield_hum.wav`, PCM id 71) plays on CH1 (the existing shield channel) for the whole time the shield is up: 2 s on HARD (one play), 3 s on NORMAL and 5 s on EASY (the sample is retriggered when it ends). It starts with the original activation attack so the press still has a punch, then sits under the action as a quieter drone.
-* The hum is stopped when the shield timer ends, on pause, on death, on GAME OVER and on the title screen. If the shield is still active after unpausing or after a respawn, it starts again. During the between-wave warp the shield stays up, so the hum stays too. The "shield ready" ding remains on CH1 and only plays after the hum has stopped. The unused short `SFX_SHIELD_ON` sample is still in the ROM but is no longer started on its own.
+**Zumbido del escudo mientras está activo (13/11/2026)**
+* El sonido de activación parecía cortarse, pero nada le estaba robando el canal. `shield_on.wav` dura solo 0.16 s; los disparos (CH3), las explosiones (CH2) y el jingle 1UP (CH4) ya usan otros canales PCM. Un nuevo zumbido de 2 s (`res/sounds/shield_hum.wav`, PCM id 71) suena en CH1 (el canal que ya usaba el escudo) durante todo el tiempo que el escudo está activo: 2 s en HARD (una reproducción), 3 s en NORMAL y 5 s en EASY (la muestra se vuelve a disparar cuando termina). Empieza con el ataque de la activación original para que el botón siga teniendo golpe, y luego queda debajo de la acción como un drone más bajo.
+* El zumbido se detiene cuando termina el temporizador del escudo, en pausa, al morir, en GAME OVER y en la pantalla de título. Si el escudo sigue activo al quitar la pausa o después de reaparecer, vuelve a empezar. Durante el warp entre oleadas el escudo sigue activo, así que el zumbido también. El ding de "escudo listo" sigue en CH1 y solo suena después de que el zumbido se detuvo. La muestra corta `SFX_SHIELD_ON`, que ya no se usa, sigue en la ROM pero ya no se reproduce por sí sola.
 
-**Charged shot (13/11/2026)**
-* Fire now happens on button release so a hold can charge. A short tap (under ~1 s, 60 NTSC / 50 PAL frames) still fires the usual 8x8 shot and uses the RapidFire cap (3 or 6). Holding B for about a second arms a charged shot: an orange 16x16 aura appears around the ship, then blinks white when ready and a short lock-on ding plays on CH4 (priority 10, below the 1UP jingle; it never uses CH1, so it cannot cut the shield hum). Releasing then fires a 24x24 bolt (3x the normal shot, one 3x3 hardware sprite, slightly faster at -4 px/frame) that pierces every enemy it touches, awarding the usual per-ship points, until it leaves the screen.
-* Only one charged bolt can be on screen; it has its own slot and does not count against the RapidFire cap. If one is still flying, a charged release falls back to a normal shot so the button is never a dead input. The charge is cancelled (no shot) when a wave-warp starts, on death, and on the title / GAME OVER screens. After pause, if B was released while paused, the charge is dropped without firing. RapidFire is unchanged: it only raises the small-bullet cap; charging works the same with it on or off.
-**Charged-shot boom (13/11/2026)**
-* The charged-shot release sample was thinner and higher than the normal laser (peak 16249, RMS 6733, attack around 1.8 kHz). It is now a ~0.32 s bass boom (sweep about 280 Hz down to 70 Hz) with a short click so it still reads as a shot. Peak 20000, just under the player explosion (20814) and louder than the laser (17972); RMS about 9600, close to the laser, so it stays present without clipping. Still played on CH3, so it cannot cut the shield hum on CH1. The charge-ready ding is slightly fuller (added a lower harmonic) but remains quieter than the boom and the 1UP jingle.
+**Disparo cargado (13/11/2026)**
+* Ahora el disparo ocurre al soltar el botón, para que mantenerlo pueda cargar. Un toque corto (menos de ~1 s, 60 frames NTSC / 50 PAL) sigue disparando la bala normal de 8x8 y usa el límite de RapidFire (3 o 6). Mantener B alrededor de un segundo arma un disparo cargado: aparece un aura naranja de 16x16 alrededor de la nave, que parpadea en blanco cuando está lista, y suena un ding corto de fijación de blanco en CH4 (prioridad 10, por debajo del jingle 1UP; nunca usa CH1, así que no puede cortar el zumbido del escudo). Al soltar se dispara un rayo de 24x24 (3x el disparo normal, un sprite de hardware de 3x3, un poco más rápido a -4 px/frame) que perfora a todos los enemigos que toca, dando los puntos normales por nave, hasta que sale de la pantalla.
+* Solo puede haber un rayo cargado en pantalla; tiene su propio espacio y no cuenta contra el límite de RapidFire. Si todavía hay uno volando, soltar una carga dispara una bala normal para que el botón nunca quede sin respuesta. La carga se cancela (sin disparo) cuando empieza un warp de oleada, al morir y en las pantallas de título / GAME OVER. Después de la pausa, si B se soltó mientras estaba en pausa, la carga se descarta sin disparar. RapidFire no cambia: solo sube el límite de balas pequeñas; la carga funciona igual con él activo o no.
+**Estruendo del disparo cargado (13/11/2026)**
+* La muestra al soltar el disparo cargado era más delgada y aguda que el láser normal (pico 16249, RMS 6733, ataque alrededor de 1.8 kHz). Ahora es un estruendo de bajos de ~0.32 s (barrido de unos 280 Hz a 70 Hz) con un clic corto para que se siga sintiendo como disparo. Pico 20000, justo debajo de la explosión del jugador (20814) y más fuerte que el láser (17972); RMS de unos 9600, cercano al del láser, así que se mantiene presente sin saturar. Sigue sonando en CH3, así que no puede cortar el zumbido del escudo en CH1. El ding de carga lista es un poco más lleno (se agregó un armónico más grave), pero sigue siendo más bajo que el estruendo y que el jingle 1UP.
 
-**RapidFire capsule (13/11/2026)**
-* The A-button RapidFire toggle was a leftover debug mode (6 bullets, red tint, 100 frames, unlimited use). It is now a real pickup. Destroyed enemies have a 10% chance (1 in 10) to drop an 8x8 blinking "R" capsule that falls at 1 px/frame. At most one capsule is on screen; after 10 kills without a drop the next one is guaranteed. The last ship of a wave never drops one, because the between-wave warp would clear it immediately. Touching the capsule grants RapidFire; if it leaves the bottom of the screen it disappears.
-* Duration is 10 s on EASY and 8 s on NORMAL and HARD (same wall-clock time on PAL, from the difficulty table). Picking up another capsule while it is active refreshes the timer. A bottom-right "RF" label and red 8-tile bar (plane A, high priority, same tiles as the shield recharge bar) show the time left. The ship body (PAL1 colour 2) turns red for the effect. Button A is free during play (it is still used on the title menu and name entry).
-* The effect persists across waves and keeps ticking during the warp, so leftover time is waiting when shooting returns. A capsule still falling is cleared on warp, death, GAME OVER and the title screen. The effect itself ends on death (you have to pick up another after a respawn). The pickup blip plays on CH4 (priority 11, below the 1UP jingle) and cannot cut the shield hum on CH1. Charged shot is unchanged and still ignores the RapidFire cap. The capsule is a single 8x8 hardware sprite at low priority, so the life icons and RF bar stay readable if it falls through that corner.
-**Mothership boss (13/11/2026)**
-* Waves 10, 20, 30... replace the two enemy rows with a 64x24 mothership (placeholder art in `res/tiles/imgboss.bmp`, two frames, two hardware sprites). It slides in during the usual warp, under an "OLEADA N" + "JEFE" banner, and patrols horizontally at Y=40. Only the 16x16 glowing core takes damage; a normal shot that hits a wing is blocked with no damage, and the charged bolt flies through the hull and damages the core once per pass (3x a normal hit). On death the ship explodes, points are awarded, RapidFire is granted or refreshed, and the next regular wave starts.
-* HP starts at 500 on wave 10 and doubles each return (1000, 2000, 4000) up to a cap of 8000 from wave 50 onward. The cap fits in a u16 and the 16-tile bar uses 32-bit math (`hp * 128 / max`), so there is no overflow. Core damage is 30 / 20 / 10 on EASY / NORMAL / HARD; movement and fire also scale (speed 1/2/3, 1/2/4 shots every 90/60/40 frames). Base points are 500 / 1000 / 1500 times the appearance number. A "JEFE" label and bar sit on HUD row 2 (blue, then red under 25%). The sprite is a placeholder for Alberto to replace later. Hit ticks play on CH4 (they cannot cut the shield hum); the death boom is on CH2.
-**Start-wave easter egg (13/11/2026)**
-* On the title screen (not on the TOP 5 view), entering UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks a fourth menu line, `OLEADA INICIAL: NN` (1-99, wraps). The menu still moves while the code is entered; the sequence is tracked in parallel. A wrong button or a ~2 s gap (120 NTSC / 100 PAL frames) resets it; a stray UP after a mistake can start a new attempt. Completing the code on A does not also cycle difficulty or open PUNTAJES. A 1UP jingle plays and "TRUCO ACTIVADO" appears briefly under the logo. The unlock is RAM-only and lasts until power-off or reset; it is not saved in SRAM. Tip: enter it with the cursor on INICIAR so LEFT/RIGHT do not change the difficulty.
-* START on INICIAR or on the wave line begins the match at that wave, with the usual per-wave scaling and, on 10/20/30..., the mothership already in place (no warp, like wave 1) and the HP that visit should have. Starting at wave 1, even after unlocking, is a normal run and can go into the TOP 5. Starting at wave 2 or later is a practice run: it does not qualify for the table (no initials prompt), the pause screen shows PRACTICA, and GAME OVER says the score is not saved. That keeps the official leaderboard clean without punishing someone who only unlocked the selector and then played from wave 1.
+**Cápsula RapidFire (13/11/2026)**
+* El toggle de RapidFire en el botón A era un modo de depuración que había quedado (6 balas, tinte rojo, 100 frames, uso ilimitado). Ahora es un objeto que se recoge de verdad. Los enemigos destruidos tienen 10% de probabilidad (1 de 10) de soltar una cápsula "R" parpadeante de 8x8 que cae a 1 px/frame. Como máximo hay una cápsula en pantalla; después de 10 derribos sin cápsula, la siguiente es segura. La última nave de una oleada nunca suelta una, porque el warp entre oleadas la borraría de inmediato. Tocar la cápsula otorga RapidFire; si sale por la parte de abajo de la pantalla, desaparece.
+* Dura 10 s en EASY y 8 s en NORMAL y HARD (el mismo tiempo real en PAL, desde la tabla de dificultad). Recoger otra cápsula mientras está activo reinicia el temporizador. Una etiqueta "RF" abajo a la derecha y una barra roja de 8 tiles (plano A, alta prioridad, los mismos tiles de la barra de recarga del escudo) muestran el tiempo restante. El cuerpo de la nave (color 2 de PAL1) se pone rojo durante el efecto. El botón A queda libre durante el juego (se sigue usando en el menú de título y en la captura del nombre).
+* El efecto se mantiene entre oleadas y sigue corriendo durante el warp, así que el tiempo que sobre te espera cuando vuelves a disparar. Una cápsula que todavía va cayendo se borra en el warp, al morir, en GAME OVER y en la pantalla de título. El efecto en sí termina al morir (tienes que recoger otra después de reaparecer). El blip al recogerla suena en CH4 (prioridad 11, por debajo del jingle 1UP) y no puede cortar el zumbido del escudo en CH1. El disparo cargado no cambia y sigue ignorando el límite de RapidFire. La cápsula es un solo sprite de hardware de 8x8 de baja prioridad, así que los íconos de vida y la barra RF siguen legibles si cae por esa esquina.
+**Jefe nave nodriza (13/11/2026)**
+* Las oleadas 10, 20, 30... reemplazan las dos filas de enemigos con una nave nodriza de 64x24 (arte provisional en `res/tiles/imgboss.bmp`, dos frames, dos sprites de hardware). Entra deslizándose durante el warp de siempre, bajo un letrero "OLEADA N" + "JEFE", y patrulla en horizontal en Y=40. Solo el núcleo brillante de 16x16 recibe daño; un disparo normal que pega en un ala se bloquea sin daño, y el rayo cargado atraviesa el casco y daña el núcleo una vez por pasada (3x un golpe normal). Al morir la nave explota, se otorgan puntos, se otorga o renueva RapidFire y empieza la siguiente oleada normal.
+* Los HP empiezan en 500 en la oleada 10 y se duplican en cada regreso (1000, 2000, 4000) hasta un tope de 8000 a partir de la oleada 50. El tope cabe en un u16 y la barra de 16 tiles usa aritmética de 32 bits (`hp * 128 / max`), así que no hay desbordamiento. El daño al núcleo es 30 / 20 / 10 en EASY / NORMAL / HARD; el movimiento y el disparo también escalan (velocidad 1/2/3, 1/2/4 disparos cada 90/60/40 frames). Los puntos base son 500 / 1000 / 1500 por el número de aparición. Una etiqueta "JEFE" y una barra quedan en la fila 2 del HUD (azul, luego roja por debajo del 25%). El sprite es provisional para que Alberto lo reemplace después. Los tics de impacto suenan en CH4 (no pueden cortar el zumbido del escudo); el estruendo de la muerte va en CH2.
+**Easter egg de oleada inicial (13/11/2026)**
+* En la pantalla de título (no en la vista del TOP 5), ingresar UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A desbloquea un cuarto renglón del menú, `OLEADA INICIAL: NN` (1-99, da la vuelta). El menú se sigue moviendo mientras se ingresa el código; la secuencia se rastrea en paralelo. Un botón equivocado o una pausa de ~2 s (120 frames NTSC / 100 PAL) la reinicia; un UP suelto después de un error puede empezar un intento nuevo. Completar el código con A no alterna también la dificultad ni abre PUNTAJES. Suena un jingle 1UP y aparece brevemente "TRUCO ACTIVADO" bajo el logo. El desbloqueo vive solo en RAM y dura hasta apagar o reiniciar; no se guarda en SRAM. Consejo: ingrésalo con el cursor en INICIAR para que LEFT/RIGHT no cambien la dificultad.
+* START sobre INICIAR o sobre el renglón de oleada inicia la partida en esa oleada, con el escalado normal por oleada y, en 10/20/30..., la nave nodriza ya en su lugar (sin warp, como en la oleada 1) y con los HP que le tocarían en esa visita. Empezar en la oleada 1, aunque se haya desbloqueado, es una partida normal y puede entrar al TOP 5. Empezar en la oleada 2 o posterior es una partida de práctica: no califica para la tabla (no pide iniciales), la pantalla de pausa muestra PRACTICA y el GAME OVER dice que el puntaje no se guarda. Así la tabla oficial se mantiene limpia sin castigar a quien solo desbloqueó el selector y luego jugó desde la oleada 1.
 
 
-**Boss hitbox, feedback and top-half roam (13/11/2026)**
-* The first mothership build only damaged a 16x16 core inset 4 px from the top, while the painted glow was wider, so shots at the obvious weak point often counted as a wing hit: the bullet vanished, HP did not drop, the JEFE bar did not move, and there was no flash or tick. That is why it felt like the boss took no damage. The weak zone is now the center third of the hull and the full 24 px body height (24x24 at offset 20,0). A core hit whites out the mothership for a few frames (PAL2 only, so the player ship is not bleached) and always plays the hit tick, including with the charged bolt. A wing hit spawns a spark and still deals no damage. The JEFE bar is force-redrawn on every HP change.
-* Horizontal-only patrol at Y=40 is gone. After the enter animation the mothership follows a smooth Lissajous path across the top half of the screen (Y 28-88, so the hull never crosses mid-screen into the player area). Speed scales with difficulty (`bossSpeed` 1/2/3). Volleys are still fired from the underside and the HP bar stays on HUD row 2.
+**Hitbox del jefe, retroalimentación y recorrido en la mitad superior (13/11/2026)**
+* La primera versión de la nave nodriza solo recibía daño en un núcleo de 16x16 a 4 px del borde superior, mientras que el brillo dibujado era más ancho, así que los disparos al punto débil evidente muchas veces contaban como golpe en el ala: la bala desaparecía, los HP no bajaban, la barra JEFE no se movía y no había destello ni tic. Por eso parecía que el jefe no recibía daño. La zona débil ahora es el tercio central del casco y toda la altura de 24 px del cuerpo (24x24 en el offset 20,0). Un golpe al núcleo pone en blanco la nave nodriza durante unos frames (solo PAL2, para que la nave del jugador no se decolore) y siempre suena el tic de impacto, también con el rayo cargado. Un golpe en el ala genera una chispa y sigue sin hacer daño. La barra JEFE se fuerza a redibujarse en cada cambio de HP.
+* Se eliminó la patrulla solo horizontal en Y=40. Después de la animación de entrada, la nave nodriza sigue una trayectoria Lissajous suave por la mitad superior de la pantalla (Y 28-88, así que el casco nunca cruza la mitad hacia la zona del jugador). La velocidad escala con la dificultad (`bossSpeed` 1/2/3). Las ráfagas se siguen disparando desde la parte inferior y la barra de HP se queda en la fila 2 del HUD.
 
-**Charged shot no longer skips the boss (13/11/2026)**
-* On a boss wave the two rows are hidden and `enemiesLeft` is 0 for the whole fight. The charged-bolt path treated "bolt in flight and no ships left" as a wave clear, so releasing a charged shot (even a miss) returned `COLLISION_WIN`, hid the mothership without the defeat explosion or bonus, and jumped to the next wave. Normal shots did not trip it because they only checked the count after an actual kill. The formation-clear check is now ignored while the boss is active or the current wave is a boss wave; `game_state` also refuses to start the next wave if the mothership is still up. The fight ends only when boss HP reaches 0, through the usual explosion, points, RapidFire grant and warp. Regular waves are unchanged.
+**El disparo cargado ya no se salta al jefe (13/11/2026)**
+* En una oleada de jefe las dos filas están ocultas y `enemiesLeft` vale 0 durante toda la pelea. La ruta del rayo cargado trataba "rayo en vuelo y sin naves restantes" como oleada limpia, así que soltar un disparo cargado (aunque fallara) regresaba `COLLISION_WIN`, ocultaba la nave nodriza sin la explosión de derrota ni el bono y saltaba a la siguiente oleada. Los disparos normales no lo activaban porque solo revisaban el conteo después de un derribo real. La revisión de formación limpia ahora se ignora mientras el jefe está activo o la oleada actual es de jefe; `game_state` también se niega a iniciar la siguiente oleada si la nave nodriza sigue en pie. La pelea solo termina cuando los HP del jefe llegan a 0, con la explosión, los puntos, el RapidFire otorgado y el warp de siempre. Las oleadas normales no cambian.
 
-## Work log - 16/11/2026 (with Bimo)
-Everything below was done on Nov 16, 2026 (V0.3.61). Details are in `CHANGELOG.md`.
+## Bitácora de trabajo - 16/11/2026 (con Bimo)
+Todo lo siguiente se hizo el 16 de noviembre de 2026 (V0.3.61). Los detalles están en `CHANGELOG.md`.
 
-**macOS build (16/11/2026)**
-* New `build.sh` at the repo root, the macOS/Linux counterpart of `run.bat`. `./build.sh build` writes `src/version.h` byte for byte like `run.bat` (`#define GAME_VERSION "V0.3.xx"` + CRLF, xx = `git rev-list --count HEAD`, at least 2 digits), deletes `out/src/*.o` because several modules include the version through `game.h`, and runs SGDK 2.11's `makefile.gen`. `./build.sh clean` runs makefile.gen's clean and `./build.sh run` opens `out/rom.bin`. With no argument it only runs the ROM, like `run.bat`; commands can be chained (`./build.sh clean build run`).
-* Toolchain: Alberto's MacBook Pro (Apple Silicon) had marsdev installed in `/opt/toolchains/mars`, but that install is an Intel build (GCC 13.1, SGDK 2.00) linked against Homebrew libraries in `/usr/local`, so its compiler does not run there. marsdev's own arm64 rebuild of m68k-elf GCC 14.2.0 + binutils did work, so it was copied to `~/Desktop/retrodev/mars-sgdk211/m68k-elf` together with SGDK 2.11 (tag v2.11). `libmd.a` and `libmd_debug.a` were built there with 0 warnings; `bintos`, `xgmtool`, `sjasm` and `convsym` were compiled natively, and the SGDK jars were copied. `common.mk` is SGDK 2.11's with absolute paths to the `m68k-elf-*` tools and the GCC 14.2 LTO plugin / libgcc. Everything lives in user folders; no `sudo` was needed and the old `/opt` install was left untouched. `GENS_GDK` overrides the path.
-* Emulator: BlastEm 1.0.0 from Homebrew (`brew install blastem`, native arm64). `run` falls back to `open -a "Genesis Plus"` if BlastEm is not installed.
-* Result: GCC 14 builds the game with 0 warnings and no game code changes; `out/rom.bin` is 384 KB and shows V0.3.61.
+**Compilación en macOS (16/11/2026)**
+* Nuevo `build.sh` en la raíz del repo, el equivalente de `run.bat` para macOS/Linux. `./build.sh build` escribe `src/version.h` byte por byte igual que `run.bat` (`#define GAME_VERSION "V0.3.xx"` + CRLF, xx = `git rev-list --count HEAD`, mínimo 2 dígitos), borra `out/src/*.o` porque varios módulos incluyen la versión a través de `game.h` y ejecuta el `makefile.gen` de SGDK 2.11. `./build.sh clean` ejecuta el clean de makefile.gen y `./build.sh run` abre `out/rom.bin`. Sin argumentos solo corre la ROM, como `run.bat`; los comandos se pueden encadenar (`./build.sh clean build run`).
+* Toolchain: la MacBook Pro de Alberto (Apple Silicon) tenía marsdev instalado en `/opt/toolchains/mars`, pero esa instalación es un binario Intel (GCC 13.1, SGDK 2.00) enlazado contra bibliotecas de Homebrew en `/usr/local`, así que su compilador no corre ahí. La recompilación arm64 propia de marsdev de m68k-elf GCC 14.2.0 + binutils sí funcionó, así que se copió a `~/Desktop/retrodev/mars-sgdk211/m68k-elf` junto con SGDK 2.11 (tag v2.11). Ahí se compilaron `libmd.a` y `libmd_debug.a` con 0 warnings; `bintos`, `xgmtool`, `sjasm` y `convsym` se compilaron de forma nativa y se copiaron los jars de SGDK. `common.mk` es el de SGDK 2.11 con rutas absolutas a las herramientas `m68k-elf-*` y al plugin LTO / libgcc de GCC 14.2. Todo vive en carpetas del usuario; no se necesitó `sudo` y la instalación vieja de `/opt` quedó intacta. `GENS_GDK` cambia la ruta.
+* Emulador: BlastEm 1.0.0 de Homebrew (`brew install blastem`, nativo arm64). `run` recurre a `open -a "Genesis Plus"` si BlastEm no está instalado.
+* Resultado: GCC 14 compila el juego con 0 warnings y sin cambios en el código del juego; `out/rom.bin` pesa 384 KB y muestra V0.3.61.
+
+## Bitácora de trabajo - 18/11/2026 (con Bimo)
+Todo lo siguiente se hizo el 18 de noviembre de 2026. Los detalles están en `CHANGELOG.md`.
+
+**Documentación (18/11/2026)**
+* Este `README.MD` mezclaba inglés y español. Ahora está completo en español, y `README.en.md` es la versión completa en inglés, con la misma estructura. GitHub no tiene un selector de idioma integrado para los README, así que ambos archivos empiezan con una línea (`Español | English`) que enlaza al otro.
+* El contenido, los comandos, las rutas, los identificadores, las versiones y las fechas no cambian. Se restauraron algunos caracteres que una edición anterior había convertido en caracteres de control en la lista de la estructura del código (`bullets.c`, `enemies.c`, `title.c`, `boot/rom_head.c`, `reviveGameEntity`, `rowsOpposite`).

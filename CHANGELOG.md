@@ -3,6 +3,32 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-18 - README unificado en español y README.en.md en inglés (AMH + Bimo)
+
+### Cambiado
+- `README.MD`: todo el documento queda en español (antes mezclaba
+  encabezados y texto en inglés, como "How to build", "Controls",
+  "Change log" y "Work log"). Se conservan la estructura, el orden, los
+  bloques de código, los comandos, las rutas, los identificadores, las
+  versiones y las fechas.
+
+### Agregado
+- `README.en.md`: versión completa en inglés del mismo documento, con la
+  misma estructura.
+- Selector de idioma al inicio de ambos archivos: en `README.MD`
+  `**Español** | [English](README.en.md)` y en `README.en.md`
+  `[Español](README.MD) | **English**`. GitHub no tiene un selector de
+  idioma integrado para los README, por eso se usan enlaces entre archivos.
+- Entrada del 18/11/2026 en HISTORY y en la bitácora de trabajo de ambos
+  README, y en `gensinvaders-session-log.html`.
+
+### Corregido
+- En la sección de estructura del código, una edición anterior había
+  convertido algunas letras en caracteres de control (`\b`, `\e`, `\r`,
+  `\t`), lo que dejaba `ullets.c`, `nemies.c`, `itle.c`, `oot/rom_head.c`
+  y cortaba `reviveGameEntity` y `rowsOpposite` en dos líneas. Se
+  restauraron en ambos README.
+
 ## 2026-11-17 - Comentario de inicialización en main.c (AMH + Bimo)
 
 ### Cambiado
