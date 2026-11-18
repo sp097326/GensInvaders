@@ -54,7 +54,7 @@ From the project folder:
 
 The ROM builds with GCC 14 with 0 warnings and no game code changes. Do not use the older
 `/opt/toolchains/mars` install for this game: it ships SGDK 2.00 and is an Intel build that
-does not run on this Mac.
+does not run on Apple Silicon.
 
 ## Code structure
 Public headers live in inc/; implementation in src/. SGDK's makefile.gen already compiles every src/*.c (except boot/rom_head.c) and adds -Iinc -Isrc. Module data is static inside each .c; only shared types and accessors are exported. src/main.c is init, the starfield, and the main-loop dispatch.
