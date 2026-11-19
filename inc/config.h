@@ -64,11 +64,32 @@
 #define BOSS_HOME_Y          ((BOSS_Y_MIN + BOSS_Y_MAX) / 2)  /* 42, roam center */
 #define BOSS_BAR_STEPS      128  /* 16 tiles x 8 px */
 /* Second boss attack: a 3-bullet fan aimed toward the player.
- * Above 50% HP it is a random pick (1 in BOSS_FAN_CHANCE volleys);
- * at 50% HP or less it alternates with the normal volley. */
+ * Above 50% HP it is a random pick (1 in BOSS_FAN_CHANCE attacks);
+ * at 50% HP or less it alternates with the bone. */
 #define BOSS_FAN_CHANCE       4
 #define BOSS_FAN_SPREAD       2  /* px/frame sideways between fan bullets */
 #define BOSS_FAN_AIM_ZONE    32  /* player offset (px) that tilts the fan */
+/* Main boss attack (19/11/2026): one 48x16 bone falls straight down from
+ * the belly, centred (x = boss.x + 8), where the old 8x8 volley spread.
+ * The hitbox is smaller than the art (40x8, centred) so a graze does not
+ * kill. A solid 48 px bar has no gaps to slip through, so it falls 1
+ * px/frame slower than the enemy bullets of the current wave (min 1).
+ * At most 2 on screen: with one, a fast boss timer would skip attacks
+ * while the previous bone is still falling. The shield does NOT stop it
+ * (Alberto's call): only dodging works. Player shots ignore it. */
+#define BOSS_BONE_W          48
+#define BOSS_BONE_H          16
+#define BOSS_BONE_HIT_OX      4  /* (48-40)/2 */
+#define BOSS_BONE_HIT_OY      4  /* (16-8)/2 */
+#define BOSS_BONE_HIT_W      40
+#define BOSS_BONE_HIT_H       8
+#define BOSS_BONE_SLOWER      1  /* px/frame slower than bulletSpeed */
+#define MAX_BOSS_BONES        2
+/* Bone colours live in PAL1 slots 7-9: space.bmp only uses 0-6, nothing
+ * else draws with 7-15, and PAL1 is never tinted by the boss hit flash
+ * (that only touches PAL2 colours 1-3). imgbone.png is indexed 7-9. */
+#define BOSS_BONE_PAL_FIRST   7
+#define BOSS_BONE_PAL_COUNT   3
 
 #define POWER_ON 1
 #define POWER_OFF 0

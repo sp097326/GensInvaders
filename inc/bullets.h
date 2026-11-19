@@ -23,6 +23,13 @@ void bullets_shootEnemyXY(s16 x, s16 y);
 /* Boss fan shot: explicit muzzle and velocity. Returns 1 if fired. */
 u16  bullets_shootEnemyXYV(s16 x, s16 y, s16 vx, s16 vy);
 GameEntity* bullets_charged(void);
+/* Boss bone (48x16, falls straight down, MAX_BOSS_BONES at once).
+ * Returns 1 if fired. Cleared with the enemy bullets. */
+u16  bullets_shootBone(s16 x, s16 y);
+GameEntity* bullets_boneAt(u16 i);
+/* The bone's reduced 40x8 hitbox, for collision. */
+void bullets_boneHitbox(GameEntity* bone, GameEntity* out);
+void bullets_despawnBone(GameEntity* b);
 
 void bullets_tickShot(void);
 void bullets_clearShotTicker(void);

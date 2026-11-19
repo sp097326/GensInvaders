@@ -28,5 +28,6 @@ extern const SpriteDefinition shield;
 extern const SpriteDefinition flame;
 extern const SpriteDefinition capsuleSpr;
 extern const SpriteDefinition mothership;
+extern const SpriteDefinition bossbone;
 
 #endif // _RES_RESOURCES_H_

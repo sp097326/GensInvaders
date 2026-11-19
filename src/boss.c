@@ -201,34 +201,15 @@ void boss_advanceEnter(u16 remain, u16 total, u16 offset) {
     }
 }
 
-static void fireVolley(void) {
-    const DifficultyConfig* cfg = difficulty_config();
-    u16 n = cfg->bossShotsPerVolley;
-    s16 base;
-    s16 gap;
-    u16 i;
-    GameEntity muzzle;
-
-    if (n == 0) return;
-    if (n > MAX_ENEMY_BULLETS) n = MAX_ENEMY_BULLETS;
-    muzzle.w = 8;
-    muzzle.h = 8;
-    muzzle.y = boss.y + BOSS_H - 4;
-    if (n == 1) {
-        muzzle.x = boss.x + (BOSS_W / 2) - 4;
-        bullets_shootEnemyXY(muzzle.x, muzzle.y);
-        return;
-    }
-    /* Spread the volley across the underside, inset 8 px from each tip. */
-    base = boss.x + 8;
-    gap = (s16)((BOSS_W - 16 - 8) / (n - 1));
-    for (i = 0; i < n; i++) {
-        bullets_shootEnemyXY(base + gap * (s16)i, muzzle.y);
-    }
+/* Main attack (19/11/2026): one 48x16 bone, centred under the belly
+ * (x = boss.x + 8, the span the old 8x8 volley covered), falling
+ * straight down. Speed, hitbox and cap: BOSS_BONE_* in config.h. */
+static void fireBone(void) {
+    bullets_shootBone(boss.x + (BOSS_W - BOSS_BONE_W) / 2, boss.y + BOSS_H - 4);
 }
 
 /* Second attack: 3 diagonal bullets from the belly, tilted toward the
- * player (left, straight or right) and a bit faster than the volley. */
+ * player (left, straight or right) and a bit faster than enemy bullets. */
 static void fireFan(void) {
     const DifficultyConfig* cfg = difficulty_config();
     s16 mx = boss.x + (BOSS_W / 2) - 4;
@@ -244,14 +225,14 @@ static void fireFan(void) {
     bullets_shootEnemyXYV(mx, my, aim + BOSS_FAN_SPREAD, vy);
 }
 
-/* Below half HP: alternate fan and volley. Otherwise: random fan. */
+/* Below half HP: alternate fan and bone. Otherwise: random fan. */
 static void fireAttack(void) {
     u16 useFan;
 
     if ((u32)hp * 2 <= (u32)hpMax) useFan = lastWasFan ? 0 : 1;
     else useFan = ((random() % BOSS_FAN_CHANCE) == 0) ? 1 : 0;
     if (useFan) fireFan();
-    else fireVolley();
+    else fireBone();
     lastWasFan = useFan;
 }
 

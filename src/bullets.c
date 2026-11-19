@@ -11,6 +11,23 @@ static u16 shotTicker = 0;
 static u16 shotByPlayer = 0;
 static u16 maxPlayerBullets = MAX_PLAYER_BULLETS;
 static GameEntity chargedBullet;
+static GameEntity bones[MAX_BOSS_BONES];
+
+/* Bone colours into the free PAL1 slots 7-9 (see config.h). Called at init
+ * and again on every spawn, so nothing that reloads PAL1 can leave the
+ * bone with the wrong colours. */
+static void loadBonePal(TransferMethod tm) {
+    PAL_setColors(16 + BOSS_BONE_PAL_FIRST,
+                  bossbone.palette->data + BOSS_BONE_PAL_FIRST,
+                  BOSS_BONE_PAL_COUNT, tm);
+}
+
+static void killBones(void) {
+    u16 i;
+    for (i = 0; i < MAX_BOSS_BONES; i++) {
+        killGameEntity(&bones[i]);
+    }
+}
 
 void bullets_init(void) {
     u16 i;
@@ -51,6 +68,21 @@ void bullets_init(void) {
     chargedBullet.sprite = SPR_addSprite(&bulletc, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
     SPR_setVisibility(chargedBullet.sprite, HIDDEN);
     sprintf(chargedBullet.name, "ChB");
+    /* Boss bones: 48x16 = 6x2 tiles, 2 hardware sprites each (32+16 wide),
+     * 12 VRAM tiles each. PAL1 so the boss hit tint (PAL2) never reaches it. */
+    for (i = 0; i < MAX_BOSS_BONES; i++) {
+        bones[i].x = 0;
+        bones[i].y = -BOSS_BONE_H;
+        bones[i].w = BOSS_BONE_W;
+        bones[i].h = BOSS_BONE_H;
+        bones[i].velx = 0;
+        bones[i].vely = 1;
+        bones[i].health = 0;
+        bones[i].sprite = SPR_addSprite(&bossbone, 0, -BOSS_BONE_H, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+        SPR_setVisibility(bones[i].sprite, HIDDEN);
+        sprintf(bones[i].name, "Bn%d", i);
+    }
+    loadBonePal(DMA);
 }
 
 void bullets_reset(void) {
@@ -62,6 +94,7 @@ void bullets_reset(void) {
         killGameEntity(&enemyBullets[i]);
     }
     killGameEntity(&chargedBullet);
+    killBones();
     bulletsOnScreen = 0;
     shotByPlayer = 0;
     enemyBulletsOnScreen = 0;
@@ -77,6 +110,7 @@ void bullets_hideAll(void) {
         killGameEntity(&enemyBullets[i]);
     }
     killGameEntity(&chargedBullet);
+    killBones();
     bulletsOnScreen = 0;
     shotByPlayer = 0;
     enemyBulletsOnScreen = 0;
@@ -87,6 +121,7 @@ void bullets_clearEnemy(void) {
     for (i = 0; i < MAX_ENEMY_BULLETS; i++) {
         killGameEntity(&enemyBullets[i]);
     }
+    killBones();
     enemyBulletsOnScreen = 0;
     shotTicker = 0;
 }
@@ -117,6 +152,18 @@ void bullets_update(void) {
             if (bllt->y > BOTTOM_EDGE || bllt->x < LEFT_EDGE - 8 || bllt->x > RIGHT_EDGE) {
                 killGameEntity(bllt);
                 enemyBulletsOnScreen--;
+            } else {
+                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+            }
+        }
+    }
+    for (i = 0; i < MAX_BOSS_BONES; i++)
+    {
+        bllt = &bones[i];
+        if (bllt->health > 0) {
+            bllt->y += bllt->vely;
+            if (bllt->y > BOTTOM_EDGE) {
+                killGameEntity(bllt);
             } else {
                 SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
             }
@@ -249,6 +296,43 @@ u16 bullets_shootEnemyXYV(s16 x, s16 y, s16 vx, s16 vy) {
         }
     }
     return 0;
+}
+
+u16 bullets_shootBone(s16 x, s16 y) {
+    const DifficultyConfig* cfg = difficulty_config();
+    s16 vy = (s16)cfg->bulletSpeed - BOSS_BONE_SLOWER;
+    u16 i;
+
+    if (vy < 1) vy = 1;
+    for (i = 0; i < MAX_BOSS_BONES; i++) {
+        GameEntity* b = &bones[i];
+        if (b->health == 0) {
+            b->x = x;
+            b->y = y;
+            b->velx = 0;
+            b->vely = vy;
+            loadBonePal(DMA);
+            reviveGameEntity(b);
+            SPR_setPosition(b->sprite, b->x, b->y);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+GameEntity* bullets_boneAt(u16 i) {
+    return &bones[i];
+}
+
+void bullets_boneHitbox(GameEntity* bone, GameEntity* out) {
+    out->x = bone->x + BOSS_BONE_HIT_OX;
+    out->y = bone->y + BOSS_BONE_HIT_OY;
+    out->w = BOSS_BONE_HIT_W;
+    out->h = BOSS_BONE_HIT_H;
+}
+
+void bullets_despawnBone(GameEntity* b) {
+    killGameEntity(b);
 }
 
 void bullets_tickShot(void) {

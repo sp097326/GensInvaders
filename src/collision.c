@@ -168,6 +168,25 @@ u16 collision_update(int* score) {
                 }
             }
         }
+
+        /* Boss bones: the shield does NOT stop them (they pass through the
+         * bubble), only dodging works. Only the reduced 40x8 hitbox counts,
+         * so grazing the edge of the 48x16 art is safe. */
+        for (i = 0; i < MAX_BOSS_BONES; i++)
+        {
+            GameEntity hit;
+
+            b = bullets_boneAt(i);
+            if (b->health == 0 || p->health == 0) continue;
+            bullets_boneHitbox(b, &hit);
+            if (player_invulnTimer() == 0 && collideEntities(&hit, p)) {
+                bullets_despawnBone(b);
+                if (player_hit(*score)) {
+                    return COLLISION_GAME_OVER;
+                }
+                return COLLISION_NONE;
+            }
+        }
     }
 
     /* Invasion: overlapping a living enemy is always GAME OVER (shield and

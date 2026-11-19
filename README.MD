@@ -69,7 +69,7 @@ Los headers públicos viven en inc/; la implementación, en src/. El makefile.ge
 * collision.c/.h — revisiones AABB; balas del jugador contra enemigos, balas enemigas contra el jugador y contacto fatal de cuerpo enemigo-jugador (o una nave que llega al fondo visible).
 * title.c/.h — logo de bloques, menú, pulso dorado; GAME_VERSION bajo el logo.
 * powerups.c/.h — cápsula RapidFire y la habilidad de escudo (C; la duración y la recarga vienen de la tabla de dificultad).
-* boss.c/.h — nave nodriza en las oleadas 10, 20, 30... (500 HP, se duplica en cada regreso hasta 8000; daño en el tercio central, a toda la altura del núcleo; recorrido Lissajous en la mitad superior).
+* boss.c/.h — nave nodriza en las oleadas 10, 20, 30... (500 HP, se duplica en cada regreso hasta 8000; daño en el tercio central, a toda la altura del núcleo; recorrido Lissajous en la mitad superior; ataques: hueso de 48x16 y abanico de 3 balas).
 * game_state.c/.h — título / juego / pausa / GAME OVER / YOU WIN, manejador del control, reinicio y texto de las pantallas finales.
 * src/main.c — inicialización del toolchain, fondo de estrellas (drawStarfield + scroll vertical de offset) y el ciclo que llama a game_state_update(). El fondo de estrellas se quedó en main.c porque no había un módulo de fondo en el plan.
 
@@ -80,7 +80,7 @@ Los headers públicos viven en inc/; la implementación, en src/. El makefile.ge
 * D-pad izquierda/derecha: mueve la nave (durante el juego).
 * B: disparar (mantén ~1 s para el disparo cargado perforante; un toque corto es el disparo normal de 8x8).
 * RapidFire: recoge una cápsula "R" que cae de los enemigos destruidos (10% de probabilidad, garantizada tras 10 derribos sin cápsula; 10 s en EASY, 8 s en NORMAL/HARD). La nave se pone roja y una barra RF en la esquina inferior derecha muestra el tiempo restante. Recoger otra reinicia el temporizador. El botón A ya no lo activa.
-* Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 500 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 50+). El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo hace destellar la nave en blanco y suena un tic, un golpe en el ala solo saca chispas. Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional.
+* Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 500 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 50+). El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo tiñe la nave de rojo y suena un tic, un golpe en el ala solo saca chispas. Ataques: un hueso de 48x16 que cae recto desde la panza (zona de golpe de 40x8, para que rozarlo no te destruya; cae un poco más lento que las balas; máximo 2 en pantalla; el escudo NO lo detiene, hay que esquivarlo) y un abanico de 3 balas diagonales dirigido hacia ti (este sí lo detiene el escudo). Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional.
 * Easter egg (pantalla de título): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A desbloquea OLEADA INICIAL (1-99). Ingrésalo con el cursor en INICIAR para que LEFT/RIGHT no cambien la dificultad. Empezar en la oleada 2+ es práctica y no se guarda en el TOP 5. El desbloqueo dura hasta reiniciar (no se guarda en SRAM). En BlastEm el botón B es S y A es A.
 * A: sin uso durante el juego (RapidFire sale de una cápsula que cae). Se sigue usando en el menú de título y en la captura de iniciales.
 * C: activa el escudo si está cargado. La duración y la recarga dependen de la
@@ -95,7 +95,7 @@ Los headers públicos viven en inc/; la implementación, en src/. El makefile.ge
 * Tienes 3 naves; tras un impacto de bala la nave reaparece y parpadea ~2 s (las balas no la dañan).
 * Reglas: un impacto de bala cuesta una vida. Una nave enemiga que toca al jugador siempre es
         GAME OVER después de la explosión, aunque queden vidas o escudo (el escudo
-        sigue bloqueando balas). Si los invasores pasan sin tocarlo y llegan al
+        sigue bloqueando balas, salvo el hueso del jefe). Si los invasores pasan sin tocarlo y llegan al
         fondo de la pantalla, también es GAME OVER, para que la partida no se estanque.
 
 ## Registro de cambios
@@ -284,6 +284,11 @@ HISTORIAL:
                  segundo ataque: abanico de 3 balas dirigido al jugador, al
                  azar con más del 50% de vida y alternado con la ráfaga normal
                  con 50% o menos. V0.3.66.
+*       19/11/26 - El jefe dispara un hueso de 48x16 (sprite de Alberto,
+                 PAL1 colores 7-9) en lugar de la ráfaga de balas: zona de
+                 golpe de 40x8, cae 1 px/frame más lento que las balas,
+                 máximo 2 en pantalla y el escudo no lo detiene. El
+                 abanico no cambia. V0.3.67.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -554,7 +559,19 @@ Todo lo siguiente se hizo el 18 de noviembre de 2026. Los detalles están en `CH
 * El contenido, los comandos, las rutas, los identificadores, las versiones y las fechas no cambian. Se restauraron algunos caracteres que una edición anterior había convertido en caracteres de control en la lista de la estructura del código (`bullets.c`, `enemies.c`, `title.c`, `boot/rom_head.c`, `reviveGameEntity`, `rowsOpposite`).
 
 **Jefe: nuevo sprite y segundo disparo (18/11/2026)**
-* Sprite temporal de Alberto: es/tiles/imgboss.png, 64x56 con 2 cuadros (el fuego de los cohetes parpadea). Usa su propia paleta en PAL2 durante la oleada del jefe y al terminar se restaura la del fondo. Al golpear el núcleo el cuerpo se tiñe de rojo, porque un destello blanco no se notaba sobre el color crema.
+* Sprite temporal de Alberto: `res/tiles/imgboss.png`, 64x56 con 2 cuadros (el fuego de los cohetes parpadea). Usa su propia paleta en PAL2 durante la oleada del jefe y al terminar se restaura la del fondo. Al golpear el núcleo el cuerpo se tiñe de rojo, porque un destello blanco no se notaba sobre el color crema.
 * Hitbox: solo el cuerpo central (24x40, desplazado 20,8) recibe daño; los cohetes bloquean los disparos. El recorrido vertical se redujo (Y 28 a 56) porque el sprite mide más del doble de alto.
-* Segundo ataque: abanico de 3 balas diagonales dirigido hacia el jugador. Con más del 50% de vida sale al azar (1 de cada 4 disparos); con 50% o menos alterna siempre con la ráfaga normal. Para esto las balas enemigas ahora tienen velocidad horizontal (ullets_shootEnemyXYV). Los ajustes están en BOSS_FAN_* en inc/config.h.
+* Segundo ataque: abanico de 3 balas diagonales dirigido hacia el jugador. Con más del 50% de vida sale al azar (1 de cada 4 disparos); con 50% o menos alterna siempre con la ráfaga normal. Para esto las balas enemigas ahora tienen velocidad horizontal (`bullets_shootEnemyXYV`). Los ajustes están en BOSS_FAN_* en inc/config.h.
 * Pendiente: sprites propios para los disparos del jefe.
+
+## Bitácora de trabajo - 19/11/2026 (con Bimo)
+Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles están en `CHANGELOG.md`.
+
+**Jefe: el hueso reemplaza a la ráfaga (19/11/2026)**
+* La ráfaga de balas de 8x8 que el jefe repartía bajo la panza ahora es un solo hueso de 48x16 (`res/tiles/imgbone.png`, arte de Alberto) que cae recto, centrado bajo el jefe (x = boss.x + 8, el mismo ancho que cubría la ráfaga). El abanico de 3 balas y la forma de alternarlos no cambian.
+* Zona de golpe de 40x8 centrada en el dibujo (desplazamiento 4,4): rozar la orilla del hueso no destruye la nave.
+* Cae 1 px/frame más lento que las balas enemigas de la oleada (mínimo 1), porque una barra sólida no deja huecos. Hay máximo 2 huesos en pantalla a la vez.
+* El escudo NO detiene el hueso (decisión de Alberto): lo atraviesa y, si la zona de 40x8 toca la nave, cuesta una vida. Las balas normales y el abanico se siguen deteniendo con el escudo. Los disparos del jugador no lo afectan.
+* Paleta: el hueso usa PAL1 con sus colores en los espacios libres 7-9 (el fondo solo usa 0-6), así que se ve con sus colores reales y el destello rojo del jefe (colores 1-3 de PAL2) no lo pinta.
+* Se borra junto con las balas enemigas al cambiar de oleada, al morir el jefe, en GAME OVER y al reiniciar. Cada hueso usa 2 sprites de hardware y 12 tiles de VRAM.
+* Pendiente: el sprite todavía dice "BONE"; se cambia por el definitivo con las mismas medidas.

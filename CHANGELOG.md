@@ -3,16 +3,67 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-19 - El jefe dispara un hueso en lugar de la ráfaga (AMH + Bimo) - V0.3.67
+
+### Cambiado
+- Ataque principal del jefe ("La Cookie"): la ráfaga de balas de 8x8
+  repartidas bajo la panza (`fireVolley`) se reemplaza por un solo hueso
+  de 48x16 (`fireBone`) que cae en línea recta, centrado bajo el jefe
+  (x = boss.x + 8, el mismo ancho que cubría la ráfaga). El abanico de 3
+  balas diagonales no cambia, ni la lógica que los alterna (al azar con
+  más del 50% de vida, alternado con 50% o menos). El campo
+  `bossShotsPerVolley` de la tabla de dificultad ya no lo usa el jefe.
+- Zona de golpe del hueso más chica que el dibujo: 40x8 centrada dentro
+  de los 48x16 (desplazamiento 4,4), para que rozar la orilla no destruya
+  la nave.
+- Cae 1 px/frame más lento que las balas enemigas de la oleada
+  (`bulletSpeed - 1`, mínimo 1), porque una barra sólida de 48 px no deja
+  huecos para pasar. Máximo 2 huesos en pantalla (`MAX_BOSS_BONES`); si
+  ya hay 2, ese ataque no sale.
+- El escudo (C) NO detiene el hueso: lo atraviesa y, si la zona de 40x8
+  toca la nave, cuesta una vida igual que una bala (decisión de Alberto).
+  Las balas normales de 8x8 se siguen deteniendo con el escudo. Los
+  disparos del jugador no interactúan con el hueso (igual que con las
+  balas enemigas). La invulnerabilidad tras reaparecer sí protege.
+- Los huesos se borran junto con las balas enemigas: al cambiar de
+  oleada (incluida la muerte del jefe), en GAME OVER / regreso al título
+  y al reiniciar partida (`bullets_clearEnemy`, `bullets_hideAll`,
+  `bullets_reset`).
+
+### Agregado
+- `res/tiles/imgbone.png`: sprite del hueso de Alberto (48x16, indexado,
+  2 sprites de hardware y 12 tiles de VRAM por hueso). En
+  `res/resources.res`: `SPRITE bossbone "tiles/imgbone.png" 6 2 FAST 0`.
+- Paleta: el hueso usa PAL1 con sus 3 colores en los espacios libres 7-9
+  (`space.bmp` solo usa 0-6 y ningún otro sprite usa 7-15). El PNG está
+  indexado en 7-9 y `loadBonePal` copia esos colores a PAL1 al iniciar y
+  en cada disparo. Así se ve con sus colores reales y no se pinta de rojo
+  con el destello del jefe, que solo toca los colores 1-3 de PAL2.
+- `inc/config.h`: `BOSS_BONE_W/H`, `BOSS_BONE_HIT_OX/OY/W/H`,
+  `BOSS_BONE_SLOWER`, `MAX_BOSS_BONES`, `BOSS_BONE_PAL_FIRST/COUNT`.
+- `bullets.c/.h`: `bullets_shootBone`, `bullets_boneAt`,
+  `bullets_boneHitbox`, `bullets_despawnBone`.
+
+### Corregido
+- En la entrada del 18/11 de este CHANGELOG y en la bitácora de ambos
+  README había letras convertidas en caracteres de control (`res/...`,
+  `applyBossPal`, `boss_hide`, `bullets_shootEnemyXYV`, `velx`); se
+  restauraron.
+
+### Pendiente
+- El sprite todavía dice "BONE": se verá así en el juego hasta que llegue
+  el arte definitivo (mismas medidas, 48x16).
+
 ## 2026-11-18 - Nuevo sprite del jefe y segundo disparo en abanico (AMH + Bimo) - V0.3.66
 
 ### Cambiado
 - Sprite del jefe (nave nodriza): nuevo arte temporal de Alberto,
-  es/tiles/imgboss.png (indexado, 16 colores, 2 cuadros de 64x56; el
+  `res/tiles/imgboss.png` (indexado, 16 colores, 2 cuadros de 64x56; el
   segundo intercambia los tonos del fuego para que las llamas parpadeen).
-  Se eliminó es/tiles/imgboss.bmp. En es/resources.res:
+  Se eliminó `res/tiles/imgboss.bmp.` En `res/resources.res`:
   SPRITE mothership "tiles/imgboss.png" 8 7 FAST 0.
 - El jefe carga su propia paleta en PAL2 durante su oleada
-  (pplyBossPal); oss_hide regresa la paleta del fondo para la
+  (`applyBossPal`); `boss_hide` regresa la paleta del fondo para la
   formación.
 - Al recibir un golpe en el núcleo, el cuerpo se tiñe de rojo (colores
   33-35 a 0xFC6C6C) en lugar de blanco, porque el cuerpo crema hacía
@@ -29,9 +80,9 @@ Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
   elige al azar (1 de cada BOSS_FAN_CHANCE = 4 disparos); con 50% o
   menos alterna siempre con la ráfaga normal. Ajustes en config.h:
   BOSS_FAN_CHANCE, BOSS_FAN_SPREAD, BOSS_FAN_AIM_ZONE.
-- ullets_shootEnemyXYV(x, y, vx, vy): bala enemiga con velocidad
-  horizontal. Las balas enemigas ahora suman elx y desaparecen al
-  salir por los bordes laterales; los disparos existentes usan elx = 0.
+- `bullets_shootEnemyXYV`(x, y, vx, vy): bala enemiga con velocidad
+  horizontal. Las balas enemigas ahora suman `velx` y desaparecen al
+  salir por los bordes laterales; los disparos existentes usan `velx` = 0.
 
 ### Pendiente
 - Sprites propios para los disparos del jefe (los está haciendo el

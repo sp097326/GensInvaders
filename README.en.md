@@ -69,7 +69,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * collision.c/.h — AABB checks; player bullets vs enemies, enemy bullets vs the player, and fatal enemy-player body contact (or a ship reaching the visible bottom).
 * title.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
 * powerups.c/.h — RapidFire capsule pickup and the Shield ability (C; duration and recharge come from the difficulty table).
-* boss.c/.h — mothership on waves 10, 20, 30... (500 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half).
+* boss.c/.h — mothership on waves 10, 20, 30... (500 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half; attacks: 48x16 bone and 3-bullet fan).
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
 * src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
 
@@ -80,7 +80,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * D-pad left/right: move the ship (during play).
 * B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
 * RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
-* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit flashes the ship white and plays a tick, a wing hit only sparks. It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
+* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls a bit slower than bullets; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
 * Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
 * A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
 * C: activate the shield if it is charged. Duration and recharge depend on
@@ -95,7 +95,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * You get 3 ships; after a bullet hit the ship respawns and blinks for ~2 s (can't be hit by bullets).
 * Rules: a bullet hit costs one life. An enemy ship touching the player is always
         GAME OVER after the explosion, even with lives or a shield left (the shield
-        still blocks bullets). If invaders slip past without touching and reach the
+        still blocks bullets, except the boss bone). If invaders slip past without touching and reach the
         bottom of the screen, that is also GAME OVER, so the match cannot stall.
 
 ## Change log
@@ -284,6 +284,11 @@ HISTORY:
                  a 3-bullet fan aimed at the player, random above 50% HP
                  and alternating with the normal volley at 50% or less.
                  V0.3.66.
+*       19/11/26 - The boss fires a 48x16 bone (Alberto's sprite, PAL1
+                 colours 7-9) instead of the bullet volley: 40x8 hitbox,
+                 falls 1 px/frame slower than bullets, at most 2 on screen
+                 and the shield does not stop it. The fan is unchanged.
+                 V0.3.67.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -554,7 +559,19 @@ Everything below was done on Nov 18, 2026. Details are in `CHANGELOG.md`.
 * Content, commands, paths, identifiers, versions and dates are unchanged. A few characters that an earlier edit had turned into control characters in the code-structure list (`bullets.c`, `enemies.c`, `title.c`, `boot/rom_head.c`, `reviveGameEntity`, `rowsOpposite`) were restored.
 
 **Boss: new sprite and second attack (18/11/2026)**
-* Temporary art from Alberto: es/tiles/imgboss.png, 64x56 with 2 frames (the rocket flames flicker). It loads its own palette into PAL2 during the boss wave and the background palette is restored afterwards. A core hit tints the body red, because a white flash did not show on the cream body.
+* Temporary art from Alberto: `res/tiles/imgboss.png`, 64x56 with 2 frames (the rocket flames flicker). It loads its own palette into PAL2 during the boss wave and the background palette is restored afterwards. A core hit tints the body red, because a white flash did not show on the cream body.
 * Hitbox: only the central body (24x40 at offset 20,8) takes damage; the rockets block shots. The vertical roam was reduced (Y 28 to 56) because the sprite is more than twice as tall.
-* Second attack: a fan of 3 diagonal bullets aimed toward the player. Above 50% HP it is picked at random (1 in 4 volleys); at 50% or less it always alternates with the normal volley. Enemy bullets now have horizontal speed (ullets_shootEnemyXYV). Tuning lives in BOSS_FAN_* in inc/config.h.
+* Second attack: a fan of 3 diagonal bullets aimed toward the player. Above 50% HP it is picked at random (1 in 4 volleys); at 50% or less it always alternates with the normal volley. Enemy bullets now have horizontal speed (`bullets_shootEnemyXYV`). Tuning lives in BOSS_FAN_* in inc/config.h.
 * To do: dedicated sprites for the boss shots.
+
+## Work log - 19/11/2026 (with Bimo)
+Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.md`.
+
+**Boss: the bone replaces the volley (19/11/2026)**
+* The row of 8x8 bullets the boss spread under its belly is now a single 48x16 bone (`res/tiles/imgbone.png`, Alberto's art) that falls straight down, centred under the boss (x = boss.x + 8, the same width the volley covered). The 3-bullet fan and the way the two attacks alternate are unchanged.
+* 40x8 hitbox centred in the art (offset 4,4): grazing the edge of the bone does not destroy the ship.
+* It falls 1 px/frame slower than the wave's enemy bullets (minimum 1), because a solid bar has no gaps. At most 2 bones are on screen at once.
+* The shield does NOT stop the bone (Alberto's call): it passes through and, if the 40x8 hitbox touches the ship, it costs a life. Normal bullets and the fan are still stopped by the shield. Player shots do not affect it.
+* Palette: the bone uses PAL1 with its colours in the free slots 7-9 (the background only uses 0-6), so it shows its real colours and the boss red hit tint (PAL2 colours 1-3) does not touch it.
+* It is cleared with the enemy bullets on wave change, boss death, GAME OVER and reset. Each bone uses 2 hardware sprites and 12 VRAM tiles.
+* To do: the sprite still reads "BONE"; it will be swapped for the final art at the same size.
