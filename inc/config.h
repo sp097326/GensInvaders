@@ -48,10 +48,11 @@
 #define SFX_BOSS_DIE 76      /* heavier boom on death, CH2 */
 
 /* Mothership boss: first appears on wave 10, then every 10 waves.
- * HP starts at 500 and doubles each return, capped so the bar and u16 stay safe. */
+ * HP starts at 350 (500 until V0.3.69) and doubles each return, capped so
+ * the bar and u16 stay safe. */
 #define BOSS_WAVE_EVERY      10
-#define BOSS_HP_BASE        500
-#define BOSS_HP_CAP        8000  /* wave 50+: 500, 1000, 2000, 4000, 8000 */
+#define BOSS_HP_BASE        350
+#define BOSS_HP_CAP        8000  /* 350, 700, 1400, 2800, 5600, then 8000 from wave 60 */
 #define BOSS_CHARGED_MULT     3  /* charged bolt deals 3x a normal hit */
 #define BOSS_W               64
 #define BOSS_H               56

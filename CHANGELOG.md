@@ -3,6 +3,48 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-19 - Revisión de dificultad: rampa más suave, jefe con 350 HP y ciclos de 10 oleadas (AMH + Bimo) - V0.3.69
+
+### Cambiado
+- Rampa de las oleadas 1-9 más suave en las tres dificultades
+  (`waveTuneTable` en `src/difficulty.c`): velocidad, tamaño de ráfaga,
+  límite de balas y velocidad de bala suben cada 4 oleadas en vez de 3
+  (en HARD la ráfaga sube cada 3 en vez de 2). El intervalo entre ráfagas
+  baja más despacio: EASY 10 -> 5, NORMAL 10 -> 6 y HARD 10 -> 3 frames
+  por oleada (mismos mínimos: 45 / 40 / 30). El descenso sube un paso
+  más tarde: NORMAL cada 5 oleadas (antes 4) y HARD cada 6 (antes 5).
+  En NORMAL, la oleada 9 queda como la 6-7 de antes (velocidad 3, 4
+  disparos, intervalo 72, bala 7, paso 12; antes todo estaba al máximo:
+  intervalo 40 y paso 16).
+- La Cookie: 350 HP en su primera aparición (antes 500), unos 18 impactos
+  al núcleo en NORMAL. Se sigue duplicando en cada regreso: 350, 700,
+  1400, 2800, 5600 y 8000 desde la oleada 60 (`BOSS_HP_BASE`).
+- Ciclos de 10 oleadas: después de cada jefe la dificultad de la
+  formación baja y vuelve a subir. Se calcula una oleada efectiva
+  `pos + 3 * ciclo` (ciclo = (oleada-1)/10, pos = (oleada-1)%10 + 1,
+  tope 40): la 11 se juega como la 4, la 21 como la 7, la 31 como la 10.
+  El número de aparición del jefe, sus HP, el texto OLEADA y el TOP 5 usan
+  la oleada real; los datos del jefe (daño, velocidad, intervalo, puntos)
+  no cambian. No hay tercera fila ni cambios en el movimiento (las
+  variantes de la oleada 11 quedan para después).
+
+### Tabla NORMAL (oleadas 1-12)
+
+| Oleada | Efectiva | Velocidad | Disparos | Intervalo | Bala | Paso |
+|---|---|---|---|---|---|---|
+| 1 | 1 | 1 | 2 | 120 | 5 | 8 |
+| 2 | 2 | 1 | 2 | 114 | 5 | 8 |
+| 3 | 3 | 1 | 2 | 108 | 5 | 8 |
+| 4 | 4 | 1 | 2 | 102 | 5 | 8 |
+| 5 | 5 | 2 | 3 | 96 | 6 | 8 |
+| 6 | 6 | 2 | 3 | 90 | 6 | 12 |
+| 7 | 7 | 2 | 3 | 84 | 6 | 12 |
+| 8 | 8 | 2 | 3 | 78 | 6 | 12 |
+| 9 | 9 | 3 | 4 | 72 | 7 | 12 |
+| 10 (jefe) | 10 | 3 | 4 | 66 | 7 | 12 |
+| 11 | 4 | 1 | 2 | 102 | 5 | 8 |
+| 12 | 5 | 2 | 3 | 96 | 6 | 8 |
+
 ## 2026-11-19 - Hueso del jefe más lento (AMH + Bimo) - V0.3.68
 
 ### Cambiado

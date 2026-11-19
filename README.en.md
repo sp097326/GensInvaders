@@ -69,7 +69,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * collision.c/.h — AABB checks; player bullets vs enemies, enemy bullets vs the player, and fatal enemy-player body contact (or a ship reaching the visible bottom).
 * title.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
 * powerups.c/.h — RapidFire capsule pickup and the Shield ability (C; duration and recharge come from the difficulty table).
-* boss.c/.h — mothership on waves 10, 20, 30... (500 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half; attacks: 48x16 bone and 3-bullet fan).
+* boss.c/.h — mothership on waves 10, 20, 30... (350 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half; attacks: 48x16 bone and 3-bullet fan).
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
 * src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
 
@@ -80,7 +80,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * D-pad left/right: move the ship (during play).
 * B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
 * RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
-* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls slower than bullets, by 2 px/frame; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
+* Boss: waves 10, 20, 30... replace the two rows with a mothership. 350 HP on the first visit, doubling each return up to 8000 (wave 60+). After each boss the formation difficulty drops and climbs again (10-wave cycles: wave 11 plays like wave 4). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls slower than bullets, by 2 px/frame; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
 * Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
 * A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
 * C: activate the shield if it is charged. Duration and recharge depend on
@@ -291,6 +291,10 @@ HISTORY:
                  V0.3.67.
 *       19/11/26 - Slower bone after Alberto's playtest: it falls 2 px/frame
                  slower than bullets (was 1), 3-5 px/frame. V0.3.68.
+*       19/11/26 - Difficulty review: gentler ramp (steps every 4 waves,
+                 slower interval decrease), La Cookie at 350 HP and
+                 10-wave cycles (wave 11 plays like wave 4, wave 21 like
+                 wave 7). V0.3.69.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -580,3 +584,10 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 
 **Slower bone (19/11/2026, V0.3.68)**
 * Alberto playtested it and asked to lower its speed. `BOSS_BONE_SLOWER` goes from 1 to 2: the bone falls at `bulletSpeed - 2` px/frame (minimum 1), i.e. 3-5 px/frame with bullets at 5-7 (was 4-6). Hitbox, 2-bone cap and shield behaviour are unchanged.
+
+**Difficulty review (19/11/2026, V0.3.69)**
+* Alberto found it hard to reach wave 10 and had not beaten La Cookie: on NORMAL everything stepped up every 3 waves and was maxed by wave 9 (speed 3, 4 shots every 40 frames, bullet 7, step 16).
+* Gentler ramp on all three difficulties: speed, volley, bullet cap and bullet speed step up every 4 waves (HARD: volley every 3 instead of 2); the interval drops 5 / 6 / 3 frames per wave on EASY / NORMAL / HARD (was 10); descent steps up every 5 waves on NORMAL and every 6 on HARD. On NORMAL wave 9 now plays like the old wave 6-7 (3 / 4 / 72 / 7 / 12).
+* La Cookie starts at 350 HP (was 500) and still doubles: 350, 700, 1400, 2800, 5600 and 8000 from wave 60.
+* 10-wave cycles: the formation uses an effective wave `pos + 3 * cycle` (capped at 40), so the difficulty drops after each boss: wave 11 plays like wave 4, wave 21 like wave 7, wave 31 like wave 10. The boss, its HP, the OLEADA text and the TOP 5 use the real wave. The NORMAL table for waves 1-12 is in `CHANGELOG.md` and in a comment in `src/difficulty.c`.
+* To do: wave 11 variants (rows moving together or a third row).
