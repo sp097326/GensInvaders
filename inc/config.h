@@ -7,9 +7,17 @@
 /* Enemy formation: two rows of 7, moving as one group (or opposite on
  * NORMAL/HARD). Each 16x16 ship uses 4 hardware sprites (2 per scanline).
  * Rows are spaced so they never share a scanline (20-sprite/line limit). */
-#define ENEMY_ROWS 2
+/* ENEMY_ROWS is the most rows any wave can use (all sprites are created
+ * at boot). Which rows/columns a wave actually fills comes from
+ * enemies_rowMaskForWave() in enemies.c: waves 11-19 add a staggered
+ * third row (columns 0, 2, 4, 6); every other wave uses 2 full rows. */
+#define ENEMY_ROWS 3
 #define ENEMIES_PER_ROW 7
 #define MAX_ENEMIES (ENEMY_ROWS * ENEMIES_PER_ROW)
+#define ENEMY_ROW_FULL      0x7F  /* columns 0-6 */
+#define ENEMY_ROW_STAGGER   0x55  /* columns 0, 2, 4, 6 */
+#define STAGGER_ROW_FIRST_WAVE 11
+#define STAGGER_ROW_LAST_WAVE  19
 #define ENEMY_COL_SPACING 32
 #define ENEMY_ROW_SPACING 24    /* 16 px sprite + 8 px gap; rows do not overlap */
 #define ENEMY_START_Y 32
@@ -138,7 +146,11 @@
 #define STAR_SPEED_NORMAL       2
 #define STAR_SPEED_WARP        14
 #define WAVE_WARP_LIFT          8  /* pixels the ship rises during the boost */
-#define WAVE_WARP_ENTER        80  /* both rows start fully above the screen */
+#define WAVE_WARP_ENTER        80  /* boss slide-in offset (unchanged) */
+/* Formation slide-in offset: every row (up to ENEMY_ROWS) starts fully
+ * above the screen. 32 + 3 * 24 = 104, so the third row (home y 80)
+ * starts at y -24. */
+#define ENEMY_WARP_ENTER       (ENEMY_START_Y + ENEMY_ROWS * ENEMY_ROW_SPACING)
 /* Kept as aliases so older comments still read; the warp timer is what is used. */
 #define WAVE_BANNER_FRAMES_NTSC WAVE_WARP_FRAMES_NTSC
 #define WAVE_BANNER_FRAMES_PAL  WAVE_WARP_FRAMES_PAL

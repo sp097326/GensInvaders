@@ -17,7 +17,9 @@ typedef struct
 
 static const EnemyRowType enemyRows[ENEMY_ROWS] = {
     { &ship, PAL2, TRUE },  /* top row: original colors */
-    { &ship, PAL3, TRUE }   /* bottom row: green/yellow tint */
+    { &ship, PAL3, TRUE },  /* second row: green/yellow tint */
+    { &ship, PAL2, TRUE }   /* third row (waves 11-19, staggered): original
+                             * colors for now; a dedicated ship may come later */
 };
 
 static GameEntity enemies[MAX_ENEMIES];
@@ -272,12 +274,29 @@ u16 enemies_update() {
     if (!exploding) enemiesTryShoot();
     return 0;
 }
-/* Puts every enemy back in its starting slot (used at boot and on restart). */
+/* Row layout per wave. Rows 0-1 are always full. Row 2 is a staggered
+ * row (columns 0, 2, 4, 6, aligned with the rows above so the column
+ * based targeting is unchanged) on waves 11-19, and empty otherwise.
+ * Boss waves never place the formation. To give wave 21+ a full third
+ * row later, return ENEMY_ROW_FULL for row 2 there. */
+u16 enemies_rowMaskForWave(u16 wave, u16 row) {
+    if (row < 2) return ENEMY_ROW_FULL;
+    if (row == 2 && wave >= STAGGER_ROW_FIRST_WAVE && wave <= STAGGER_ROW_LAST_WAVE) {
+        return ENEMY_ROW_STAGGER;
+    }
+    return 0;
+}
+
+/* Puts every enemy back in its starting slot (used at boot and on restart).
+ * Only the slots in this wave's layout are revived and counted; the rest
+ * stay hidden with health 0, so every loop that checks health ignores them. */
 static void placeEnemies() {
-    u16 row, col, i;
+    u16 row, col, i, mask;
     GameEntity* enem;
+    u16 wave = difficulty_wave();
     enemiesLeft = 0;
     for (row = 0; row < ENEMY_ROWS; row++) {
+        mask = enemies_rowMaskForWave(wave, row);
         for (col = 0; col < ENEMIES_PER_ROW; col++) {
             i = row * ENEMIES_PER_ROW + col;
             enem = &enemies[i];
@@ -291,9 +310,13 @@ static void placeEnemies() {
             if ((*difficulty_config()).rowsOpposite && (row & 1)) {
                 enem->x += (RIGHT_EDGE - ((ENEMIES_PER_ROW - 1) * ENEMY_COL_SPACING + enem->w));
             }
-            reviveGameEntity(enem);
             SPR_setPosition(enem->sprite, enem->x, enem->y);
-            enemiesLeft++;
+            if (mask & (1 << col)) {
+                reviveGameEntity(enem);
+                enemiesLeft++;
+            } else {
+                killGameEntity(enem);
+            }
         }
     }
 }
@@ -320,7 +343,12 @@ void enemies_init() {
             enem->sprite = SPR_addSprite(type->spriteDef, enem->x, enem->y,
                 TILE_ATTR(type->palette, 0, type->vFlip, FALSE));
             sprintf(enem->name, "En%d", i);
-            enemiesLeft++;
+            /* Slots outside the wave-1 layout (the third row) start hidden. */
+            if (enemies_rowMaskForWave(1, row) & (1 << col)) {
+                enemiesLeft++;
+            } else {
+                killGameEntity(enem);
+            }
         }
     }
 }

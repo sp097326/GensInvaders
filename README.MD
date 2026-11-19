@@ -80,7 +80,7 @@ Los headers públicos viven en inc/; la implementación, en src/. El makefile.ge
 * D-pad izquierda/derecha: mueve la nave (durante el juego).
 * B: disparar (mantén ~1 s para el disparo cargado perforante; un toque corto es el disparo normal de 8x8).
 * RapidFire: recoge una cápsula "R" que cae de los enemigos destruidos (10% de probabilidad, garantizada tras 10 derribos sin cápsula; 10 s en EASY, 8 s en NORMAL/HARD). La nave se pone roja y una barra RF en la esquina inferior derecha muestra el tiempo restante. Recoger otra reinicia el temporizador. El botón A ya no lo activa.
-* Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 350 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 60+). Después de cada jefe la dificultad de la formación baja y vuelve a subir (ciclos de 10 oleadas: la 11 se juega como la 4). El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo tiñe la nave de rojo y suena un tic, un golpe en el ala solo saca chispas. Ataques: un hueso de 48x16 que cae recto desde la panza (zona de golpe de 40x8, para que rozarlo no te destruya; cae más lento que las balas, 2 px/frame menos; máximo 2 en pantalla; el escudo NO lo detiene, hay que esquivarlo) y un abanico de 3 balas diagonales dirigido hacia ti (este sí lo detiene el escudo). Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional.
+* Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 350 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 60+). Después de cada jefe la dificultad de la formación baja y vuelve a subir (ciclos de 10 oleadas: la 11 se juega como la 4). En las oleadas 11 a 19 hay una tercera fila intercalada de 4 naves. El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo tiñe la nave de rojo y suena un tic, un golpe en el ala solo saca chispas. Ataques: un hueso de 48x16 que cae recto desde la panza (zona de golpe de 40x8, para que rozarlo no te destruya; cae más lento que las balas, 2 px/frame menos; máximo 2 en pantalla; el escudo NO lo detiene, hay que esquivarlo) y un abanico de 3 balas diagonales dirigido hacia ti (este sí lo detiene el escudo). Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional.
 * Easter egg (pantalla de título): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A desbloquea OLEADA INICIAL (1-99). Ingrésalo con el cursor en INICIAR para que LEFT/RIGHT no cambien la dificultad. Empezar en la oleada 2+ es práctica y no se guarda en el TOP 5. El desbloqueo dura hasta reiniciar (no se guarda en SRAM). En BlastEm el botón B es S y A es A.
 * A: sin uso durante el juego (RapidFire sale de una cápsula que cae). Se sigue usando en el menú de título y en la captura de iniciales.
 * C: activa el escudo si está cargado. La duración y la recarga dependen de la
@@ -295,6 +295,9 @@ HISTORIAL:
                  oleadas, intervalo baja más lento), La Cookie con 350 HP
                  y ciclos de 10 oleadas (la 11 se juega como la 4, la 21
                  como la 7). V0.3.69.
+*       19/11/26 - Oleadas 11-19: tercera fila intercalada de 4 naves
+                 (columnas 0, 2, 4, 6; 18 naves en total). ENEMY_ROWS 3,
+                 acomodo por oleada con enemies_rowMaskForWave. V0.3.70.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -591,3 +594,10 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 * La Cookie arranca con 350 HP (antes 500) y se sigue duplicando: 350, 700, 1400, 2800, 5600 y 8000 desde la oleada 60.
 * Ciclos de 10 oleadas: la formación usa una oleada efectiva `pos + 3 * ciclo` (tope 40), así que después de cada jefe baja la dificultad: la 11 se juega como la 4, la 21 como la 7, la 31 como la 10. El jefe, sus HP, el texto OLEADA y el TOP 5 usan la oleada real. La tabla de NORMAL para las oleadas 1-12 está en `CHANGELOG.md` y en un comentario de `src/difficulty.c`.
 * Pendiente: variantes de la oleada 11 (filas parejas o tercera fila).
+
+**Tercera fila intercalada en las oleadas 11-19 (19/11/2026, V0.3.70)**
+* Se revisó el presupuesto de sprites: hoy se reservan 48 de 80 sprites de hardware y 197 de 420 tiles; cada fila va en sus propias líneas (separación de 24 px), así que una fila más no empeora el límite de 20 sprites por línea. Con la tercera fila: 55 de 80 y 225 tiles.
+* Alberto eligió para la 11 una fila intercalada de 4 naves alineada con las columnas 0, 2, 4 y 6, de modo que la lógica de disparo por columna no cambia. Va de la oleada 11 a la 19; las oleadas 1-9, las de jefe y la 21+ siguen con 2 filas (la fila completa de la 21 queda para después).
+* `ENEMY_ROWS` pasa a 3 y `enemies_rowMaskForWave(wave, row)` define qué columnas tiene cada fila por oleada. Las naves fuera del acomodo quedan ocultas con vida 0 y no cuentan en el HUD ni para terminar la oleada.
+* La formación entra durante el warp desde 104 px arriba (`ENEMY_WARP_ENTER`) para que la tercera fila no aparezca ya visible; el jefe sigue usando 80.
+* Impacto: 18 naves en lugar de 14; la fila de abajo arranca 24 px más cerca, así que la invasión llega un par de pasos antes (en la 11 la velocidad es 1). El tope de balas no cambia.

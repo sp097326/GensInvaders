@@ -312,7 +312,7 @@ static void startNextWave(void) {
         boss_beginEnter(WAVE_WARP_ENTER);
     } else {
         boss_hide();
-        enemies_beginEnter(WAVE_WARP_ENTER);
+        enemies_beginEnter(ENEMY_WARP_ENTER);
     }
     player_chargeCancel();
     player_setWarpFlame(1);
@@ -351,7 +351,7 @@ static void updateWaveWarp(void) {
         if (boss_isWave(difficulty_wave())) {
             boss_advanceEnter(wavePauseTimer, warpArrive, WAVE_WARP_ENTER);
         } else {
-            enemies_advanceEnter(wavePauseTimer, warpArrive, WAVE_WARP_ENTER);
+            enemies_advanceEnter(wavePauseTimer, warpArrive, ENEMY_WARP_ENTER);
         }
         if (wavePauseTimer < (warpArrive / 5)) {
             player_setWarpFlame(0);
@@ -370,7 +370,7 @@ static void finishWavePause(void) {
     if (boss_isWave(difficulty_wave())) {
         boss_advanceEnter(0, 1, WAVE_WARP_ENTER);
     } else {
-        enemies_advanceEnter(0, 1, WAVE_WARP_ENTER);
+        enemies_advanceEnter(0, 1, ENEMY_WARP_ENTER);
     }
     stopWaveWarp();
     clearEndScreen();

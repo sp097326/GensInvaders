@@ -12,6 +12,9 @@ void enemies_advanceEnter(u16 remain, u16 total, u16 offset);
 void enemies_hideAll(void);
 u16  enemies_update(void);
 void enemies_setRowPalettes(void);
+/* Column bitmask (bit c = column c) of the ships row `row` has on `wave`.
+ * 0 = row unused. Waves 11-19: rows 0-1 full + staggered row 2. */
+u16  enemies_rowMaskForWave(u16 wave, u16 row);
 
 GameEntity* enemies_at(u16 i);
 u16 enemies_left(void);

@@ -3,6 +3,41 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-19 - Tercera fila intercalada en las oleadas 11-19 (AMH + Bimo) - V0.3.70
+
+### Agregado
+- Oleadas 11 a 19: una tercera fila intercalada de 4 naves, alineada con
+  las columnas 0, 2, 4 y 6 de las filas de arriba (18 naves en total en
+  lugar de 14). Usa la misma nave y la paleta original (PAL2) por ahora;
+  la fila de en medio sigue teñida (PAL3). Las oleadas 1-9, las de jefe y
+  la 21 en adelante siguen con 2 filas (la fila completa de la 21 queda
+  para después).
+- `enemies_rowMaskForWave(wave, row)`: regresa la máscara de columnas de
+  cada fila por oleada (`ENEMY_ROW_FULL` 0x7F, `ENEMY_ROW_STAGGER` 0x55).
+  Para dar a la 21 una tercera fila completa basta con regresar 0x7F para
+  la fila 2 en esas oleadas.
+
+### Cambiado
+- `ENEMY_ROWS` 2 -> 3 (`MAX_ENEMIES` 21). Los 21 sprites se crean al
+  arrancar (55 de 80 sprites de hardware, 225 de 420 tiles de VRAM); solo
+  se reviven y cuentan en el HUD las naves del acomodo de la oleada, y las
+  demás quedan ocultas con vida 0, así que disparos, colisiones, invasión
+  y fin de oleada las ignoran.
+- Entrada de la formación durante el warp: `ENEMY_WARP_ENTER` = 104
+  (32 + 3 x 24) en lugar de 80, para que la tercera fila también arranque
+  fuera de la pantalla. El jefe sigue usando `WAVE_WARP_ENTER` (80).
+- Sin cambios en el disparo: cada columna dispara desde su nave viva más
+  baja, así que en las columnas 0, 2, 4 y 6 dispara primero la tercera
+  fila. Con `rowsOpposite` la fila 2 se mueve como la fila 0 (empieza a la
+  izquierda hacia la derecha) y rebota sola. Una fila no baja si quedaría
+  a menos de 24 px de la fila viva de abajo, igual que antes.
+
+### Notas de juego
+- La fila de abajo empieza 24 px más cerca del jugador (y 80 contra 56),
+  así que la invasión llega un par de pasos antes; en la 11 la formación
+  va a velocidad 1 (oleada efectiva 4).
+- El tope de balas enemigas no cambia; solo cambia de dónde salen.
+
 ## 2026-11-19 - Revisión de dificultad: rampa más suave, jefe con 350 HP y ciclos de 10 oleadas (AMH + Bimo) - V0.3.69
 
 ### Cambiado
