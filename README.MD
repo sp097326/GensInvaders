@@ -80,7 +80,7 @@ Los headers públicos viven en inc/; la implementación, en src/. El makefile.ge
 * D-pad izquierda/derecha: mueve la nave (durante el juego).
 * B: disparar (mantén ~1 s para el disparo cargado perforante; un toque corto es el disparo normal de 8x8).
 * RapidFire: recoge una cápsula "R" que cae de los enemigos destruidos (10% de probabilidad, garantizada tras 10 derribos sin cápsula; 10 s en EASY, 8 s en NORMAL/HARD). La nave se pone roja y una barra RF en la esquina inferior derecha muestra el tiempo restante. Recoger otra reinicia el temporizador. El botón A ya no lo activa.
-* Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 500 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 50+). El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo tiñe la nave de rojo y suena un tic, un golpe en el ala solo saca chispas. Ataques: un hueso de 48x16 que cae recto desde la panza (zona de golpe de 40x8, para que rozarlo no te destruya; cae un poco más lento que las balas; máximo 2 en pantalla; el escudo NO lo detiene, hay que esquivarlo) y un abanico de 3 balas diagonales dirigido hacia ti (este sí lo detiene el escudo). Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional.
+* Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 500 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 50+). El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo tiñe la nave de rojo y suena un tic, un golpe en el ala solo saca chispas. Ataques: un hueso de 48x16 que cae recto desde la panza (zona de golpe de 40x8, para que rozarlo no te destruya; cae más lento que las balas, 2 px/frame menos; máximo 2 en pantalla; el escudo NO lo detiene, hay que esquivarlo) y un abanico de 3 balas diagonales dirigido hacia ti (este sí lo detiene el escudo). Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional.
 * Easter egg (pantalla de título): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A desbloquea OLEADA INICIAL (1-99). Ingrésalo con el cursor en INICIAR para que LEFT/RIGHT no cambien la dificultad. Empezar en la oleada 2+ es práctica y no se guarda en el TOP 5. El desbloqueo dura hasta reiniciar (no se guarda en SRAM). En BlastEm el botón B es S y A es A.
 * A: sin uso durante el juego (RapidFire sale de una cápsula que cae). Se sigue usando en el menú de título y en la captura de iniciales.
 * C: activa el escudo si está cargado. La duración y la recarga dependen de la
@@ -289,6 +289,8 @@ HISTORIAL:
                  golpe de 40x8, cae 1 px/frame más lento que las balas,
                  máximo 2 en pantalla y el escudo no lo detiene. El
                  abanico no cambia. V0.3.67.
+*       19/11/26 - Hueso más lento tras la prueba de Alberto: cae 2 px/frame
+                 más lento que las balas (antes 1), 3-5 px/frame. V0.3.68.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -575,3 +577,6 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 * Paleta: el hueso usa PAL1 con sus colores en los espacios libres 7-9 (el fondo solo usa 0-6), así que se ve con sus colores reales y el destello rojo del jefe (colores 1-3 de PAL2) no lo pinta.
 * Se borra junto con las balas enemigas al cambiar de oleada, al morir el jefe, en GAME OVER y al reiniciar. Cada hueso usa 2 sprites de hardware y 12 tiles de VRAM.
 * Pendiente: el sprite todavía dice "BONE"; se cambia por el definitivo con las mismas medidas.
+
+**Hueso más lento (19/11/2026, V0.3.68)**
+* Alberto lo probó y pidió bajarle la velocidad. `BOSS_BONE_SLOWER` pasa de 1 a 2: el hueso cae a `bulletSpeed - 2` px/frame (mínimo 1), o sea 3-5 px/frame con balas de 5-7 (antes 4-6). Zona de golpe, límite de 2 y escudo sin cambios.

@@ -72,8 +72,9 @@
 /* Main boss attack (19/11/2026): one 48x16 bone falls straight down from
  * the belly, centred (x = boss.x + 8), where the old 8x8 volley spread.
  * The hitbox is smaller than the art (40x8, centred) so a graze does not
- * kill. A solid 48 px bar has no gaps to slip through, so it falls 1
- * px/frame slower than the enemy bullets of the current wave (min 1).
+ * kill. It falls BOSS_BONE_SLOWER (2) px/frame slower than the enemy
+ * bullets of the current wave (min 1): 3-5 px/frame for bullets at 5-7
+ * (Alberto's tuning after playtesting, 19/11/2026).
  * At most 2 on screen: with one, a fast boss timer would skip attacks
  * while the previous bone is still falling. The shield does NOT stop it
  * (Alberto's call): only dodging works. Player shots ignore it. */
@@ -83,7 +84,7 @@
 #define BOSS_BONE_HIT_OY      4  /* (16-8)/2 */
 #define BOSS_BONE_HIT_W      40
 #define BOSS_BONE_HIT_H       8
-#define BOSS_BONE_SLOWER      1  /* px/frame slower than bulletSpeed */
+#define BOSS_BONE_SLOWER      2  /* px/frame slower than bulletSpeed (was 1 until V0.3.68) */
 #define MAX_BOSS_BONES        2
 /* Bone colours live in PAL1 slots 7-9: space.bmp only uses 0-6, nothing
  * else draws with 7-15, and PAL1 is never tinted by the boss hit flash

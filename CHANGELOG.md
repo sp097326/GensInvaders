@@ -3,6 +3,15 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-19 - Hueso del jefe más lento (AMH + Bimo) - V0.3.68
+
+### Cambiado
+- Tras probarlo, Alberto pidió bajar la velocidad del hueso:
+  `BOSS_BONE_SLOWER` pasa de 1 a 2 en `inc/config.h`. Ahora cae a
+  `bulletSpeed - 2` px/frame (mínimo 1), es decir 3-5 px/frame con balas
+  de 5-7 (antes 4-6). Lo demás no cambia: zona de golpe de 40x8, máximo
+  2 en pantalla y el escudo no lo detiene.
+
 ## 2026-11-19 - El jefe dispara un hueso en lugar de la ráfaga (AMH + Bimo) - V0.3.67
 
 ### Cambiado

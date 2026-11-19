@@ -80,7 +80,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * D-pad left/right: move the ship (during play).
 * B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
 * RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
-* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls a bit slower than bullets; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
+* Boss: waves 10, 20, 30... replace the two rows with a mothership. 500 HP on the first visit, doubling each return up to 8000 (wave 50+). The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls slower than bullets, by 2 px/frame; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
 * Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
 * A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
 * C: activate the shield if it is charged. Duration and recharge depend on
@@ -289,6 +289,8 @@ HISTORY:
                  falls 1 px/frame slower than bullets, at most 2 on screen
                  and the shield does not stop it. The fan is unchanged.
                  V0.3.67.
+*       19/11/26 - Slower bone after Alberto's playtest: it falls 2 px/frame
+                 slower than bullets (was 1), 3-5 px/frame. V0.3.68.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -575,3 +577,6 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 * Palette: the bone uses PAL1 with its colours in the free slots 7-9 (the background only uses 0-6), so it shows its real colours and the boss red hit tint (PAL2 colours 1-3) does not touch it.
 * It is cleared with the enemy bullets on wave change, boss death, GAME OVER and reset. Each bone uses 2 hardware sprites and 12 VRAM tiles.
 * To do: the sprite still reads "BONE"; it will be swapped for the final art at the same size.
+
+**Slower bone (19/11/2026, V0.3.68)**
+* Alberto playtested it and asked to lower its speed. `BOSS_BONE_SLOWER` goes from 1 to 2: the bone falls at `bulletSpeed - 2` px/frame (minimum 1), i.e. 3-5 px/frame with bullets at 5-7 (was 4-6). Hitbox, 2-bone cap and shield behaviour are unchanged.
