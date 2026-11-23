@@ -101,6 +101,43 @@
 #define BOSS_BONE_PAL_FIRST   7
 #define BOSS_BONE_PAL_COUNT   3
 
+/* Second boss (23/11/2026): the turtle wizard, only on wave 20 (the 2nd
+ * boss appearance). Waves 10, 30, 40... keep La Cookie unchanged. Same HP,
+ * points, damage, speed and fire timer as any 2nd appearance (700 HP).
+ * res/tiles/imgboss2.png: 64x64, 1 frame, own 16-colour palette in PAL2
+ * (indices 1-3 = shell and limb greens, tinted red by the hit flash).
+ * If a 2nd frame is added (8 8 tiles per frame), boss.c animates it. */
+#define BOSS2_APPEARANCE      2   /* wave 20 = BOSS_WAVE_EVERY * 2 */
+#define BOSS2_W              64
+#define BOSS2_H              64
+#define BOSS2_CORE_OX        20  /* shell centre: x 20-43 */
+#define BOSS2_CORE_OY         8  /* y 8-43, inside the shell */
+#define BOSS2_CORE_W         24
+#define BOSS2_CORE_H         36
+#define BOSS2_Y_MAX          (112 - BOSS2_H)  /* 48: stays in the top half */
+#define BOSS2_FAN_OX         28  /* fan from the head (bullet centred at x 32) */
+#define BOSS2_FAN_OY         48
+#define BOSS2_STAR_OX        50  /* star centred on the wand tip (58, 28) */
+#define BOSS2_STAR_OY        20
+#define BOSS2_BOB_AMP         2  /* floating bob: +-2 px on top of the roam */
+#define BOSS2_BOB_STEP       16  /* sin steps per frame: 64 frames per bob */
+#define BOSS2_ANIM_SHIFT      4  /* 2nd frame (when added): swap every 16 frames */
+/* Turtle main attack: a 16x16 star from the wand instead of the bone.
+ * Same mechanics as the bone: falls straight down BOSS_STAR_SLOWER px/frame
+ * slower than the wave's enemy bullets (min 1), at most 2 on screen, the
+ * shield does NOT stop it, player shots ignore it. Hitbox 10x10 centred. */
+#define BOSS_STAR_W          16
+#define BOSS_STAR_H          16
+#define BOSS_STAR_HIT_OX      3
+#define BOSS_STAR_HIT_OY      3
+#define BOSS_STAR_HIT_W      10
+#define BOSS_STAR_HIT_H      10
+#define BOSS_STAR_SLOWER      BOSS_BONE_SLOWER
+#define MAX_BOSS_STARS        2
+/* Star colours in PAL1 slots 10-11 (right after the bone's 7-9). */
+#define BOSS_STAR_PAL_FIRST  10
+#define BOSS_STAR_PAL_COUNT   2
+
 #define POWER_ON 1
 #define POWER_OFF 0
 

@@ -29,5 +29,7 @@ extern const SpriteDefinition flame;
 extern const SpriteDefinition capsuleSpr;
 extern const SpriteDefinition mothership;
 extern const SpriteDefinition bossbone;
+extern const SpriteDefinition boss2turtle;
+extern const SpriteDefinition bossstar;
 
 #endif // _RES_RESOURCES_H_

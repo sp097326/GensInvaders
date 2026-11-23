@@ -187,6 +187,24 @@ u16 collision_update(int* score) {
                 return COLLISION_NONE;
             }
         }
+
+        /* Turtle stars (wave 20): same rule as the bone, the shield does
+         * not stop them; only the 10x10 centre of the 16x16 star counts. */
+        for (i = 0; i < MAX_BOSS_STARS; i++)
+        {
+            GameEntity hit;
+
+            b = bullets_starAt(i);
+            if (b->health == 0 || p->health == 0) continue;
+            bullets_starHitbox(b, &hit);
+            if (player_invulnTimer() == 0 && collideEntities(&hit, p)) {
+                bullets_despawnStar(b);
+                if (player_hit(*score)) {
+                    return COLLISION_GAME_OVER;
+                }
+                return COLLISION_NONE;
+            }
+        }
     }
 
     /* Invasion: overlapping a living enemy is always GAME OVER (shield and

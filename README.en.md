@@ -69,7 +69,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * collision.c/.h — AABB checks; player bullets vs enemies, enemy bullets vs the player, and fatal enemy-player body contact (or a ship reaching the visible bottom).
 * title.c/.h — block logo, menu, gold pulse; GAME_VERSION under the logo.
 * powerups.c/.h — RapidFire capsule pickup and the Shield ability (C; duration and recharge come from the difficulty table).
-* boss.c/.h — mothership on waves 10, 20, 30... (350 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half; attacks: 48x16 bone and 3-bullet fan).
+* boss.c/.h — mothership on waves 10, 20, 30... (350 HP, doubles each return up to 8000; damage on the center third, full core height; Lissajous roam in the top half; attacks: 48x16 bone and 3-bullet fan; on wave 20 the boss is the turtle wizard, which fires a 16x16 star).
 * game_state.c/.h — title / play / pause / GAME OVER / YOU WIN, joy handler, reset and end-screen text.
 * src/main.c — toolchain init, starfield (drawStarfield + vertical scroll of offset) and the loop that calls game_state_update(). The starfield stayed in main.c because no background module was in the plan.
 
@@ -80,7 +80,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * D-pad left/right: move the ship (during play).
 * B: shoot (hold ~1 s for the charged piercing shot; a short tap is the normal 8x8).
 * RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
-* Boss: waves 10, 20, 30... replace the two rows with a mothership. 350 HP on the first visit, doubling each return up to 8000 (wave 60+). After each boss the formation difficulty drops and climbs again (10-wave cycles: wave 11 plays like wave 4). Waves 11 to 19 add a staggered third row of 4 ships. The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls slower than bullets, by 2 px/frame; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder.
+* Boss: waves 10, 20, 30... replace the two rows with a mothership. 350 HP on the first visit, doubling each return up to 8000 (wave 60+). After each boss the formation difficulty drops and climbs again (10-wave cycles: wave 11 plays like wave 4). Waves 11 to 19 add a staggered third row of 4 ships. The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls slower than bullets, by 2 px/frame; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder. On wave 20 the boss is the turtle wizard (64x64, same HP and difficulty as the second appearance: 700 HP): instead of the bone it casts a 16x16 star from its wand (10x10 hitbox, same rules as the bone: falls 2 px/frame slower than bullets, at most 2, the shield does not stop it), the fan comes from its head, only the shell centre (24x36) takes damage, and it floats ±2 px while roaming the top half. Waves 10, 30, 40... keep La Cookie.
 * Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
 * A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
 * C: activate the shield if it is charged. Duration and recharge depend on
@@ -298,6 +298,11 @@ HISTORY:
 *       19/11/26 - Waves 11-19: staggered third row of 4 ships (columns
                  0, 2, 4, 6; 18 ships total). ENEMY_ROWS 3, per-wave
                  layout via enemies_rowMaskForWave. V0.3.70.
+*       23/11/26 - Second boss on wave 20: the turtle wizard (64x64,
+                 own PAL2 palette, 24x36 shell core, floats ±2 px). It
+                 casts a 16x16 star from its wand (PAL1 colours 10-11,
+                 10x10 hitbox) instead of the bone, and the fan from its
+                 head. Waves 10 and 30 are unchanged. V0.3.71.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -601,3 +606,11 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 * `ENEMY_ROWS` is now 3 and `enemies_rowMaskForWave(wave, row)` sets which columns each row has per wave. Ships outside the layout stay hidden with health 0 and do not count on the HUD or toward clearing the wave.
 * The formation slides in during the warp from 104 px above (`ENEMY_WARP_ENTER`) so the third row is not already visible; the boss still uses 80.
 * Impact: 18 ships instead of 14; the bottom row starts 24 px closer, so the invasion arrives a couple of steps sooner (speed is 1 on wave 11). The bullet cap is unchanged.
+
+**Second boss: the turtle wizard on wave 20 (23/11/2026, V0.3.71)**
+* Alberto's sprite: a top-down turtle wizard (green shell, blue robe with stars, wand). It came as a 64x64 RGBA PNG with 8 colours and was converted to a 16-colour indexed `res/tiles/imgboss2.png` (colour 0 transparent) with the art untouched. It is the wave 20 boss, the counterpart of La Cookie: same HP and difficulty logic as the second appearance (700 HP, same damage, speed, interval and points).
+* `boss.c` now describes each boss with a `BossKind` struct (sprite, size, damage zone, roam limit, attack muzzles, flash frame and bob). La Cookie keeps its previous values; the turtle uses the `BOSS2_*` constants in `inc/config.h`. The same sprite gets its definition swapped when the wave starts (`SPR_setDefinition`), so no extra VRAM is held outside the fight.
+* Damage zone: 24x36 in the centre of the shell (offset 20,8). Wand, limbs and head only spark. The red hit flash tints palette colours 1-3 (shell and limb greens).
+* Main attack: a 16x16 star (`res/tiles/imgstar.png`, the turtle's two yellows) from the wand tip (x + 50, y + 20). Same rules as the bone: falls at `bulletSpeed - 2` px/frame (minimum 1), at most 2 on screen, the shield does not stop it. 10x10 hitbox, centred. It uses PAL1 colours 10-11, right after the bone's 7-9. The 3-bullet fan comes from the head (x + 28, y + 48).
+* Animation: one frame for now, with a ±2 px floating bob (64-frame cycle) on top of the Lissajous roam, which goes down to y = 48 so the 64 px sprite stays in the top half. If a second frame is added to the PNG (128x64, two 8x8-tile frames), it animates on its own every 16 frames.
+* To test it: title code (UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A) and OLEADA INICIAL 20.

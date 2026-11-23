@@ -12,6 +12,7 @@ static u16 shotByPlayer = 0;
 static u16 maxPlayerBullets = MAX_PLAYER_BULLETS;
 static GameEntity chargedBullet;
 static GameEntity bones[MAX_BOSS_BONES];
+static GameEntity stars[MAX_BOSS_STARS];
 
 /* Bone colours into the free PAL1 slots 7-9 (see config.h). Called at init
  * and again on every spawn, so nothing that reloads PAL1 can leave the
@@ -22,10 +23,21 @@ static void loadBonePal(TransferMethod tm) {
                   BOSS_BONE_PAL_COUNT, tm);
 }
 
+/* Turtle star colours into PAL1 slots 10-11, same idea as the bone. */
+static void loadStarPal(TransferMethod tm) {
+    PAL_setColors(16 + BOSS_STAR_PAL_FIRST,
+                  bossstar.palette->data + BOSS_STAR_PAL_FIRST,
+                  BOSS_STAR_PAL_COUNT, tm);
+}
+
+/* Bones and stars (both boss attacks) are always cleared together. */
 static void killBones(void) {
     u16 i;
     for (i = 0; i < MAX_BOSS_BONES; i++) {
         killGameEntity(&bones[i]);
+    }
+    for (i = 0; i < MAX_BOSS_STARS; i++) {
+        killGameEntity(&stars[i]);
     }
 }
 
@@ -83,6 +95,21 @@ void bullets_init(void) {
         sprintf(bones[i].name, "Bn%d", i);
     }
     loadBonePal(DMA);
+    /* Turtle stars: 16x16 = 2x2 tiles, 1 hardware sprite and 4 VRAM tiles
+     * each. PAL1 like the bone, so the boss hit tint never reaches them. */
+    for (i = 0; i < MAX_BOSS_STARS; i++) {
+        stars[i].x = 0;
+        stars[i].y = -BOSS_STAR_H;
+        stars[i].w = BOSS_STAR_W;
+        stars[i].h = BOSS_STAR_H;
+        stars[i].velx = 0;
+        stars[i].vely = 1;
+        stars[i].health = 0;
+        stars[i].sprite = SPR_addSprite(&bossstar, 0, -BOSS_STAR_H, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+        SPR_setVisibility(stars[i].sprite, HIDDEN);
+        sprintf(stars[i].name, "St%d", i);
+    }
+    loadStarPal(DMA);
 }
 
 void bullets_reset(void) {
@@ -160,6 +187,18 @@ void bullets_update(void) {
     for (i = 0; i < MAX_BOSS_BONES; i++)
     {
         bllt = &bones[i];
+        if (bllt->health > 0) {
+            bllt->y += bllt->vely;
+            if (bllt->y > BOTTOM_EDGE) {
+                killGameEntity(bllt);
+            } else {
+                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+            }
+        }
+    }
+    for (i = 0; i < MAX_BOSS_STARS; i++)
+    {
+        bllt = &stars[i];
         if (bllt->health > 0) {
             bllt->y += bllt->vely;
             if (bllt->y > BOTTOM_EDGE) {
@@ -333,6 +372,43 @@ void bullets_boneHitbox(GameEntity* bone, GameEntity* out) {
 
 void bullets_despawnBone(GameEntity* b) {
     killGameEntity(b);
+}
+
+u16 bullets_shootStar(s16 x, s16 y) {
+    const DifficultyConfig* cfg = difficulty_config();
+    s16 vy = (s16)cfg->bulletSpeed - BOSS_STAR_SLOWER;
+    u16 i;
+
+    if (vy < 1) vy = 1;
+    for (i = 0; i < MAX_BOSS_STARS; i++) {
+        GameEntity* st = &stars[i];
+        if (st->health == 0) {
+            st->x = x;
+            st->y = y;
+            st->velx = 0;
+            st->vely = vy;
+            loadStarPal(DMA);
+            reviveGameEntity(st);
+            SPR_setPosition(st->sprite, st->x, st->y);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+GameEntity* bullets_starAt(u16 i) {
+    return &stars[i];
+}
+
+void bullets_starHitbox(GameEntity* star, GameEntity* out) {
+    out->x = star->x + BOSS_STAR_HIT_OX;
+    out->y = star->y + BOSS_STAR_HIT_OY;
+    out->w = BOSS_STAR_HIT_W;
+    out->h = BOSS_STAR_HIT_H;
+}
+
+void bullets_despawnStar(GameEntity* st) {
+    killGameEntity(st);
 }
 
 void bullets_tickShot(void) {

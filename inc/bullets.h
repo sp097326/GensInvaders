@@ -30,6 +30,13 @@ GameEntity* bullets_boneAt(u16 i);
 /* The bone's reduced 40x8 hitbox, for collision. */
 void bullets_boneHitbox(GameEntity* bone, GameEntity* out);
 void bullets_despawnBone(GameEntity* b);
+/* Turtle boss star (16x16, falls straight down, MAX_BOSS_STARS at once).
+ * Same rules as the bone; cleared with the enemy bullets. */
+u16  bullets_shootStar(s16 x, s16 y);
+GameEntity* bullets_starAt(u16 i);
+/* The star's reduced 10x10 hitbox, for collision. */
+void bullets_starHitbox(GameEntity* star, GameEntity* out);
+void bullets_despawnStar(GameEntity* s);
 
 void bullets_tickShot(void);
 void bullets_clearShotTicker(void);

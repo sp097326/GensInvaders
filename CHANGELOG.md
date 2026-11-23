@@ -3,6 +3,50 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Segundo jefe: la tortuga hechicera en la oleada 20 (AMH + Bimo) - V0.3.71
+
+### Agregado
+- Jefe de la oleada 20: la tortuga hechicera (sprite de Alberto,
+  `res/tiles/imgboss2.png`, 64x64, 1 cuadro). Se convirtió de RGBA a PNG
+  indexado de 16 colores con el color 0 transparente, sin tocar el dibujo
+  (8 colores: 1-3 verdes del caparazón y las patas, 4 verde medio, 5 azul
+  de la túnica, 6-7 amarillos, 8 ojos). Usa su propia paleta en PAL2, igual
+  que La Cookie.
+- Disparo principal: una estrella de 16x16 que sale de la punta de la
+  varita (`res/tiles/imgstar.png`, amarillos de la tortuga, PAL1 espacios
+  10-11, justo después de los del hueso). Misma mecánica que el hueso: cae
+  recto `bulletSpeed - 2` px/frame (mínimo 1), máximo 2 en pantalla, el
+  escudo NO la detiene y los disparos del jugador no la afectan. Zona de
+  golpe de 10x10 centrada (desplazamiento 3,3). Cada estrella usa 1 sprite
+  de hardware y 4 tiles de VRAM.
+- Animación de flotar: la tortuga sube y baja ±2 px (ciclo de 64 frames)
+  encima del recorrido Lissajous. Si después se agrega un segundo cuadro al
+  PNG (8x8 tiles por cuadro), `placeSprite` lo anima solo, cada 16 frames.
+
+### Cambiado
+- `boss.c`: cada jefe se describe con una estructura `BossKind` (sprite,
+  tamaño, zona de daño, límite inferior del recorrido, bocas del abanico y
+  del disparo principal, cuadro del destello, flotación). La Cookie usa
+  exactamente los valores de antes (`BOSS_*`); la tortuga usa `BOSS2_*` en
+  `inc/config.h`. Al empezar una oleada de jefe se cambia la definición del
+  mismo sprite con `SPR_setDefinition` (si fallara, se queda La Cookie).
+- Tortuga: misma lógica de HP y dificultad que cualquier segunda aparición
+  (700 HP, mismo daño, velocidad, intervalo y puntos). Zona de daño de
+  24x36 en el centro del caparazón (desplazamiento 20,8); el resto del
+  sprite (varita, patas, cabeza) solo saca chispas. Recorre y = 28-48
+  (64 px de alto, sigue en la mitad superior). El abanico de 3 balas sale
+  de la cabeza (x + 28, y + 48) con las mismas reglas que La Cookie. El
+  destello rojo tiñe los colores 1-3 (verdes del caparazón y las patas);
+  la túnica, la varita y las estrellas no cambian.
+- Las oleadas 10, 30, 40... siguen con La Cookie sin cambios.
+
+### Notas de juego
+- El sprite toca el borde de abajo solo por un píxel suelto en (27,63);
+  no afecta el juego.
+- Presupuesto: 57 de 80 sprites de hardware (+2 estrellas) y unos 233 de
+  420 tiles al arrancar; durante la oleada 20 la tortuga usa hasta 8 tiles
+  más que La Cookie.
+
 ## 2026-11-19 - Tercera fila intercalada en las oleadas 11-19 (AMH + Bimo) - V0.3.70
 
 ### Agregado

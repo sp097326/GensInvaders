@@ -24,6 +24,53 @@ static u16 bossPal[16];
 static u16 bossPalSaved = 0;
 static s16 homeY = BOSS_HOME_Y;
 static u16 lastWasFan = 0;
+static u16 bobAng = 0;
+
+/* Per-boss layout (23/11/2026). La Cookie keeps exactly the values it had
+ * before (BOSS_* in config.h); the turtle wizard (wave 20) uses BOSS2_*.
+ * All offsets are from the sprite's top-left corner. */
+#define BOSS_SHOT_BONE 0
+#define BOSS_SHOT_STAR 1
+typedef struct {
+    const SpriteDefinition* def;
+    s16 w, h;
+    s16 coreOX, coreOY, coreW, coreH;  /* damage zone */
+    s16 yMax;                          /* lowest roam y (top half) */
+    s16 fanOX, fanOY;                  /* 3-bullet fan muzzle */
+    u16 shot;                          /* main attack: bone or star */
+    s16 shotOX, shotOY;                /* main attack muzzle */
+    u16 flashFrame;                    /* 1 = show frame 1 while flashing */
+    u16 animShift;                     /* frame swap every 2^n frames */
+    s16 bobAmp;                        /* floating bob (px), 0 = none */
+} BossKind;
+
+static const BossKind kindCookie = {
+    &mothership, BOSS_W, BOSS_H,
+    BOSS_CORE_OX, BOSS_CORE_OY, BOSS_CORE_W, BOSS_CORE_H,
+    BOSS_Y_MAX,
+    (BOSS_W / 2) - 4, BOSS_H - 4,
+    BOSS_SHOT_BONE, (BOSS_W - BOSS_BONE_W) / 2, BOSS_H - 4,
+    1, 3, 0
+};
+
+static const BossKind kindTurtle = {
+    &boss2turtle, BOSS2_W, BOSS2_H,
+    BOSS2_CORE_OX, BOSS2_CORE_OY, BOSS2_CORE_W, BOSS2_CORE_H,
+    BOSS2_Y_MAX,
+    BOSS2_FAN_OX, BOSS2_FAN_OY,
+    BOSS_SHOT_STAR, BOSS2_STAR_OX, BOSS2_STAR_OY,
+    0, BOSS2_ANIM_SHIFT, BOSS2_BOB_AMP
+};
+
+static const BossKind* kind = &kindCookie;
+
+static const BossKind* kindForAppearance(u16 n) {
+    return (n == BOSS2_APPEARANCE) ? &kindTurtle : &kindCookie;
+}
+
+static s16 kindHomeY(const BossKind* k) {
+    return (BOSS_Y_MIN + k->yMax) / 2;  /* Cookie: 42 = BOSS_HOME_Y */
+}
 
 static u16 appearanceOf(u16 wave) {
     if (wave < BOSS_WAVE_EVERY) return 0;
@@ -70,13 +117,14 @@ static void restoreBossPal(void) {
 
 /* Load the boss sprite's own 16 colors into PAL2 for the boss wave. */
 static void applyBossPal(void) {
-    PAL_setColors(32, mothership.palette->data, 16, CPU);
+    PAL_setColors(32, kind->def->palette->data, 16, CPU);
     flashTimer = 0;
 }
 
 static void flashCore(void) {
     /* Red tint on the body colors (1-3) on PAL2 only. The body is
-     * cream, so a white flash would barely show. */
+     * cream, so a white flash would barely show. On the turtle 1-3 are
+     * the shell and limb greens (robe, wand and stars keep their colour). */
     PAL_setColor(33, RGB24_TO_VDPCOLOR(0xFC6C6C));
     PAL_setColor(34, RGB24_TO_VDPCOLOR(0xFC6C6C));
     PAL_setColor(35, RGB24_TO_VDPCOLOR(0xFC6C6C));
@@ -84,10 +132,20 @@ static void flashCore(void) {
 }
 
 static void placeSprite(void) {
+    u16 frames;
+    u16 frame = 0;
+
     if (boss.sprite == NULL) return;
     SPR_setPosition(boss.sprite, boss.x, boss.y);
-    /* Hold the bright frame while the core is flashing. */
-    SPR_setAnimAndFrame(boss.sprite, 0, (flashTimer > 0) ? 1 : ((animTick >> 3) & 1));
+    /* Cookie holds its bright frame while the core is flashing. A
+     * 1-frame boss (the turtle for now) always shows frame 0; drop a 2nd
+     * frame into its PNG and it starts animating with no code change. */
+    frames = kind->def->animations[0]->numFrame;
+    if (frames > 1) {
+        if (kind->flashFrame && flashTimer > 0) frame = 1;
+        else frame = (animTick >> kind->animShift) & 1;
+    }
+    SPR_setAnimAndFrame(boss.sprite, 0, frame);
     SPR_setVisibility(boss.sprite, (boss.health > 0) ? VISIBLE : HIDDEN);
 }
 
@@ -138,6 +196,8 @@ void boss_reset(void) {
 
 void boss_init(void) {
     /* 64x56 boss (temporary art from Alberto, 2 frames: flame flicker).
+     * Wave 20 swaps this same sprite to the 64x64 turtle wizard
+     * (boss_beginEnter); every other boss wave puts La Cookie back.
      * Uses its own palette in PAL2 during the boss wave; boss_hide puts
      * the background palette back for the formation. PAL2 so the hit
      * tint does not touch the player (PAL1). High priority so it sits
@@ -160,14 +220,26 @@ void boss_beginEnter(u16 offset) {
     boss_hide();
     if (n == 0) return;
 
+    /* Pick the boss for this appearance and swap the sprite definition
+     * (same Sprite, VRAM re-allocated by SGDK). If the swap fails, fall
+     * back to La Cookie so the wave is still playable. */
+    kind = kindForAppearance(n);
+    if (!SPR_setDefinition(boss.sprite, kind->def)) {
+        kind = &kindCookie;
+        SPR_setDefinition(boss.sprite, kind->def);
+    }
+    SPR_setVisibility(boss.sprite, HIDDEN);
+    boss.w = kind->w;
+    boss.h = kind->h;
     applyBossPal();
     hpMax = hpForAppearance(n);
     hp = hpMax;
     /* Lissajous starts at the centre of the top-half roam box. */
     angX = 0;
     angY = 0;
-    homeY = BOSS_HOME_Y;
-    boss.x = (RIGHT_EDGE - BOSS_W) / 2;
+    bobAng = 0;
+    homeY = kindHomeY(kind);
+    boss.x = (RIGHT_EDGE - kind->w) / 2;
     boss.y = homeY - (s16)offset;
     boss.velx = (s16)cfg->bossSpeed;
     if (boss.velx == 0) boss.velx = 1;
@@ -201,19 +273,25 @@ void boss_advanceEnter(u16 remain, u16 total, u16 offset) {
     }
 }
 
-/* Main attack (19/11/2026): one 48x16 bone, centred under the belly
- * (x = boss.x + 8, the span the old 8x8 volley covered), falling
- * straight down. Speed, hitbox and cap: BOSS_BONE_* in config.h. */
-static void fireBone(void) {
-    bullets_shootBone(boss.x + (BOSS_W - BOSS_BONE_W) / 2, boss.y + BOSS_H - 4);
+/* Main attack. Cookie (19/11/2026): one 48x16 bone, centred under the
+ * belly (x = boss.x + 8, the span the old 8x8 volley covered), falling
+ * straight down. Speed, hitbox and cap: BOSS_BONE_* in config.h.
+ * Turtle (23/11/2026): one 16x16 star from the wand tip, same rules
+ * (BOSS_STAR_* in config.h). */
+static void fireMain(void) {
+    s16 x = boss.x + kind->shotOX;
+    s16 y = boss.y + kind->shotOY;
+
+    if (kind->shot == BOSS_SHOT_STAR) bullets_shootStar(x, y);
+    else bullets_shootBone(x, y);
 }
 
 /* Second attack: 3 diagonal bullets from the belly, tilted toward the
  * player (left, straight or right) and a bit faster than enemy bullets. */
 static void fireFan(void) {
     const DifficultyConfig* cfg = difficulty_config();
-    s16 mx = boss.x + (BOSS_W / 2) - 4;
-    s16 my = boss.y + BOSS_H - 4;
+    s16 mx = boss.x + kind->fanOX;
+    s16 my = boss.y + kind->fanOY;
     s16 dx = player_get()->x - mx;
     s16 aim = 0;
     s16 vy = (s16)cfg->bulletSpeed + 1;
@@ -232,17 +310,19 @@ static void fireAttack(void) {
     if ((u32)hp * 2 <= (u32)hpMax) useFan = lastWasFan ? 0 : 1;
     else useFan = ((random() % BOSS_FAN_CHANCE) == 0) ? 1 : 0;
     if (useFan) fireFan();
-    else fireBone();
+    else fireMain();
     lastWasFan = useFan;
 }
 
 /* Smooth Lissajous roam: never leaves the top half of the screen.
- * Speed scales with difficulty (bossSpeed 1/2/3). */
+ * Speed scales with difficulty (bossSpeed 1/2/3). A boss with bobAmp
+ * (the turtle) also floats up and down a few px; its Lissajous band is
+ * bobAmp smaller so the sum stays inside BOSS_Y_MIN..yMax. */
 static void roam(u16 speed) {
-    s16 xMid = (RIGHT_EDGE - BOSS_W) / 2;
+    s16 xMid = (RIGHT_EDGE - kind->w) / 2;
     s16 xAmp = xMid;
-    s16 yMid = BOSS_HOME_Y;
-    s16 yAmp = (BOSS_Y_MAX - BOSS_Y_MIN) / 2;
+    s16 yMid = kindHomeY(kind);
+    s16 yAmp = (kind->yMax - BOSS_Y_MIN) / 2 - kind->bobAmp;
     fix16 sx;
     fix16 sy;
 
@@ -253,10 +333,14 @@ static void roam(u16 speed) {
     sy = sinFix16(angY);
     boss.x = xMid + (s16)(((s32)sx * (s32)xAmp) / 64);
     boss.y = yMid + (s16)(((s32)sy * (s32)yAmp) / 64);
+    if (kind->bobAmp > 0) {
+        bobAng = (bobAng + BOSS2_BOB_STEP) & 1023;
+        boss.y += (s16)(((s32)sinFix16(bobAng) * (s32)kind->bobAmp) / 64);
+    }
     if (boss.x < LEFT_EDGE) boss.x = LEFT_EDGE;
-    if (boss.x > RIGHT_EDGE - BOSS_W) boss.x = RIGHT_EDGE - BOSS_W;
+    if (boss.x > RIGHT_EDGE - kind->w) boss.x = RIGHT_EDGE - kind->w;
     if (boss.y < BOSS_Y_MIN) boss.y = BOSS_Y_MIN;
-    if (boss.y > BOSS_Y_MAX) boss.y = BOSS_Y_MAX;
+    if (boss.y > kind->yMax) boss.y = kind->yMax;
 }
 
 void boss_update(void) {
@@ -307,9 +391,9 @@ u16 boss_hitShot(GameEntity* shot, u16 charged) {
         return 0;
     }
 
-    cx = boss.x + BOSS_CORE_OX;
-    cy = boss.y + BOSS_CORE_OY;
-    if (!overlaps(shot->x, shot->y, shot->w, shot->h, cx, cy, BOSS_CORE_W, BOSS_CORE_H)) {
+    cx = boss.x + kind->coreOX;
+    cy = boss.y + kind->coreOY;
+    if (!overlaps(shot->x, shot->y, shot->w, shot->h, cx, cy, kind->coreW, kind->coreH)) {
         /* Wing / hull: spark, no damage. A normal shot is blocked;
          * the charged bolt flies through, still without damaging. */
         explosions_spawn(shot->x, shot->y);
@@ -337,7 +421,7 @@ u16 boss_hitShot(GameEntity* shot, u16 charged) {
     if (hp == 0) {
         explosions_spawn(boss.x + 8, boss.y + 4);
         explosions_spawn(cx, cy);
-        explosions_spawn(boss.x + BOSS_W - 24, boss.y + 4);
+        explosions_spawn(boss.x + boss.w - 24, boss.y + 4);
         XGM_startPlayPCM(SFX_BOSS_DIE, 15, SOUND_PCM_CH2);
         powerups_grantRapidFire();
         boss_hide();

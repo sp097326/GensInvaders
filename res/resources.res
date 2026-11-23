@@ -12,6 +12,8 @@ SPRITE flame "tiles/imgflame.bmp" 1 1 FAST 0
 SPRITE capsuleSpr "tiles/imgcapsule.bmp" 1 1 FAST 0
 SPRITE mothership "tiles/imgboss.png" 8 7 FAST 0
 SPRITE bossbone "tiles/imgbone.png" 6 2 FAST 0
+SPRITE boss2turtle "tiles/imgboss2.png" 8 8 FAST 0
+SPRITE bossstar "tiles/imgstar.png" 2 2 FAST 0
 WAV laser "sounds/laser.wav" XGM
 WAV xplosion "sounds/explosion.wav" XGM
 WAV intro "music/intro_short.wav" XGM
