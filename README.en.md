@@ -346,6 +346,9 @@ HISTORY:
                  at 12). V0.4.83.
 *       23/11/26 - Full third row (7 ships, 21 total) from wave 21 on
                  every non-boss wave. V0.4.84.
+*       23/11/26 - EASY/NORMAL: bullets reach 7 at level 13 (was 11);
+                 wave 25 no longer raises bullet speed right after the
+                 4-shot volley. V0.4.85.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -723,3 +726,7 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 * From wave 21, on every non-boss wave (21-29, 31-39...), the third row has all 7 ships: 21 in total. Waves 1-9 keep 2 rows and 11-19 the staggered row of 4 (`FULL_ROW3_FIRST_WAVE` in `inc/config.h`).
 * No hardware cost: all 21 ships have been allocated since V0.3.70 and each row has its own scanlines. Firing, the HUD count, wave clear and capsules use the same per-row masks.
 * Wave 21 plays like cycle level 7 (speed 1.75) but with 21 ships; the bottom row sits at the same height as the staggered one, so the invasion arrives as early as on 11-19.
+
+**Second bullet-speed raise later (23/11/2026, V0.4.85)**
+* Alberto felt a jump from wave 24 to 25: 25 raised bullets from 6 to 7 right after the 4-shot volley (24) and before the 16 px step (26), with the third row firing closer.
+* On EASY and NORMAL bullet speed now rises at levels 7 and 13 (was 7 and 11). NORMAL: 24 volley 4, 25 formation speed only, 26 step 16, 27 bullet 7. Waves 1-10 and HARD are unchanged; waves 18-19 keep bullet 6.

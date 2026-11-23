@@ -347,6 +347,9 @@ HISTORIAL:
 *       23/11/26 - Tercera fila completa (7 naves, 21 en total) desde la
                  oleada 21 en todas las oleadas que no son de jefe.
                  V0.4.84.
+*       23/11/26 - EASY/NORMAL: la bala llega a 7 en el nivel 13 (antes
+                 11); la 25 ya no sube la bala justo tras la ráfaga de 4.
+                 V0.4.85.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -724,3 +727,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 * Desde la oleada 21, en todas las oleadas que no son de jefe (21-29, 31-39...), la tercera fila trae las 7 naves: 21 en total. Las oleadas 1-9 siguen con 2 filas y las 11-19 con la fila intercalada de 4 (`FULL_ROW3_FIRST_WAVE` en `inc/config.h`).
 * Sin costo de hardware: las 21 naves ya se reservan desde V0.3.70 y cada fila va en sus propias líneas. Disparo, conteo del HUD, fin de oleada y cápsulas usan las mismas máscaras por fila.
 * La 21 se juega como la 7 del ciclo (velocidad 1.75) pero con 21 naves; la fila de abajo está a la misma altura que la intercalada, así que la invasión llega igual de pronto que en las 11-19.
+
+**Segunda subida de velocidad de bala más tarde (23/11/2026, V0.4.85)**
+* Alberto sintió un brinco de la oleada 24 a la 25: la 25 subía la bala de 6 a 7 justo después de la ráfaga de 4 (24) y antes de la caída de 16 (26), con la tercera fila disparando más cerca.
+* En EASY y NORMAL la bala sube en los niveles 7 y 13 (antes 7 y 11). NORMAL: 24 ráfaga 4, 25 solo velocidad de formación, 26 caída 16, 27 bala 7. Las oleadas 1-10 y HARD no cambian; las 18-19 quedan con bala 6.

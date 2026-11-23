@@ -3,6 +3,21 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Segunda subida de velocidad de bala más tarde (AMH + Bimo) - V0.4.85
+
+### Cambiado
+- Alberto sintió un brinco fuerte de la oleada 24 a la 25. La 25 (nivel
+  efectivo 11) subía la bala de 6 a 7 justo después de la ráfaga de 4 (24)
+  y antes de la caída de 16 (26), y con la tercera fila completa disparando
+  24 px más cerca: 13.7 frames para llegar a la nave (lo mínimo del juego).
+- En EASY y NORMAL la velocidad de bala ahora sube cada 6 niveles (7 y 13)
+  en vez de cada 4 (7 y 11): `bulletSpeedEvery` 4 -> 6 en `waveTuneTable`.
+  NORMAL en el tercer ciclo: 24 ráfaga 4, 25 solo la velocidad de la
+  formación (2.75 / 4 / 60 / 6 / 12), 26 caída 16, 27 bala 7.
+- Oleadas 1-10 sin cambios. En el segundo ciclo las 18-19 quedan con bala
+  6 (antes 7); el jefe de la 20 no cambia (nivel 13, bala 7). HARD no
+  cambia. Simulado en las oleadas 1-31 de las tres dificultades.
+
 ## 2026-11-23 - Tercera fila completa desde la oleada 21 (AMH + Bimo) - V0.4.84
 
 ### Agregado
