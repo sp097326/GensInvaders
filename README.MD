@@ -335,6 +335,9 @@ HISTORIAL:
                  soltarse una cápsula. Jefes: siempre "R". V0.4.79.
 *       23/11/26 - "E" o "I" con la barra llena dan puntos extra
                  (5 naves: 50/100/150) con "+N" abajo. V0.4.80.
+*       23/11/26 - El RapidFire y el escudo encendido ya no se gastan
+                 durante el warp entre oleadas; las recargas sí siguen.
+                 V0.4.81.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -694,3 +697,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 * Idea de Alberto: en vez de desperdiciar una "E" o una "I" cuando su barra ya está llena (escudo o impulso listos, sin usarse), atraparla da puntos extra: lo que valen 5 naves en la dificultad actual (`CAPSULE_FULL_BONUS` 5 en `inc/config.h`): 50 en EASY, 100 en NORMAL y 150 en HARD.
 * Aviso: suena el "ding" de disparo cargado listo en lugar del sonido de recoger, y aparece "+N" en la fila de abajo, en el lugar de "+1 NAVE", por ~1 s. Los puntos cuentan para la nave extra cada 1000; si completan una, se muestra "+1 NAVE".
 * Si el escudo está encendido o vas a media embestida, se mantiene el relleno guardado (sin puntos), como en V0.4.79.
+
+**RapidFire y escudo congelados en el warp (23/11/2026, V0.4.81)**
+* Alberto notó que una "R" atrapada justo al terminar la oleada se gastaba durante la animación de warp (~2.5 s), donde no se puede disparar. Ahora el tiempo de RapidFire no corre durante el warp (también el que lleva a un jefe) y la barra RF sigue al empezar la oleada.
+* Un escudo encendido también se congela en el warp (no hay balas enemigas). Las recargas del escudo y del impulso siguen corriendo como antes.

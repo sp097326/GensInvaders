@@ -6,7 +6,10 @@
 void powerups_init(void);
 void powerups_reset(void);
 void powerups_hide(void);
-void powerups_update(void);
+/* frozen != 0 during the wave warp: the RapidFire time left and an
+ * active shield's time left do not run down (they are useless there:
+ * no shooting, no enemy fire); recharges and the capsule keep going. */
+void powerups_update(u16 frozen);
 void powerups_deactivate(void);
 u16  powerups_isOn(void);
 /* Try to spawn a RapidFire capsule at the destroyed enemy. No-op if one

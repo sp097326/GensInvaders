@@ -3,6 +3,23 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - RapidFire y escudo activo se congelan durante el warp (AMH + Bimo) - V0.4.81
+
+### Corregido
+- Alberto notó que si atrapas una "R" justo al terminar la oleada, el
+  tiempo de RapidFire seguía corriendo durante la animación de warp (~2.5 s,
+  150 frames NTSC / 125 PAL), donde no se puede disparar, y se desperdiciaba.
+  Ahora `powerups_update(frozen)` no descuenta el RapidFire mientras dura el
+  warp (incluido el warp que lleva a una oleada de jefe); la barra RF se
+  queda quieta y sigue al empezar la oleada. Una "R" atrapada durante el
+  warp (por ejemplo la del jefe) empieza a contar al llegar la oleada.
+- Por lo mismo, un escudo encendido al terminar la oleada también se
+  congela: en el warp no hay balas enemigas, así que no sirve. La burbuja y
+  el zumbido siguen mientras tanto.
+- Las recargas (escudo e impulso) siguen corriendo durante el warp, como
+  antes: ahí no se desperdicia nada y congelarlas sería un castigo. El
+  impulso no se puede usar en el warp, así que no hay nada más que congelar.
+
 ## 2026-11-23 - Puntos extra por cápsula E/I con la barra llena (AMH + Bimo) - V0.4.80
 
 ### Cambiado

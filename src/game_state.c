@@ -424,7 +424,9 @@ void game_state_update(void) {
         if (wavePauseTimer > 0) {
             /* Warp intermission: no formation AI or enemy fire. The player
              * can steer; shooting and a new shield are blocked in the joy
-             * handler. Shield timers, 1UP banner and life icons keep going. */
+             * handler. Recharges (shield, boost), the 1UP banner and life
+             * icons keep going; RapidFire and an active shield are frozen
+             * in powerups_update so the warp does not eat them (V0.4.81). */
             wavePauseTimer--;
             if (wavePauseTimer == 0) {
                 finishWavePause();
@@ -450,7 +452,7 @@ void game_state_update(void) {
                 }
             }
         }
-        powerups_update();
+        powerups_update(wavePauseTimer > 0);
         {
             /* E / I capsule caught on a full bar: bonus points. */
             u16 bonus = powerups_takeBonus();

@@ -335,6 +335,9 @@ HISTORY:
                  capsule drops. Bosses: always "R". V0.4.79.
 *       23/11/26 - "E" or "I" on a full bar gives bonus points
                  (5 ships: 50/100/150) with "+N" below. V0.4.80.
+*       23/11/26 - RapidFire and an active shield no longer run down
+                 during the between-wave warp; recharges still do.
+                 V0.4.81.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -694,3 +697,7 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 * Alberto's idea: instead of wasting an "E" or "I" when its bar is already full (shield or boost ready, not in use), catching it gives bonus points: 5 ships' worth at the current difficulty (`CAPSULE_FULL_BONUS` 5 in `inc/config.h`): 50 on EASY, 100 on NORMAL, 150 on HARD.
 * Feedback: the charged-shot ready ding plays instead of the pickup sound, and "+N" shows on the bottom row in the "+1 NAVE" slot for ~1 s. The points count toward the extra ship every 1000; if they complete one, "+1 NAVE" is shown instead.
 * With the shield up or mid-dash the queued refill is kept (no points), as in V0.4.79.
+
+**RapidFire and shield frozen during the warp (23/11/2026, V0.4.81)**
+* Alberto noticed an "R" caught right as the wave ended was used up during the ~2.5 s warp animation, where you cannot shoot. RapidFire time no longer runs during the warp (including the one into a boss wave) and the RF bar resumes when the wave starts.
+* An active shield is frozen in the warp too (there is no enemy fire). Shield and boost recharges keep running as before.

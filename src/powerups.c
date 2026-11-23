@@ -351,9 +351,9 @@ void powerups_deactivate(void) {
     rapidRefreshHud(1);
 }
 
-void powerups_update(void) {
+void powerups_update(u16 frozen) {
     if (powerOn) {
-        if (powerupTimer > 0) {
+        if (powerupTimer > 0 && !frozen) {
             powerupTimer--;
         }
         if (powerupTimer == 0) {
@@ -382,7 +382,7 @@ void powerups_update(void) {
 
     if (shieldActive) {
         followShieldSprite();
-        if (shieldTimer > 0) shieldTimer--;
+        if (shieldTimer > 0 && !frozen) shieldTimer--;
         if (shieldTimer == 0) {
             shieldActive = 0;
             hideShieldSprite();
