@@ -3,6 +3,30 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Estela del impulso más visible y salto a 0.4 (AMH + Bimo) - V0.4.77
+
+### Cambiado
+- Alberto notó que la estela del impulso casi no se veía (un solo sprite,
+  cuadro sí cuadro no). Ahora son 2 naves fantasma visibles todos los
+  cuadros, donde estaba la nave hace 2 y 4 frames: 12 y 24 px detrás a
+  velocidad de impulso. Al terminar el impulso se quedan 6 frames
+  (`BOOST_TRAIL_LINGER`) y se deslizan hacia la nave; una que queda encima
+  de la nave se oculta. Un golpe a media embestida las borra al instante.
+- Paleta fantasma: usan PAL0 colores 1-4 (la fuente de SGDK solo usa 0 y
+  15) en tonos azules tipo escudo: azul 2060C0, azul claro 40A0FC, cian
+  claro A0E0FC y contorno 002060, en vez de los colores normales de la nave.
+- Sprites de hardware: 59 de 80 (uno más que V0.3.76).
+- Constantes: `BOOST_GHOSTS`, `BOOST_GHOST_LAG1/2`, `BOOST_TRAIL_LINGER` y
+  `BOOST_HIST` en `inc/config.h` (sale `BOOST_GHOST_LAG`).
+- La tortuga no cambia.
+
+### Versión
+- El prefijo de versión pasa de 0.3 a 0.4 (jefes alternados tortuga/Cookie
+  + impulso). `run.bat build` y `./build.sh build` ahora escriben
+  `V0.4.xx`; el último número sigue siendo el total de commits (no se
+  reinicia), así que esta versión es V0.4.77. Sin `version.h` el juego
+  muestra `V0.4.DEV`. Tag `v0.4.77`.
+
 ## 2026-11-23 - Impulso con A + izquierda/derecha (AMH + Bimo) - V0.3.76
 
 ### Agregado

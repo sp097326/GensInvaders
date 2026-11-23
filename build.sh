@@ -23,13 +23,13 @@ check_gdk() {
 }
 
 write_version() {
-    # Version = V0.3.xx, xx = numero de commits del repo (2 digitos minimo), igual que run.bat.
+    # Version = V0.4.xx, xx = numero de commits del repo (2 digitos minimo), igual que run.bat.
     local build
     build="$(git rev-list --count HEAD 2>/dev/null || echo 0)"
     build="$(printf '%02d' "$build")"
     # Mismo contenido exacto que run.bat (terminado en CRLF).
-    printf '#define GAME_VERSION "V0.3.%s"\r\n' "$build" > src/version.h
-    echo "Version: V0.3.$build"
+    printf '#define GAME_VERSION "V0.4.%s"\r\n' "$build" > src/version.h
+    echo "Version: V0.4.$build"
 }
 
 do_build() {

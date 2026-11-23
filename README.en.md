@@ -28,7 +28,7 @@ From the project folder:
 The ROM ends up in `out/rom.bin` (256 KB).
 
 To play it, run `run.bat` from the project root (or `run.bat build` to compile first).
-`run.bat build` also writes `src/version.h` with the version `V0.3.xx`, where xx is the
+`run.bat build` also writes `src/version.h` with the version `V0.4.xx`, where xx is the
 total number of git commits (`git rev-list --count HEAD`); the 0.2 prefix marks this
 stage of the game, and the last number is not reset. Build after committing so the
 version matches GitHub. If `version.h` is missing, the game shows `V0.3.DEV`.
@@ -47,7 +47,7 @@ Requirements (macOS, Apple Silicon):
 
 From the project folder:
 
-    ./build.sh build        # writes src/version.h (same V0.3.xx as run.bat) and compiles
+    ./build.sh build        # writes src/version.h (same V0.4.xx as run.bat) and compiles
     ./build.sh run          # opens out/rom.bin in BlastEm (or Genesis Plus)
     ./build.sh clean        # removes out/
     ./build.sh build run    # commands can be chained; no argument = run
@@ -323,6 +323,9 @@ HISTORY:
                  recharge same as the shield (10/20/30 s), afterimage
                  and IMP bar on the bottom row. No invulnerability.
                  V0.3.76.
+*       23/11/26 - More visible boost trail: 2 blue ghost ships (12 and
+                 24 px behind) every frame, lingering 6 frames after the
+                 dash. Version moves to 0.4. V0.4.77.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -658,6 +661,11 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 * Alberto's idea for button A, which had no use during play. A + LEFT or A + RIGHT (either order) starts a boost: 8 frames at 6 px/frame = 48 px, about 3 ship widths, clamped to the screen edge. The d-pad is ignored while it lasts.
 * Recharge: the difficulty's `shieldRechargeSec` (10 / 20 / 30 s), on its own timer; using the shield does not spend it and vice versa. A hit mid-dash still starts the recharge.
 * No invulnerability (design call): it moves you out of the way of a bullet, the fan or the turtle's dive, not through them.
-* Afterimage: a second ship sprite 16 px behind, shown every other frame during the dash (58 of 80 hardware sprites).
+* Afterimage: a second ship sprite 16 px behind, shown every other frame during the dash (58 of 80 hardware sprites). Replaced in V0.4.77 (see below).
 * HUD: "IMP" + an 8-tile bar on row 27, columns 18-28, between the lives/"+1 NAVE" and the RF bar; same colours as the shield bar (green ready, blue in use, red recharging, blink when ready). The "+1 NAVE" text now only clears columns 10-17.
 * Not available during the between-wave warp. Title, menu, wave code and initials entry are unchanged.
+
+**More visible boost trail and version 0.4 (23/11/2026, V0.4.77)**
+* Alberto found the trail hard to see. It is now 2 ghost ships drawn every frame where the ship was 2 and 4 frames ago (12 and 24 px behind at boost speed). After the dash they stay 6 frames (`BOOST_TRAIL_LINGER`) and slide back into the ship; a hit clears them at once.
+* Ghost palette on PAL0 colours 1-4 (the font only uses 0 and 15): shield-like blues instead of the ship's blue/orange/white/black. 59 of 80 hardware sprites.
+* The version prefix moves to 0.4 (`run.bat` and `build.sh` write `V0.4.xx`); the last number is still the total commit count, so this is V0.4.77 (tag `v0.4.77`). The turtle is unchanged.

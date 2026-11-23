@@ -191,12 +191,20 @@
  * to the screen edges, then recharges for the difficulty's shield recharge
  * time (shieldRechargeSec: 10 / 20 / 30 s on EASY / NORMAL / HARD; its own
  * timer, independent of the shield). A alone does nothing. No
- * invulnerability: the dash only moves you out of the way. An afterimage
- * (a second ship sprite, every other frame) trails BOOST_GHOST_LAG px
- * behind while dashing. Blocked during the between-wave warp. */
+ * invulnerability: the dash only moves you out of the way. Blocked during
+ * the between-wave warp.
+ * Trail (V0.4.77, Alberto found the single flickering afterimage hard to
+ * see): 2 ghost ships drawn every frame where the ship was 2 and 4 frames
+ * ago (12 and 24 px behind at full speed), in a blue ghost palette (PAL0
+ * colours 1-4, unused by the font), lingering BOOST_TRAIL_LINGER frames
+ * after the dash so they slide back into the ship. */
 #define BOOST_SPEED           6   /* px/frame while dashing (normal move is 2) */
 #define BOOST_FRAMES          8   /* 8 x 6 = 48 px */
-#define BOOST_GHOST_LAG      16   /* afterimage offset behind the ship */
+#define BOOST_GHOSTS          2   /* trail sprites (1 hardware sprite each) */
+#define BOOST_GHOST_LAG1      2   /* frames behind: 2 x 6 = 12 px */
+#define BOOST_GHOST_LAG2      4   /* frames behind: 4 x 6 = 24 px */
+#define BOOST_TRAIL_LINGER    6   /* frames the trail stays after the dash */
+#define BOOST_HIST            8   /* position history (power of 2, > LAG2) */
 #define BOOST_READY_BLINK    32   /* HUD bar blink frames when recharged */
 
 #define SHIELD_SPRITE_SIZE   32

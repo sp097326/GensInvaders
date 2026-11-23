@@ -5,14 +5,14 @@
 #include "config.h"
 
 /* Game version. run.bat writes src/version.h before each build with
- * V0.3.xx, where xx = number of commits in the git repo (git rev-list --count HEAD).
- * The prefix is 0.3 (endless waves); the last number is still the total count,
- * not a count from a 0.3 base tag. version.h is git-ignored; if it is missing
+ * V0.4.xx, where xx = number of commits in the git repo (git rev-list --count HEAD).
+ * The prefix is 0.4 since V0.4.77 (bosses alternate + boost; 0.3 was endless
+ * waves); the last number is still the total count, not a count from a base tag. version.h is git-ignored; if it is missing
  * we fall back to a dev label. */
 #if __has_include("version.h")
 #include "version.h"
 #else
-#define GAME_VERSION "V0.3.DEV"
+#define GAME_VERSION "V0.4.DEV"
 #endif
 
 /* name[6] holds 5 chars + the terminating '\0', so "PLAYER" (6 chars) didn't fit. */

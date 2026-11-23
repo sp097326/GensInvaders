@@ -22,7 +22,10 @@ static u16 chargeTimer = 0;
 static u16 chargeReady = 0;
 
 /* Boost / dash (button A + direction), see BOOST_* in config.h. */
-static Sprite* ghostSpr = NULL;
+static Sprite* ghostSpr[BOOST_GHOSTS] = { NULL, NULL };
+static s16 trailHist[BOOST_HIST];
+static u16 trailIdx = 0;
+static u16 trailTimer = 0;      /* > 0 while the trail lingers after a dash */
 static u16 boostTimer = 0;      /* > 0 while dashing */
 static s16 boostDir = 0;
 static u16 boostCooldown = 0;   /* > 0 while recharging */
@@ -98,7 +101,15 @@ static void updatePlayerLife(void) {
 }
 
 static void hideGhost(void) {
-    if (ghostSpr != NULL) SPR_setVisibility(ghostSpr, HIDDEN);
+    u16 i;
+    for (i = 0; i < BOOST_GHOSTS; i++) {
+        if (ghostSpr[i] != NULL) SPR_setVisibility(ghostSpr[i], HIDDEN);
+    }
+}
+
+static void fillTrail(s16 x) {
+    u16 i;
+    for (i = 0; i < BOOST_HIST; i++) trailHist[i] = x;
 }
 
 static u16 boostRechargeFrames(void) {
@@ -131,13 +142,15 @@ static void boostRefreshHud(u16 force) {
     hud_updateBoostBar(mode, level, blink);
 }
 
-/* End a dash (finished, or the ship was hit) and start the recharge. */
-static void endBoost(void) {
+/* End a dash (finished, or the ship was hit) and start the recharge.
+ * linger != 0 keeps the trail for BOOST_TRAIL_LINGER frames. */
+static void endBoost(u16 linger) {
     if (boostTimer == 0) return;
     boostTimer = 0;
     boostCooldownMax = boostRechargeFrames();
     boostCooldown = boostCooldownMax;
-    hideGhost();
+    trailTimer = linger ? BOOST_TRAIL_LINGER : 0;
+    if (!linger) hideGhost();
     boostRefreshHud(1);
 }
 
@@ -153,20 +166,32 @@ static void updateBoostTimers(void) {
     }
 }
 
+/* Trail: ghosts sit where the ship was BOOST_GHOST_LAG1/2 frames ago,
+ * every frame, so they stretch out during the dash and slide back into
+ * the ship while lingering. A ghost on top of the ship is hidden. */
 static void updateGhost(void) {
-    s16 gx;
+    static const u16 lag[BOOST_GHOSTS] = { BOOST_GHOST_LAG1, BOOST_GHOST_LAG2 };
+    u16 i;
 
-    if (ghostSpr == NULL) return;
-    if (boostTimer == 0 || player.health == 0 || explActive || (boostTimer & 1)) {
+    trailIdx = (trailIdx + 1) & (BOOST_HIST - 1);
+    trailHist[trailIdx] = (s16)player.x;
+    if (trailTimer > 0 && boostTimer == 0) trailTimer--;
+    if ((boostTimer == 0 && trailTimer == 0) || player.health == 0 || explActive) {
+        trailTimer = 0;
         hideGhost();
         return;
     }
-    gx = player.x - boostDir * BOOST_GHOST_LAG;
-    if (gx < LEFT_EDGE) gx = LEFT_EDGE;
-    if (gx > RIGHT_EDGE - player.w) gx = RIGHT_EDGE - player.w;
-    SPR_setHFlip(ghostSpr, (boostDir > 0) ? TRUE : FALSE);
-    SPR_setPosition(ghostSpr, gx, player.y);
-    SPR_setVisibility(ghostSpr, VISIBLE);
+    for (i = 0; i < BOOST_GHOSTS; i++) {
+        s16 gx = trailHist[(trailIdx - lag[i]) & (BOOST_HIST - 1)];
+        if (ghostSpr[i] == NULL) continue;
+        if (gx == (s16)player.x) {
+            SPR_setVisibility(ghostSpr[i], HIDDEN);
+            continue;
+        }
+        SPR_setHFlip(ghostSpr[i], (boostDir > 0) ? TRUE : FALSE);
+        SPR_setPosition(ghostSpr[i], gx, player.y);
+        SPR_setVisibility(ghostSpr[i], VISIBLE);
+    }
 }
 
 u16 player_tryBoost(s16 dir) {
@@ -176,6 +201,8 @@ u16 player_tryBoost(s16 dir) {
     boostDir = (dir > 0) ? 1 : -1;
     boostTimer = BOOST_FRAMES;
     boostReadyBlink = 0;
+    trailTimer = 0;
+    fillTrail((s16)player.x);
     boostRefreshHud(1);
     return 1;
 }
@@ -189,7 +216,7 @@ static void positionPlayer(void) {
         boostTimer--;
         if (boostTimer == 0) {
             boostTimer = 1;  /* let endBoost see an active dash */
-            endBoost();
+            endBoost(1);
         } else {
             boostRefreshHud(0);
         }
@@ -281,12 +308,23 @@ void player_init(void) {
     SPR_setAutoAnimation(chargeGlowSpr, FALSE);
     SPR_setVisibility(chargeGlowSpr, HIDDEN);
 
-    /* Dash afterimage: a second ship sprite (1 hardware sprite, 4 tiles),
-     * low priority so the real ship draws on top. */
-    ghostSpr = SPR_addSprite(&ship, 0, -32, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-    SPR_setAutoAnimation(ghostSpr, FALSE);
-    SPR_setAnim(ghostSpr, ANIM_MOVE);
-    SPR_setVisibility(ghostSpr, HIDDEN);
+    /* Dash trail: 2 ghost ships (1 hardware sprite and 4 tiles each),
+     * added after the ship so it draws on top. They use PAL0 colours 1-4
+     * (the font only uses 0 and 15) tinted as a blue ghost of the ship's
+     * blue / orange / white / black. */
+    {
+        u16 i;
+        PAL_setColor(1, RGB24_TO_VDPCOLOR(0x2060C0));
+        PAL_setColor(2, RGB24_TO_VDPCOLOR(0x40A0FC));
+        PAL_setColor(3, RGB24_TO_VDPCOLOR(0xA0E0FC));
+        PAL_setColor(4, RGB24_TO_VDPCOLOR(0x002060));
+        for (i = 0; i < BOOST_GHOSTS; i++) {
+            ghostSpr[i] = SPR_addSprite(&ship, 0, -32, TILE_ATTR(PAL0, 0, FALSE, FALSE));
+            SPR_setAutoAnimation(ghostSpr[i], FALSE);
+            SPR_setAnim(ghostSpr[i], ANIM_MOVE);
+            SPR_setVisibility(ghostSpr[i], HIDDEN);
+        }
+    }
 }
 
 void player_reset(void) {
@@ -305,6 +343,7 @@ void player_reset(void) {
     boostCooldown = 0;
     boostCooldownMax = 0;
     boostReadyBlink = 0;
+    trailTimer = 0;
     hideGhost();
     boostRefreshHud(1);
 }
@@ -315,6 +354,7 @@ void player_hide(void) {
     player_setWarpFlame(0);
     player_chargeCancel();
     boostTimer = 0;  /* no HUD redraw here: the title may be on screen */
+    trailTimer = 0;
     hideGhost();
 }
 
@@ -352,7 +392,7 @@ void player_stop(void) {
 }
 
 u16 player_hit(int score) {
-    endBoost();  /* a dash cut short by a hit still costs the recharge */
+    endBoost(0);  /* a dash cut short by a hit still costs the recharge */
     killGameEntity(&player);
     player.velx = 0;
     if (powerups_isOn()) powerups_deactivate();
@@ -370,7 +410,7 @@ u16 player_hit(int score) {
 
 void player_hitFatal(int score) {
     if (explActive || player.health == 0) return;
-    endBoost();
+    endBoost(0);
     killGameEntity(&player);
     player.velx = 0;
     if (powerups_isOn()) powerups_deactivate();

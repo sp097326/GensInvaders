@@ -28,10 +28,10 @@ Desde la carpeta del proyecto:
 La ROM queda en `out/rom.bin` (256 KB).
 
 Para jugar, ejecuta `run.bat` desde la raíz del proyecto (o `run.bat build` para compilar antes).
-`run.bat build` también escribe `src/version.h` con la versión `V0.3.xx`, donde xx es el
-total de commits de git (`git rev-list --count HEAD`); el prefijo 0.2 marca esta
+`run.bat build` también escribe `src/version.h` con la versión `V0.4.xx`, donde xx es el
+total de commits de git (`git rev-list --count HEAD`); el prefijo 0.4 marca esta
 etapa del juego y el último número no se reinicia. Compila después de hacer commit para que la
-versión coincida con GitHub. Si falta `version.h`, el juego muestra `V0.3.DEV`.
+versión coincida con GitHub. Si falta `version.h`, el juego muestra `V0.4.DEV`.
 Abre la ROM en BlastEm 0.6.2, instalado en `C:\Tools\BlastEm\blastem-win32-0.6.2\blastem.exe`.
 Teclas predeterminadas de BlastEm: flechas = D-pad, S = B (disparar), D = C (escudo), Enter = START.
 Nota: la línea `Error 127 (ignored)` durante el enlazado es una peculiaridad conocida de SGDK/LTO en Windows y
@@ -47,7 +47,7 @@ Requisitos (macOS, Apple Silicon):
 
 Desde la carpeta del proyecto:
 
-    ./build.sh build        # writes src/version.h (same V0.3.xx as run.bat) and compiles
+    ./build.sh build        # writes src/version.h (same V0.4.xx as run.bat) and compiles
     ./build.sh run          # opens out/rom.bin in BlastEm (or Genesis Plus)
     ./build.sh clean        # removes out/
     ./build.sh build run    # commands can be chained; no argument = run
@@ -323,6 +323,9 @@ HISTORIAL:
 *       23/11/26 - Impulso con A + izquierda/derecha: 48 px en 8 frames,
                  recarga igual que el escudo (10/20/30 s), estela y barra
                  IMP en la fila de abajo. Sin invulnerabilidad. V0.3.76.
+*       23/11/26 - Estela del impulso más visible: 2 naves fantasma en
+                 azul (12 y 24 px detrás) todos los cuadros, se quedan 6
+                 frames al terminar. Versión sube a 0.4. V0.4.77.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -658,6 +661,11 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 * Idea de Alberto para el botón A, que no tenía uso en el juego. A + IZQUIERDA o A + DERECHA (en cualquier orden) lanza un impulso: 8 frames a 6 px/frame = 48 px, unas 3 naves, recortado a la orilla de la pantalla. Durante el impulso el control lateral no cuenta.
 * Recarga: `shieldRechargeSec` de la dificultad (10 / 20 / 30 s), con su propio temporizador; usar el escudo no la gasta ni al revés. Si te pegan a media embestida la recarga empieza igual.
 * Sin invulnerabilidad (decisión de diseño): sirve para salir del camino de una bala, del abanico o de la picada de la tortuga, no para atravesarlos.
-* Estela: un segundo sprite de la nave 16 px detrás, visible cuadro sí cuadro no mientras dura el impulso (58 de 80 sprites de hardware).
+* Estela: un segundo sprite de la nave 16 px detrás, visible cuadro sí cuadro no mientras dura el impulso (58 de 80 sprites de hardware). Reemplazada en V0.4.77 (ver abajo).
 * HUD: "IMP" + barra de 8 tiles en la fila 27, columnas 18-28, entre las vidas/"+1 NAVE" y la barra RF; mismos colores que la del escudo (verde lista, azul en uso, roja recargando, parpadeo al quedar lista). El texto "+1 NAVE" ahora solo borra las columnas 10-17.
 * No se puede usar durante el warp entre oleadas. Título, menú, código de oleada y captura de iniciales no cambian.
+
+**Estela del impulso más visible y versión 0.4 (23/11/2026, V0.4.77)**
+* Alberto notó que la estela casi no se veía. Ahora son 2 naves fantasma visibles todos los cuadros, en las posiciones de la nave de hace 2 y 4 frames (12 y 24 px detrás a velocidad de impulso). Al terminar se quedan 6 frames (`BOOST_TRAIL_LINGER`) y se deslizan hacia la nave; un golpe las borra al instante.
+* Paleta fantasma en PAL0 colores 1-4 (la fuente solo usa 0 y 15): azules tipo escudo en vez del azul/naranja/blanco/negro de la nave. 59 de 80 sprites de hardware.
+* El prefijo de versión sube a 0.4 (`run.bat` y `build.sh` escriben `V0.4.xx`); el último número sigue siendo el total de commits, así que esta es V0.4.77 (tag `v0.4.77`). La tortuga no cambia.
