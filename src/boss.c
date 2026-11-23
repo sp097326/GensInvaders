@@ -52,6 +52,7 @@ typedef struct {
     u16 flashFrame;                    /* 1 = show frame 1 while flashing */
     u16 animShift;                     /* frame swap every 2^n frames */
     u16 patrolDive;                    /* 1 = left-right patrol + dive (turtle) */
+    u16 fanSpeedPct;                   /* fan vertical speed, % of bulletSpeed + 1 */
     s16 homeY;                         /* roam centre / patrol height */
 } BossKind;
 
@@ -61,7 +62,7 @@ static const BossKind kindCookie = {
     BOSS_Y_MAX,
     (BOSS_W / 2) - 4, BOSS_H - 4,
     BOSS_SHOT_BONE, (BOSS_W - BOSS_BONE_W) / 2, BOSS_H - 4,
-    1, 3, 0, BOSS_HOME_Y
+    1, 3, 0, 100, BOSS_HOME_Y
 };
 
 static const BossKind kindTurtle = {
@@ -70,7 +71,7 @@ static const BossKind kindTurtle = {
     BOSS2_Y_MAX,
     BOSS2_FAN_OX, BOSS2_FAN_OY,
     BOSS_SHOT_STAR, BOSS2_STAR_OX, BOSS2_STAR_OY,
-    0, BOSS2_ANIM_SHIFT, 1, BOSS2_HOME_Y
+    0, BOSS2_ANIM_SHIFT, 1, BOSS2_FAN_SPEED_PCT, BOSS2_HOME_Y
 };
 
 static const BossKind* kind = &kindCookie;
@@ -325,8 +326,9 @@ static void fireFan(void) {
     s16 my = boss.y + kind->fanOY;
     s16 dx = player_get()->x - mx;
     s16 aim = 0;
-    s16 vy = (s16)cfg->bulletSpeed + 1;
+    s16 vy = (s16)(((s32)((s16)cfg->bulletSpeed + 1) * (s32)kind->fanSpeedPct) / 100);
 
+    if (vy < 1) vy = 1;  /* turtle fan: BOSS2_FAN_SPEED_PCT, Cookie 100% */
     if (dx > BOSS_FAN_AIM_ZONE) aim = 1;
     else if (dx < -BOSS_FAN_AIM_ZONE) aim = -1;
     bullets_shootEnemyXYV(mx, my, aim, vy);

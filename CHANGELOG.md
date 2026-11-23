@@ -3,6 +3,19 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Abanico de la tortuga más lento (AMH + Bimo) - V0.3.75
+
+### Cambiado
+- Alberto: el abanico de 3 balas de la tortuga es por mucho el ataque que
+  más mata. Ahora cae al 65% de la velocidad normal del abanico
+  (`BOSS2_FAN_SPEED_PCT` en `inc/config.h`, mínimo 1 px/frame).
+- En las oleadas de la tortuga (10, 30, 50...) la bala enemiga ya está en
+  su tope de 7 px/frame en EASY, NORMAL y HARD, así que el abanico pasa de
+  8 a 5 px/frame en las tres dificultades (37.5% más lento).
+- La velocidad lateral del abanico no cambia (`BOSS_FAN_SPREAD` 2), así que
+  se abre un poco más y deja huecos más anchos entre las balas.
+- La Cookie no cambia (su abanico sigue a `bulletSpeed + 1`).
+
 ## 2026-11-23 - Tortuga más rápida (AMH + Bimo) - V0.3.74
 
 ### Cambiado

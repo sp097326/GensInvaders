@@ -140,6 +140,12 @@
 #define BOSS2_DIVE_MIN_HARD     120  /* 2-3.6 s */
 #define BOSS2_DIVE_MAX_HARD     216
 #define BOSS2_PATROL_EXTRA        1  /* patrol px/frame = bossSpeed + 1: 2/3/4 (was 1/2/3) */
+/* Turtle fan (V0.3.75): the 3 bullets fall at this % of the normal fan
+ * speed (bulletSpeed + 1), min 1 px/frame. bulletSpeed is already capped
+ * at 7 on boss waves (10, 30, 50...) on every difficulty, so the fan goes
+ * from 8 to 5 px/frame (37.5% slower). Sideways speed (BOSS_FAN_SPREAD)
+ * is unchanged, so the fan opens a bit wider. La Cookie keeps 100%. */
+#define BOSS2_FAN_SPEED_PCT      65
 #define BOSS2_DIVE_SPEED_BASE     5  /* dive px/frame = base + bossSpeed: 6/7/8 (was 5/6/7, 3/4/5) */
 #define BOSS2_RETURN_SPEED        2  /* px/frame from above the screen back home */
 #define BOSS2_WARN_FRAMES        20  /* telegraph: stops, shakes 1 px, blinks yellow (was 36) */
