@@ -3,6 +3,29 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Cápsulas de escudo (E) e impulso (I) (AMH + Bimo) - V0.4.79
+
+### Agregado
+- Idea de Alberto: además de la cápsula "R" (RapidFire) pueden caer una
+  "E" que termina al instante la recarga del escudo y una "I" que termina
+  la del impulso. La probabilidad de que caiga cápsula al destruir una nave
+  no cambia (10%, garantizada tras 10 derribos sin cápsula, una en
+  pantalla); al soltarse, el tipo se sortea 1/3 cada uno
+  (`CAPSULE_WEIGHT_RAPID/SHIELD/BOOST` en `inc/config.h`, 0 desactiva un
+  tipo). Los jefes siempre sueltan "R".
+- Colores: "R" naranja/blanca (PAL1, como antes), "E" azul/blanca (PAL1, el
+  azul de la burbuja del escudo), "I" verde/blanca (PAL3, el verde de la
+  barra IMP lista). Mismo sprite de 8x8 (1 sprite de hardware, 1 tile):
+  `res/tiles/imgcapsule.bmp` pasa de 16x8 a 16x24, 3 filas de animación
+  (R, E, I) con 2 cuadros de parpadeo; el tipo elige la fila y la paleta.
+- Al atrapar "E": si el escudo recarga, queda listo (sonido de listo y
+  parpadeo). Con el escudo encendido, el relleno se guarda y al apagarse
+  queda listo sin recarga. Si ya estaba listo no pasa nada extra.
+- Al atrapar "I": igual con el impulso (`player_refillBoost`): si recarga,
+  queda listo y la barra parpadea; a media embestida se guarda y queda
+  listo al terminar (también si te pegan). Las tres usan el sonido de
+  recoger cápsula.
+
 ## 2026-11-23 - El jefe suelta la cápsula RF en vez de darla directo (AMH + Bimo) - V0.4.78
 
 ### Cambiado

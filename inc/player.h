@@ -28,6 +28,9 @@ void player_setWarpFlame(u16 on);
 /* Button A + LEFT (dir -1) or RIGHT (dir 1): dash if recharged and alive.
  * Returns 1 if the dash started. */
 u16  player_tryBoost(s16 dir);
+/* "I" capsule: finish the boost recharge now; during a dash, queue it so
+ * the boost is ready when the dash ends. */
+void player_refillBoost(void);
 /* Charged shot: begin on B press, release fires a tap or a charged bolt.
  * Cancel without firing (warp, death, title). Sync after pause. */
 void player_chargeBegin(void);

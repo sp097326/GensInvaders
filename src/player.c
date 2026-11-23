@@ -29,6 +29,7 @@ static u16 trailTimer = 0;      /* > 0 while the trail lingers after a dash */
 static u16 boostTimer = 0;      /* > 0 while dashing */
 static s16 boostDir = 0;
 static u16 boostCooldown = 0;   /* > 0 while recharging */
+static u16 boostRefillPending = 0;  /* "I" capsule caught mid-dash */
 static u16 boostCooldownMax = 0;
 static u16 boostReadyBlink = 0;
 static u16 boostHudMode = 0xFFFF;
@@ -149,9 +150,26 @@ static void endBoost(u16 linger) {
     boostTimer = 0;
     boostCooldownMax = boostRechargeFrames();
     boostCooldown = boostCooldownMax;
+    if (boostRefillPending) {
+        boostRefillPending = 0;
+        boostCooldown = 0;
+        boostReadyBlink = BOOST_READY_BLINK;
+    }
     trailTimer = linger ? BOOST_TRAIL_LINGER : 0;
     if (!linger) hideGhost();
     boostRefreshHud(1);
+}
+
+void player_refillBoost(void) {
+    if (boostTimer > 0) {
+        boostRefillPending = 1;
+        return;
+    }
+    if (boostCooldown > 0) {
+        boostCooldown = 0;
+        boostReadyBlink = BOOST_READY_BLINK;
+        boostRefreshHud(1);
+    }
 }
 
 static void updateBoostTimers(void) {
@@ -343,6 +361,7 @@ void player_reset(void) {
     boostCooldown = 0;
     boostCooldownMax = 0;
     boostReadyBlink = 0;
+    boostRefillPending = 0;
     trailTimer = 0;
     hideGhost();
     boostRefreshHud(1);

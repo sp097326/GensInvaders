@@ -182,6 +182,18 @@
 #define RAPID_DROP_MOD     10  /* 1 in 10 */
 #define RAPID_DROP_PITY    10  /* guaranteed drop on the 10th dry kill */
 #define CAPSULE_SPEED       1  /* pixels per frame, downward */
+/* Capsule types (V0.4.79, Alberto's idea). When an enemy kill drops a
+ * capsule (same 10% + pity + one on screen), its type is rolled with these
+ * weights (1/1/1 = 1/3 each; 0 disables a type, at least one must be > 0):
+ *   R (orange/white, PAL1)  RapidFire, as before
+ *   E (blue/white, PAL1)    refills the shield (ESC) recharge at once
+ *   I (green/white, PAL3)   refills the boost (IMP) recharge at once
+ * Caught while the shield / dash is in use, the refill is queued: it is
+ * ready again the moment that use ends (no recharge). Boss capsules are
+ * always R. One sprite: the type is the animation row of imgcapsule.bmp. */
+#define CAPSULE_WEIGHT_RAPID   1
+#define CAPSULE_WEIGHT_SHIELD  1
+#define CAPSULE_WEIGHT_BOOST   1
 /* Boss reward (V0.4.78): a defeated boss always drops a capsule at its
  * centre (no 10% roll, replaces any capsule on screen) instead of
  * granting RapidFire on the spot. The spawn is clamped to the screen and

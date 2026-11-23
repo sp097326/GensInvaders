@@ -10,6 +10,13 @@
 static GameEntity capsule = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
 static u16 capsuleTick = 0;
 static u16 capsuleBoss = 0;     /* 1 = boss reward, survives the warp */
+static u16 capsuleType = 0;     /* CAPSULE_RAPID / _SHIELD / _BOOST = anim row */
+static u16 shieldRefillPending = 0;  /* "E" caught while the shield is up */
+
+#define CAPSULE_RAPID   0
+#define CAPSULE_SHIELD  1
+#define CAPSULE_BOOST   2
+#define CAPSULE_WEIGHT_TOTAL (CAPSULE_WEIGHT_RAPID + CAPSULE_WEIGHT_SHIELD + CAPSULE_WEIGHT_BOOST)
 static u16 killsSinceDrop = 0;
 static u16 powerupTimer = 0;
 static u16 rapidDuration = 0;
@@ -203,20 +210,53 @@ static void grantRapidFire(void) {
     rapidRefreshHud(1);
 }
 
+/* "E" capsule: finish the shield recharge now (ready, with the usual
+ * ready ding and blink). While the shield is up the refill is queued and
+ * applied when it ends, so it is ready again with no recharge. */
+static void refillShield(void) {
+    if (shieldActive) {
+        shieldRefillPending = 1;
+        return;
+    }
+    if (shieldRecharge > 0) {
+        shieldRecharge = 0;
+        XGM_startPlayPCM(SFX_SHIELD_READY, 10, SOUND_PCM_CH1);
+        shieldReadyBlink = 32;
+        shieldRefreshHud(1);
+    }
+}
+
 static void collectCapsule(void) {
+    u16 type = capsuleType;
+
     powerups_clearCapsule();
     /* CH4, below the 1UP jingle, never on the shield hum channel. */
     XGM_startPlayPCM(SFX_RAPID_PICK, 11, SOUND_PCM_CH4);
-    grantRapidFire();
+    if (type == CAPSULE_SHIELD) refillShield();
+    else if (type == CAPSULE_BOOST) player_refillBoost();
+    else grantRapidFire();
 }
 
-static void spawnCapsule(s16 x, s16 y) {
+static u16 rollCapsuleType(void) {
+    u16 r;
+
+    if (CAPSULE_WEIGHT_TOTAL == 0) return CAPSULE_RAPID;
+    r = random() % CAPSULE_WEIGHT_TOTAL;
+    if (r < CAPSULE_WEIGHT_RAPID) return CAPSULE_RAPID;
+    if (r < CAPSULE_WEIGHT_RAPID + CAPSULE_WEIGHT_SHIELD) return CAPSULE_SHIELD;
+    return CAPSULE_BOOST;
+}
+
+static void spawnCapsule(s16 x, s16 y, u16 type) {
+    capsuleType = type;
+    /* The I capsule takes green from PAL3 (the IMP bar's ready green). */
+    SPR_setPalette(capsule.sprite, (type == CAPSULE_BOOST) ? PAL3 : PAL1);
     capsule.x = x;
     capsule.y = y;
     capsule.vely = CAPSULE_SPEED;
     capsule.health = 1;
     capsuleTick = 0;
-    SPR_setAnimAndFrame(capsule.sprite, 0, 0);
+    SPR_setAnimAndFrame(capsule.sprite, capsuleType, 0);
     SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
     SPR_setVisibility(capsule.sprite, VISIBLE);
 }
@@ -235,7 +275,7 @@ void powerups_dropBossCapsule(s16 x, s16 y) {
     if (cy < BOSS_CAPSULE_Y_MIN) cy = BOSS_CAPSULE_Y_MIN;
     if (cy > BOSS_CAPSULE_Y_MAX) cy = BOSS_CAPSULE_Y_MAX;
     killsSinceDrop = 0;
-    spawnCapsule(cx, cy);
+    spawnCapsule(cx, cy, CAPSULE_RAPID);
     capsuleBoss = 1;
 }
 
@@ -257,7 +297,7 @@ void powerups_tryDrop(s16 x, s16 y) {
     cx = x + 4;
     if (cx < LEFT_EDGE) cx = LEFT_EDGE;
     if (cx > (s16)(RIGHT_EDGE - 8)) cx = (s16)(RIGHT_EDGE - 8);
-    spawnCapsule(cx, y + 4);
+    spawnCapsule(cx, y + 4, rollCapsuleType());
     capsuleBoss = 0;
 }
 
@@ -270,7 +310,8 @@ void powerups_init(void) {
     SPR_setAutoAnimation(shieldSpr, FALSE);
     SPR_setVisibility(shieldSpr, HIDDEN);
 
-    /* 8x8 "R" capsule, 2 blink frames, one hardware sprite. Low priority
+    /* 8x8 capsule, one hardware sprite: 3 animation rows (R / E / I),
+     * 2 blink frames each. Low priority
      * so the bottom-row life icons and RF bar stay readable if it falls
      * through that corner. */
     capsule.sprite = SPR_addSprite(&capsuleSpr, 0, -16, TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -307,7 +348,7 @@ void powerups_update(void) {
             powerups_clearCapsule();
         } else {
             capsuleTick++;
-            SPR_setAnimAndFrame(capsule.sprite, 0, (capsuleTick >> 3) & 1);
+            SPR_setAnimAndFrame(capsule.sprite, capsuleType, (capsuleTick >> 3) & 1);
             SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
             p = player_get();
             if (p->health && !player_isExploding() && collideEntities(&capsule, p)) {
@@ -324,6 +365,12 @@ void powerups_update(void) {
             hideShieldSprite();
             stopShieldHum();
             shieldRecharge = shieldRechargeMax;
+            if (shieldRefillPending) {
+                shieldRefillPending = 0;
+                shieldRecharge = 0;
+                XGM_startPlayPCM(SFX_SHIELD_READY, 10, SOUND_PCM_CH1);
+                shieldReadyBlink = 32;
+            }
         } else {
             shieldHumUpdate();
         }
@@ -351,6 +398,7 @@ void powerups_reset(void) {
     shieldTimer = 0;
     shieldRecharge = 0;
     shieldReadyBlink = 0;
+    shieldRefillPending = 0;
     hideShieldSprite();
     shieldHumMuted = 0;
     stopShieldHum();
