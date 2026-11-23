@@ -21,6 +21,9 @@ void powerups_clearCapsule(void);
 void powerups_dropBossCapsule(s16 x, s16 y);
 /* Wave change: clear a falling enemy capsule but keep a boss capsule. */
 void powerups_clearWaveCapsule(void);
+/* Points earned by an E / I capsule caught with its bar already full
+ * since the last call (0 if none). Clears the pending value. */
+u16  powerups_takeBonus(void);
 /* Button C: start the shield if it is charged and the player is alive. */
 void powerups_tryShield(void);
 u16  powerups_shieldActive(void);

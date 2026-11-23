@@ -451,6 +451,18 @@ void game_state_update(void) {
             }
         }
         powerups_update();
+        {
+            /* E / I capsule caught on a full bar: bonus points. */
+            u16 bonus = powerups_takeBonus();
+            if (bonus) {
+                u16 gained;
+                score += bonus;
+                gained = player_checkExtraLife(score);
+                hud_updateScore(score, enemies_left(), player_lives());
+                if (gained) hud_showExtraLife(gained);
+                else hud_showBonus(bonus);
+            }
+        }
         explosions_update();
         hud_updateExtraLife();
     } else if (gameState == STATE_NAME_ENTRY) {

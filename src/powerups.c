@@ -12,6 +12,7 @@ static u16 capsuleTick = 0;
 static u16 capsuleBoss = 0;     /* 1 = boss reward, survives the warp */
 static u16 capsuleType = 0;     /* CAPSULE_RAPID / _SHIELD / _BOOST = anim row */
 static u16 shieldRefillPending = 0;  /* "E" caught while the shield is up */
+static u16 pendingBonus = 0;    /* points from an E / I caught on a full bar */
 
 #define CAPSULE_RAPID   0
 #define CAPSULE_SHIELD  1
@@ -226,15 +227,37 @@ static void refillShield(void) {
     }
 }
 
+/* E / I on a bar that is already full (ready, nothing in use or queued):
+ * bonus points instead of a wasted refill. */
+static void awardFullBonus(void) {
+    pendingBonus = (u16)(CAPSULE_FULL_BONUS * difficulty_config()->enemyPoints);
+    /* Lock-on ding on CH4 instead of the pickup sound. */
+    XGM_startPlayPCM(SFX_CHARGE_READY, 11, SOUND_PCM_CH4);
+}
+
 static void collectCapsule(void) {
     u16 type = capsuleType;
 
     powerups_clearCapsule();
+    if (type == CAPSULE_SHIELD && !shieldActive && shieldRecharge == 0) {
+        awardFullBonus();
+        return;
+    }
+    if (type == CAPSULE_BOOST && player_boostReady()) {
+        awardFullBonus();
+        return;
+    }
     /* CH4, below the 1UP jingle, never on the shield hum channel. */
     XGM_startPlayPCM(SFX_RAPID_PICK, 11, SOUND_PCM_CH4);
     if (type == CAPSULE_SHIELD) refillShield();
     else if (type == CAPSULE_BOOST) player_refillBoost();
     else grantRapidFire();
+}
+
+u16 powerups_takeBonus(void) {
+    u16 b = pendingBonus;
+    pendingBonus = 0;
+    return b;
 }
 
 static u16 rollCapsuleType(void) {
@@ -399,6 +422,7 @@ void powerups_reset(void) {
     shieldRecharge = 0;
     shieldReadyBlink = 0;
     shieldRefillPending = 0;
+    pendingBonus = 0;
     hideShieldSprite();
     shieldHumMuted = 0;
     stopShieldHum();

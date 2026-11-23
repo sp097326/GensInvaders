@@ -194,6 +194,12 @@
 #define CAPSULE_WEIGHT_RAPID   1
 #define CAPSULE_WEIGHT_SHIELD  1
 #define CAPSULE_WEIGHT_BOOST   1
+/* V0.4.80: an E / I capsule caught while its bar is already full (shield
+ * or boost ready, nothing in use) gives bonus points instead: worth
+ * CAPSULE_FULL_BONUS enemy ships at the current difficulty
+ * (5 x 10/20/30 = 50/100/150 points on EASY/NORMAL/HARD). Shown as "+N"
+ * in the "+1 NAVE" slot of the bottom row, with the lock-on ding. */
+#define CAPSULE_FULL_BONUS     5
 /* Boss reward (V0.4.78): a defeated boss always drops a capsule at its
  * centre (no 10% roll, replaces any capsule on screen) instead of
  * granting RapidFire on the spot. The spawn is clamped to the screen and

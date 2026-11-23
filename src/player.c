@@ -172,6 +172,10 @@ void player_refillBoost(void) {
     }
 }
 
+u16 player_boostReady(void) {
+    return (boostTimer == 0 && boostCooldown == 0) ? 1 : 0;
+}
+
 static void updateBoostTimers(void) {
     if (boostTimer > 0) return;  /* counted down in positionPlayer */
     if (boostCooldown > 0) {

@@ -33,5 +33,7 @@ void hud_clearOverlay(void);
 void hud_showExtraLife(u16 granted);
 void hud_updateExtraLife(void);
 void hud_hideExtraLife(void);
+/* "+N" points in the same slot for the same ~1 s (no icon blink). */
+void hud_showBonus(u16 points);
 
 #endif

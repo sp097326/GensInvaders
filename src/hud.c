@@ -434,6 +434,19 @@ void hud_showExtraLife(u16 granted) {
     drawLivesIcons();
 }
 
+void hud_showBonus(u16 points) {
+    sprintf(extraLifeText, "+%u", points);
+    VDP_clearText(EXTRA_LIFE_TEXT_X, EXTRA_LIFE_TEXT_Y, EXTRA_LIFE_TEXT_W);
+    VDP_drawText(extraLifeText, EXTRA_LIFE_TEXT_X, EXTRA_LIFE_TEXT_Y);
+    if (extraLifeGranted > 0) {
+        /* Cut a "+1 NAVE" blink short: put its icons back to solid. */
+        extraLifeGranted = 0;
+        extraLifeIconOn = 1;
+        drawLivesIcons();
+    }
+    extraLifeTimer = IS_PAL_SYSTEM ? EXTRA_LIFE_BANNER_PAL : EXTRA_LIFE_BANNER_NTSC;
+}
+
 void hud_updateExtraLife(void) {
     u16 iconOn;
     if (extraLifeTimer == 0) return;

@@ -31,6 +31,8 @@ u16  player_tryBoost(s16 dir);
 /* "I" capsule: finish the boost recharge now; during a dash, queue it so
  * the boost is ready when the dash ends. */
 void player_refillBoost(void);
+/* 1 when the boost is ready (not dashing, not recharging). */
+u16  player_boostReady(void);
 /* Charged shot: begin on B press, release fires a tap or a charged bolt.
  * Cancel without firing (warp, death, title). Sync after pause. */
 void player_chargeBegin(void);

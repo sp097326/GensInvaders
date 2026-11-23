@@ -3,6 +3,21 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Puntos extra por cápsula E/I con la barra llena (AMH + Bimo) - V0.4.80
+
+### Cambiado
+- Idea de Alberto: una "E" o una "I" atrapada con su barra ya llena
+  (escudo listo sin usarse / impulso listo, sin relleno guardado) ya no se
+  desperdicia: da `CAPSULE_FULL_BONUS` (5) naves de puntos según la
+  dificultad: 50 en EASY, 100 en NORMAL, 150 en HARD (las naves valen
+  10/20/30; una nave extra cada 1000).
+- Aviso: suena el "ding" de disparo cargado listo (CH4) en vez del sonido
+  de recoger, y aparece "+N" en la fila 27, en el lugar de "+1 NAVE", el
+  mismo ~1 s (`hud_showBonus`). Si los puntos completan una nave extra se
+  muestra "+1 NAVE".
+- Con el escudo encendido o a media embestida sigue el relleno guardado de
+  V0.4.79, sin puntos. La "R" y las cápsulas de jefe no cambian.
+
 ## 2026-11-23 - Cápsulas de escudo (E) e impulso (I) (AMH + Bimo) - V0.4.79
 
 ### Agregado
