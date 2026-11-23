@@ -24,7 +24,15 @@ static u16 bossPal[16];
 static u16 bossPalSaved = 0;
 static s16 homeY = BOSS_HOME_Y;
 static u16 lastWasFan = 0;
-static u16 bobAng = 0;
+/* Turtle patrol / dive state (V0.3.72). */
+#define DIVE_PATROL 0
+#define DIVE_WARN   1
+#define DIVE_DOWN   2
+#define DIVE_BACK   3
+static u16 diveState = DIVE_PATROL;
+static u16 diveTimer = 0;
+static u16 warnTimer = 0;
+static s16 drawOX = 0;  /* telegraph shake, sprite only */
 
 /* Per-boss layout (23/11/2026). La Cookie keeps exactly the values it had
  * before (BOSS_* in config.h); the turtle wizard (wave 20) uses BOSS2_*.
@@ -41,7 +49,8 @@ typedef struct {
     s16 shotOX, shotOY;                /* main attack muzzle */
     u16 flashFrame;                    /* 1 = show frame 1 while flashing */
     u16 animShift;                     /* frame swap every 2^n frames */
-    s16 bobAmp;                        /* floating bob (px), 0 = none */
+    u16 patrolDive;                    /* 1 = left-right patrol + dive (turtle) */
+    s16 homeY;                         /* roam centre / patrol height */
 } BossKind;
 
 static const BossKind kindCookie = {
@@ -50,7 +59,7 @@ static const BossKind kindCookie = {
     BOSS_Y_MAX,
     (BOSS_W / 2) - 4, BOSS_H - 4,
     BOSS_SHOT_BONE, (BOSS_W - BOSS_BONE_W) / 2, BOSS_H - 4,
-    1, 3, 0
+    1, 3, 0, BOSS_HOME_Y
 };
 
 static const BossKind kindTurtle = {
@@ -59,7 +68,7 @@ static const BossKind kindTurtle = {
     BOSS2_Y_MAX,
     BOSS2_FAN_OX, BOSS2_FAN_OY,
     BOSS_SHOT_STAR, BOSS2_STAR_OX, BOSS2_STAR_OY,
-    0, BOSS2_ANIM_SHIFT, BOSS2_BOB_AMP
+    0, BOSS2_ANIM_SHIFT, 1, BOSS2_HOME_Y
 };
 
 static const BossKind* kind = &kindCookie;
@@ -69,7 +78,19 @@ static const BossKind* kindForAppearance(u16 n) {
 }
 
 static s16 kindHomeY(const BossKind* k) {
-    return (BOSS_Y_MIN + k->yMax) / 2;  /* Cookie: 42 = BOSS_HOME_Y */
+    return k->homeY;  /* Cookie: 42 = BOSS_HOME_Y, turtle: BOSS2_HOME_Y */
+}
+
+/* Random frames until the next turtle dive, by difficulty. */
+static u16 nextDiveDelay(void) {
+    u16 lo, hi;
+
+    switch (difficulty_current()) {
+    case DIFF_EASY: lo = BOSS2_DIVE_MIN_EASY; hi = BOSS2_DIVE_MAX_EASY; break;
+    case DIFF_HARD: lo = BOSS2_DIVE_MIN_HARD; hi = BOSS2_DIVE_MAX_HARD; break;
+    default:        lo = BOSS2_DIVE_MIN_NORMAL; hi = BOSS2_DIVE_MAX_NORMAL; break;
+    }
+    return lo + (u16)(random() % (u16)(hi - lo + 1));
 }
 
 static u16 appearanceOf(u16 wave) {
@@ -136,7 +157,7 @@ static void placeSprite(void) {
     u16 frame = 0;
 
     if (boss.sprite == NULL) return;
-    SPR_setPosition(boss.sprite, boss.x, boss.y);
+    SPR_setPosition(boss.sprite, boss.x + drawOX, boss.y);
     /* Cookie holds its bright frame while the core is flashing. A
      * 1-frame boss (the turtle for now) always shows frame 0; drop a 2nd
      * frame into its PNG and it starts animating with no code change. */
@@ -174,6 +195,8 @@ u16 boss_points(void) {
 }
 
 void boss_hide(void) {
+    diveState = DIVE_PATROL;
+    drawOX = 0;
     restoreBossPal();
     active = 0;
     entering = 0;
@@ -237,7 +260,10 @@ void boss_beginEnter(u16 offset) {
     /* Lissajous starts at the centre of the top-half roam box. */
     angX = 0;
     angY = 0;
-    bobAng = 0;
+    diveState = DIVE_PATROL;
+    diveTimer = nextDiveDelay();
+    warnTimer = 0;
+    drawOX = 0;
     homeY = kindHomeY(kind);
     boss.x = (RIGHT_EDGE - kind->w) / 2;
     boss.y = homeY - (s16)offset;
@@ -314,15 +340,13 @@ static void fireAttack(void) {
     lastWasFan = useFan;
 }
 
-/* Smooth Lissajous roam: never leaves the top half of the screen.
- * Speed scales with difficulty (bossSpeed 1/2/3). A boss with bobAmp
- * (the turtle) also floats up and down a few px; its Lissajous band is
- * bobAmp smaller so the sum stays inside BOSS_Y_MIN..yMax. */
+/* Smooth Lissajous roam (La Cookie): never leaves the top half of the
+ * screen. Speed scales with difficulty (bossSpeed 1/2/3). */
 static void roam(u16 speed) {
     s16 xMid = (RIGHT_EDGE - kind->w) / 2;
     s16 xAmp = xMid;
     s16 yMid = kindHomeY(kind);
-    s16 yAmp = (kind->yMax - BOSS_Y_MIN) / 2 - kind->bobAmp;
+    s16 yAmp = (kind->yMax - BOSS_Y_MIN) / 2;
     fix16 sx;
     fix16 sy;
 
@@ -333,14 +357,95 @@ static void roam(u16 speed) {
     sy = sinFix16(angY);
     boss.x = xMid + (s16)(((s32)sx * (s32)xAmp) / 64);
     boss.y = yMid + (s16)(((s32)sy * (s32)yAmp) / 64);
-    if (kind->bobAmp > 0) {
-        bobAng = (bobAng + BOSS2_BOB_STEP) & 1023;
-        boss.y += (s16)(((s32)sinFix16(bobAng) * (s32)kind->bobAmp) / 64);
-    }
     if (boss.x < LEFT_EDGE) boss.x = LEFT_EDGE;
     if (boss.x > RIGHT_EDGE - kind->w) boss.x = RIGHT_EDGE - kind->w;
     if (boss.y < BOSS_Y_MIN) boss.y = BOSS_Y_MIN;
     if (boss.y > kind->yMax) boss.y = kind->yMax;
+}
+
+/* Turtle: constant left-right patrol at its home height. */
+static void patrol(void) {
+    s16 xMax = RIGHT_EDGE - kind->w;
+
+    boss.x += boss.velx;
+    if (boss.x <= LEFT_EDGE) {
+        boss.x = LEFT_EDGE;
+        if (boss.velx < 0) boss.velx = -boss.velx;
+    } else if (boss.x >= xMax) {
+        boss.x = xMax;
+        if (boss.velx > 0) boss.velx = -boss.velx;
+    }
+    boss.y = homeY;
+}
+
+/* Telegraph tint: body colours 1-3 blink yellow. A red hit flash wins. */
+static void warnTint(u16 on) {
+    if (flashTimer > 0) return;
+    if (on) {
+        PAL_setColor(33, RGB24_TO_VDPCOLOR(0xFCFC6C));
+        PAL_setColor(34, RGB24_TO_VDPCOLOR(0xFCFC6C));
+        PAL_setColor(35, RGB24_TO_VDPCOLOR(0xFCFC6C));
+    } else {
+        applyBossPal();
+    }
+}
+
+/* Turtle state machine. Returns 1 while it may fire (patrol only). */
+static u16 updateTurtle(const DifficultyConfig* cfg, u16 playerOk) {
+    s16 speed;
+
+    switch (diveState) {
+    case DIVE_WARN:
+        drawOX = ((warnTimer >> 1) & 1) ? 1 : -1;
+        warnTint((warnTimer >> 2) & 1);
+        if (warnTimer > 0) warnTimer--;
+        if (warnTimer == 0) {
+            drawOX = 0;
+            warnTint(0);
+            diveState = DIVE_DOWN;
+        }
+        return 0;
+    case DIVE_DOWN:
+        speed = BOSS2_DIVE_SPEED_BASE + (s16)cfg->bossSpeed;
+        boss.y += speed;
+        if (boss.y > BOTTOM_EDGE) {
+            /* Fully below the screen: jump to just above the top (the
+             * sprite is off screen at both ends, so no visible wrap). */
+            boss.y = -kind->h;
+            diveState = DIVE_BACK;
+        }
+        return 0;
+    case DIVE_BACK:
+        boss.y += BOSS2_RETURN_SPEED;
+        if (boss.y >= homeY) {
+            boss.y = homeY;
+            diveState = DIVE_PATROL;
+            diveTimer = nextDiveDelay();
+        }
+        return 0;
+    default:
+        patrol();
+        if (!playerOk) return 1;
+        if (diveTimer > 0) diveTimer--;
+        if (diveTimer == 0) {
+            diveState = DIVE_WARN;
+            warnTimer = BOSS2_WARN_FRAMES;
+            return 0;
+        }
+        return 1;
+    }
+}
+
+u16 boss_bodyHits(GameEntity* p) {
+    s16 bx, by;
+
+    if (!active || entering || boss.health == 0 || p == NULL) return 0;
+    if (!kind->patrolDive) return 0;
+    if (diveState != DIVE_DOWN && diveState != DIVE_BACK) return 0;
+    bx = boss.x + BOSS2_BODY_OX;
+    by = boss.y + BOSS2_BODY_OY;
+    return (p->x < bx + BOSS2_BODY_W && p->x + p->w > bx &&
+            p->y < by + BOSS2_BODY_H && p->y + p->h >= by) ? 1 : 0;
 }
 
 void boss_update(void) {
@@ -362,10 +467,16 @@ void boss_update(void) {
     }
 
     cfg = difficulty_config();
-    roam((u16)cfg->bossSpeed);
-    placeSprite();
-
-    if (player_isExploding() || player_get()->health == 0) return;
+    if (kind->patrolDive) {
+        u16 playerOk = (player_isExploding() || player_get()->health == 0) ? 0 : 1;
+        u16 canFire = updateTurtle(cfg, playerOk);
+        placeSprite();
+        if (!playerOk || !canFire) return;
+    } else {
+        roam((u16)cfg->bossSpeed);
+        placeSprite();
+        if (player_isExploding() || player_get()->health == 0) return;
+    }
 
     if (fireTimer > 0) fireTimer--;
     if (fireTimer == 0) {

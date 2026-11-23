@@ -114,13 +114,34 @@
 #define BOSS2_CORE_OY         8  /* y 8-43, inside the shell */
 #define BOSS2_CORE_W         24
 #define BOSS2_CORE_H         36
-#define BOSS2_Y_MAX          (112 - BOSS2_H)  /* 48: stays in the top half */
+#define BOSS2_Y_MAX          (112 - BOSS2_H)  /* 48: unused by the patrol, kept for the kind table */
+#define BOSS2_HOME_Y         32  /* fixed patrol height (just below the JEFE bar) */
 #define BOSS2_FAN_OX         28  /* fan from the head (bullet centred at x 32) */
 #define BOSS2_FAN_OY         48
 #define BOSS2_STAR_OX        50  /* star centred on the wand tip (58, 28) */
 #define BOSS2_STAR_OY        20
-#define BOSS2_BOB_AMP         2  /* floating bob: +-2 px on top of the roam */
-#define BOSS2_BOB_STEP       16  /* sin steps per frame: 64 frames per bob */
+/* Turtle movement (V0.3.72, Alberto): no Lissajous and no bob. It patrols
+ * left-right at a constant bossSpeed px/frame (1/2/3) at BOSS2_HOME_Y and,
+ * at a random interval, dives straight down from its current column across
+ * the screen, leaves through the bottom, re-enters from the top and slides
+ * back down to its home height. Body contact costs a life (player_hit); the
+ * shield does NOT stop it (like the bone and the star) unless
+ * BOSS2_DIVE_SHIELD_BLOCKS is 1. No stars or fan while warning/diving. */
+#define BOSS2_DIVE_MIN_EASY     240  /* frames between dives: 4-7 s */
+#define BOSS2_DIVE_MAX_EASY     420
+#define BOSS2_DIVE_MIN_NORMAL   180  /* 3-6 s */
+#define BOSS2_DIVE_MAX_NORMAL   360
+#define BOSS2_DIVE_MIN_HARD     150  /* 2.5-4.5 s */
+#define BOSS2_DIVE_MAX_HARD     270
+#define BOSS2_DIVE_SPEED_BASE     2  /* dive px/frame = base + bossSpeed: 3/4/5 */
+#define BOSS2_RETURN_SPEED        2  /* px/frame from above the screen back home */
+#define BOSS2_WARN_FRAMES        36  /* telegraph: stops, shakes 1 px, blinks yellow */
+#define BOSS2_DIVE_SHIELD_BLOCKS  0  /* 1 = an active shield makes the dive harmless */
+/* Body contact box for the dive (shell + head, limbs and wand excluded). */
+#define BOSS2_BODY_OX        18
+#define BOSS2_BODY_OY         8
+#define BOSS2_BODY_W         28
+#define BOSS2_BODY_H         42
 #define BOSS2_ANIM_SHIFT      4  /* 2nd frame (when added): swap every 16 frames */
 /* Turtle main attack: a 16x16 star from the wand instead of the bone.
  * Same mechanics as the bone: falls straight down BOSS_STAR_SLOWER px/frame

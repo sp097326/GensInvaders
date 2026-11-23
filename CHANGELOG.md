@@ -3,6 +3,41 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - La tortuga patrulla de lado a lado y se lanza en picada (AMH + Bimo) - V0.3.72
+
+### Cambiado
+- Movimiento de la tortuga (oleada 20): ya no usa el recorrido Lissajous
+  ni la flotación de ±2 px. Patrulla de izquierda a derecha a velocidad
+  constante (`bossSpeed`: 1/2/3 px/frame en EASY/NORMAL/HARD) a una altura
+  fija (`BOSS2_HOME_Y` = 32) y rebota en las orillas.
+- La Cookie (oleadas 10, 30, 40...) no cambia.
+
+### Agregado
+- Picada: cada cierto tiempo al azar (EASY 4-7 s, NORMAL 3-6 s, HARD
+  2.5-4.5 s; `BOSS2_DIVE_MIN_*` / `BOSS2_DIVE_MAX_*`) la tortuga avisa,
+  se lanza recto hacia abajo desde su columna, atraviesa la pantalla, sale
+  por abajo, reaparece por arriba y baja a 2 px/frame hasta su altura,
+  donde retoma la patrulla.
+- Aviso antes de lanzarse: se detiene 36 frames (~0.6 s), tiembla 1 px y
+  el caparazón parpadea en amarillo (colores 1-3 de PAL2; un golpe al
+  núcleo sigue mostrando el rojo).
+- Velocidad de la picada: 2 + `bossSpeed` = 3/4/5 px/frame.
+- Contacto: si el cuerpo de la tortuga (caparazón y cabeza, caja de 28x42
+  en el desplazamiento 18,8) toca la nave durante la picada o el regreso,
+  cuesta una vida (`player_hit`, igual que una bala). El escudo NO la
+  detiene, igual que el hueso y la estrella (`BOSS2_DIVE_SHIELD_BLOCKS` 0;
+  con 1 el escudo la haría inofensiva). La invulnerabilidad tras reaparecer
+  sí protege. La tortuga sigue su camino después del golpe.
+- Mientras avisa, baja o regresa no dispara estrellas ni abanico; el
+  temporizador de disparo sigue solo durante la patrulla. Sigue recibiendo
+  daño en el núcleo durante la picada (con la misma zona de 24x36).
+
+### Notas de juego
+- No empieza una picada mientras la nave está explotando o fuera de
+  pantalla.
+- La picada dura ~1 s (de y 32 a 224 a 4 px/frame en NORMAL) y el regreso
+  ~0.8 s. Al regresar pasa un momento por encima de la barra JEFE.
+
 ## 2026-11-23 - Segundo jefe: la tortuga hechicera en la oleada 20 (AMH + Bimo) - V0.3.71
 
 ### Agregado

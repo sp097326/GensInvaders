@@ -17,6 +17,9 @@ void boss_update(void);
  * one hit per pass). Returns 0 = no overlap, 1 = wing (no damage),
  * 2 = core hit, 3 = core hit that destroyed the boss. */
 u16  boss_hitShot(GameEntity* shot, u16 charged);
+/* Turtle dive: 1 if the boss body (diving or coming back) touches the
+ * player's box. Always 0 for La Cookie. */
+u16  boss_bodyHits(GameEntity* p);
 u16  boss_hp(void);
 u16  boss_hpMax(void);
 u16  boss_points(void);

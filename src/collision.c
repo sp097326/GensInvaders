@@ -188,6 +188,18 @@ u16 collision_update(int* score) {
             }
         }
 
+        /* Turtle dive (wave 20): body contact costs a life. The shield
+         * does not stop it (BOSS2_DIVE_SHIELD_BLOCKS 0), like the bone and
+         * the star; respawn invulnerability does. The turtle keeps going. */
+        if (p->health > 0 && player_invulnTimer() == 0 && boss_bodyHits(p)) {
+            if (!(BOSS2_DIVE_SHIELD_BLOCKS && powerups_shieldActive())) {
+                if (player_hit(*score)) {
+                    return COLLISION_GAME_OVER;
+                }
+                return COLLISION_NONE;
+            }
+        }
+
         /* Turtle stars (wave 20): same rule as the bone, the shield does
          * not stop them; only the 10x10 centre of the 16x16 star counts. */
         for (i = 0; i < MAX_BOSS_STARS; i++)
