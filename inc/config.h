@@ -107,7 +107,12 @@
  * res/tiles/imgboss2.png: 64x64, 1 frame, own 16-colour palette in PAL2
  * (indices 1-3 = shell and limb greens, tinted red by the hit flash).
  * If a 2nd frame is added (8 8 tiles per frame), boss.c animates it. */
-#define BOSS2_APPEARANCE      2   /* wave 20 = BOSS_WAVE_EVERY * 2 */
+/* V0.3.73 (Alberto): the order is swapped. Odd appearances (waves 10, 30,
+ * 50...) are the turtle, even ones (20, 40, 60...) La Cookie. HP still
+ * comes from the appearance number: turtle 350 on wave 10, Cookie 700 on
+ * wave 20, turtle 1400 on wave 30... (the notes above that say "wave 20"
+ * describe V0.3.71-72). */
+#define BOSS2_ON_ODD          1   /* 1 = turtle on odd appearances */
 #define BOSS2_W              64
 #define BOSS2_H              64
 #define BOSS2_CORE_OX        20  /* shell centre: x 20-43 */
@@ -133,9 +138,11 @@
 #define BOSS2_DIVE_MAX_NORMAL   360
 #define BOSS2_DIVE_MIN_HARD     150  /* 2.5-4.5 s */
 #define BOSS2_DIVE_MAX_HARD     270
-#define BOSS2_DIVE_SPEED_BASE     2  /* dive px/frame = base + bossSpeed: 3/4/5 */
+#define BOSS2_DIVE_SPEED_BASE     4  /* dive px/frame = base + bossSpeed: 5/6/7 (was 3/4/5) */
 #define BOSS2_RETURN_SPEED        2  /* px/frame from above the screen back home */
-#define BOSS2_WARN_FRAMES        36  /* telegraph: stops, shakes 1 px, blinks yellow */
+#define BOSS2_WARN_FRAMES        20  /* telegraph: stops, shakes 1 px, blinks yellow (was 36) */
+/* After leaving the bottom it re-enters from the top at a random x
+ * (0..RIGHT_EDGE - BOSS2_W), not the column it dived from. */
 #define BOSS2_DIVE_SHIELD_BLOCKS  0  /* 1 = an active shield makes the dive harmless */
 /* Body contact box for the dive (shell + head, limbs and wand excluded). */
 #define BOSS2_BODY_OX        18

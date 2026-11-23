@@ -35,7 +35,9 @@ static u16 warnTimer = 0;
 static s16 drawOX = 0;  /* telegraph shake, sprite only */
 
 /* Per-boss layout (23/11/2026). La Cookie keeps exactly the values it had
- * before (BOSS_* in config.h); the turtle wizard (wave 20) uses BOSS2_*.
+ * before (BOSS_* in config.h); the turtle wizard uses BOSS2_*. Since
+ * V0.3.73 the turtle is the odd appearances (waves 10, 30...) and La Cookie
+ * the even ones (20, 40...).
  * All offsets are from the sprite's top-left corner. */
 #define BOSS_SHOT_BONE 0
 #define BOSS_SHOT_STAR 1
@@ -74,7 +76,9 @@ static const BossKind kindTurtle = {
 static const BossKind* kind = &kindCookie;
 
 static const BossKind* kindForAppearance(u16 n) {
-    return (n == BOSS2_APPEARANCE) ? &kindTurtle : &kindCookie;
+    u16 odd = n & 1;
+    if (!BOSS2_ON_ODD) odd = !odd;
+    return odd ? &kindTurtle : &kindCookie;
 }
 
 static s16 kindHomeY(const BossKind* k) {
@@ -219,8 +223,8 @@ void boss_reset(void) {
 
 void boss_init(void) {
     /* 64x56 boss (temporary art from Alberto, 2 frames: flame flicker).
-     * Wave 20 swaps this same sprite to the 64x64 turtle wizard
-     * (boss_beginEnter); every other boss wave puts La Cookie back.
+     * Odd boss appearances (waves 10, 30...) swap this same sprite to the
+     * 64x64 turtle wizard (boss_beginEnter); even ones put La Cookie back.
      * Uses its own palette in PAL2 during the boss wave; boss_hide puts
      * the background palette back for the formation. PAL2 so the hit
      * tint does not touch the player (PAL1). High priority so it sits
@@ -412,6 +416,8 @@ static u16 updateTurtle(const DifficultyConfig* cfg, u16 playerOk) {
             /* Fully below the screen: jump to just above the top (the
              * sprite is off screen at both ends, so no visible wrap). */
             boss.y = -kind->h;
+            /* Come back at a random column (Alberto, V0.3.73). */
+            boss.x = LEFT_EDGE + (s16)(random() % (u16)(RIGHT_EDGE - kind->w - LEFT_EDGE + 1));
             diveState = DIVE_BACK;
         }
         return 0;

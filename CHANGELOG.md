@@ -3,6 +3,26 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Tortuga en la oleada 10, picada más rápida y regreso al azar (AMH + Bimo) - V0.3.73
+
+### Cambiado
+- Orden de jefes invertido (Alberto la sintió más fácil que La Cookie): la
+  tortuga es el jefe de la oleada 10 y La Cookie el de la 20. Después se
+  alternan: apariciones impares (10, 30, 50...) tortuga y pares (20, 40,
+  60...) La Cookie (`BOSS2_ON_ODD`). La vida sigue el número de aparición:
+  tortuga 350 en la 10, Cookie 700 en la 20, tortuga 1400 en la 30, Cookie
+  2800 en la 40, etc.
+- Aviso antes de la picada: 20 frames (~0.33 s) en lugar de 36.
+- Picada más rápida: 4 + `bossSpeed` = 5/6/7 px/frame en EASY/NORMAL/HARD
+  (antes 3/4/5). En NORMAL, desde que empieza el aviso hasta que el cuerpo
+  llega a la altura de la nave pasan ~38 frames (~0.6 s); la nave se mueve
+  2 px/frame y necesita ~11 frames para salir de la caja de 28 px.
+
+### Agregado
+- Al salir por abajo, la tortuga reaparece arriba en una columna al azar
+  (0 a 256), no en la misma por donde salió; baja a su altura y sigue
+  patrullando en la dirección que traía.
+
 ## 2026-11-23 - La tortuga patrulla de lado a lado y se lanza en picada (AMH + Bimo) - V0.3.72
 
 ### Cambiado
