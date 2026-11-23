@@ -338,6 +338,9 @@ HISTORY:
 *       23/11/26 - RapidFire and an active shield no longer run down
                  during the between-wave warp; recharges still do.
                  V0.4.81.
+*       23/11/26 - Staggered difficulty ramp: each wave raises only one
+                 thing (NORMAL: speed at 5, volley at 6, bullet at 7,
+                 step at 8). V0.4.82.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -701,3 +704,8 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 **RapidFire and shield frozen during the warp (23/11/2026, V0.4.81)**
 * Alberto noticed an "R" caught right as the wave ended was used up during the ~2.5 s warp animation, where you cannot shoot. RapidFire time no longer runs during the warp (including the one into a boss wave) and the RF bar resumes when the wave starts.
 * An active shield is frozen in the warp too (there is no enemy fire). Shield and boost recharges keep running as before.
+
+**Staggered difficulty ramp (23/11/2026, V0.4.82)**
+* Alberto felt a big jump from wave 4 to 5: on NORMAL the formation speed (1 -> 2, which also doubles the descent rate), the volley and bullet cap (2 -> 3) and the bullet speed (5 -> 6) all rose together, and the step at wave 6.
+* Each stat now has its own first-raise wave and then rises every 4, so no wave raises more than one thing. NORMAL (speed / volley / interval / bullet / step): 4 = 1/2/102/5/8, 5 = 2/2/96/5/8, 6 = 2/3/90/5/8, 7 = 2/3/84/6/8, 8 = 2/3/78/6/12, 9 = 3/3/72/6/12.
+* EASY: speed at 5 and 9, volley 2 at 6, bullet at 7 and 11. HARD: volley at 4 and 8, speed at 5, bullet at 6, step at 7. Caps are unchanged, just reached later in the cycles.

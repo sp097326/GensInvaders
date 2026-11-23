@@ -3,6 +3,29 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Rampa de dificultad escalonada, un cambio por oleada (AMH + Bimo) - V0.4.82
+
+### Cambiado
+- Alberto sintió un salto muy grande de la oleada 4 a la 5. En NORMAL, en la
+  5 subían juntas la velocidad (1 -> 2 px/frame, que además duplica el ritmo
+  de bajada), la ráfaga y el tope de balas (2 -> 3) y la velocidad de bala
+  (5 -> 6): ~60% más disparos por segundo. Todas compartían "cada 4
+  oleadas"; en la 6 subía además la caída por rebote (8 -> 12).
+- Ahora cada parámetro tiene su propia oleada de primer aumento
+  (`speedFirst`, `shotsFirst`, `bulletsFirst`, `bulletSpeedFirst`,
+  `stepFirst` en `waveTuneTable`) y luego sube cada 4 oleadas, así que
+  ninguna oleada sube más de una cosa (el intervalo entre ráfagas sigue
+  bajando poco a poco cada oleada):
+  - NORMAL: velocidad 2 en la 5, ráfaga 3 en la 6, bala 6 en la 7, caída
+    12 en la 8, velocidad 3 en la 9, ráfaga 4 en la 10, bala 7 en la 11,
+    caída 16 en la 12.
+  - EASY: velocidad en la 5 y 9, ráfaga/tope 2 en la 6, bala en la 7 y 11.
+  - HARD: ráfaga 3 en la 4 y 4 en la 8, velocidad 3 en la 5, bala 7 en la
+    6, caída 20 en la 7.
+- Los máximos no cambian; se alcanzan un poco más tarde en los ciclos de
+  10 oleadas (la oleada 9 en NORMAL queda 3 / 3 / 72 / 6 / 12 en vez de
+  3 / 4 / 72 / 7 / 12). Solo cambia `src/difficulty.c`.
+
 ## 2026-11-23 - RapidFire y escudo activo se congelan durante el warp (AMH + Bimo) - V0.4.81
 
 ### Corregido

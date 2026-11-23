@@ -338,6 +338,9 @@ HISTORIAL:
 *       23/11/26 - El RapidFire y el escudo encendido ya no se gastan
                  durante el warp entre oleadas; las recargas sí siguen.
                  V0.4.81.
+*       23/11/26 - Rampa de dificultad escalonada: cada oleada sube una
+                 sola cosa (NORMAL: velocidad en la 5, ráfaga en la 6,
+                 bala en la 7, caída en la 8). V0.4.82.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -701,3 +704,8 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **RapidFire y escudo congelados en el warp (23/11/2026, V0.4.81)**
 * Alberto notó que una "R" atrapada justo al terminar la oleada se gastaba durante la animación de warp (~2.5 s), donde no se puede disparar. Ahora el tiempo de RapidFire no corre durante el warp (también el que lleva a un jefe) y la barra RF sigue al empezar la oleada.
 * Un escudo encendido también se congela en el warp (no hay balas enemigas). Las recargas del escudo y del impulso siguen corriendo como antes.
+
+**Rampa de dificultad escalonada (23/11/2026, V0.4.82)**
+* Alberto sintió un brinco grande de la oleada 4 a la 5: en NORMAL subían juntas la velocidad de la formación (1 -> 2, que también duplica el ritmo de bajada), la ráfaga y el tope de balas (2 -> 3) y la velocidad de bala (5 -> 6), y en la 6 la caída por rebote.
+* Ahora cada parámetro tiene su propia oleada de primer aumento y luego sube cada 4, así que ninguna oleada sube más de una cosa. NORMAL (velocidad / ráfaga / intervalo / bala / caída): 4 = 1/2/102/5/8, 5 = 2/2/96/5/8, 6 = 2/3/90/5/8, 7 = 2/3/84/6/8, 8 = 2/3/78/6/12, 9 = 3/3/72/6/12.
+* EASY: velocidad en la 5 y 9, ráfaga 2 en la 6, bala en la 7 y 11. HARD: ráfaga en la 4 y 8, velocidad en la 5, bala en la 6, caída en la 7. Los máximos no cambian, solo se alcanzan más tarde en los ciclos.
