@@ -22,7 +22,9 @@ typedef struct
     u16 shotsPerVolley;     /* distinct enemies that fire together when the interval hits */
     u16 fireChance;         /* 0-10; the volley fires if (random() % 10) < fireChance */
     u16 shotInterval;       /* frames between volley attempts */
-    u16 enemySpeed;         /* horizontal pixels per frame (also the |enemyDir| reset) */
+    u16 enemySpeed;         /* horizontal speed in quarter pixels per frame (4 = 1 px/frame,
+                             * 5 = 1.25...). enemies.c moves whole pixels with a
+                             * sub-pixel accumulator (V0.4.83). */
     u16 bulletSpeed;        /* downward speed of each enemy bullet */
     u8  rowsOpposite;       /* 1 = each row has its own direction and bounces alone.
                              * On in NORMAL and HARD; set EASY to 1 to enable it there too. */

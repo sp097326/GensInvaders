@@ -341,6 +341,9 @@ HISTORIAL:
 *       23/11/26 - Rampa de dificultad escalonada: cada oleada sube una
                  sola cosa (NORMAL: velocidad en la 5, ráfaga en la 6,
                  bala en la 7, caída en la 8). V0.4.82.
+*       23/11/26 - Velocidad de la formación en cuartos de pixel: +0.25
+                 px/frame por oleada (NORMAL 1.0 en la 4, 1.25 en la 5,
+                 2.0 en la 8, 3.0 en la 12). V0.4.83.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -709,3 +712,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 * Alberto sintió un brinco grande de la oleada 4 a la 5: en NORMAL subían juntas la velocidad de la formación (1 -> 2, que también duplica el ritmo de bajada), la ráfaga y el tope de balas (2 -> 3) y la velocidad de bala (5 -> 6), y en la 6 la caída por rebote.
 * Ahora cada parámetro tiene su propia oleada de primer aumento y luego sube cada 4, así que ninguna oleada sube más de una cosa. NORMAL (velocidad / ráfaga / intervalo / bala / caída): 4 = 1/2/102/5/8, 5 = 2/2/96/5/8, 6 = 2/3/90/5/8, 7 = 2/3/84/6/8, 8 = 2/3/78/6/12, 9 = 3/3/72/6/12.
 * EASY: velocidad en la 5 y 9, ráfaga 2 en la 6, bala en la 7 y 11. HARD: ráfaga en la 4 y 8, velocidad en la 5, bala en la 6, caída en la 7. Los máximos no cambian, solo se alcanzan más tarde en los ciclos.
+
+**Velocidad de la formación gradual (23/11/2026, V0.4.83)**
+* La oleada 5 seguía sintiéndose como brinco porque la velocidad pasaba de 1 a 2 px/frame. Ahora va en cuartos de pixel y sube +0.25 por oleada: NORMAL y EASY 1.0 hasta la 4, 1.25 en la 5, 1.5 en la 6, 1.75 en la 7, 2.0 en la 8 y 3.0 en la 12; HARD 2.0 en la 1 y 3.0 en la 5.
+* `enemies.c` usa un acumulador sub-pixel compartido: cada frame mueve los pixeles enteros, igual para todas las naves, así que la formación sigue alineada y los rebotes no cambian. La rampa escalonada de V0.4.82 (ráfaga, bala, caída) se mantiene.

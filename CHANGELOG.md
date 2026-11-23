@@ -3,6 +3,30 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Velocidad de la formación en cuartos de pixel (AMH + Bimo) - V0.4.83
+
+### Cambiado
+- Con V0.4.82 la oleada 5 seguía sintiéndose como un brinco: la velocidad
+  de la formación pasaba de 1 a 2 px/frame (el doble, y el doble de ritmo
+  de bajada). Ahora `enemySpeed` va en cuartos de pixel por frame y sube
+  +0.25 por oleada:
+  - NORMAL y EASY: 1.0 hasta la 4, 1.25 en la 5, 1.5 en la 6, 1.75 en la
+    7, 2.0 en la 8 ... 3.0 en la 12 (efectiva). La oleada 5 es 25% más
+    rápida que la 4, no 100%.
+  - HARD: 2.0 en la 1, +0.25 por oleada desde la 2, 3.0 en la 5 (igual que
+    antes en la 5, pero sin el salto 2 -> 3).
+- `src/enemies.c`: acumulador sub-pixel compartido; cada frame se mueven los
+  pixeles enteros (1.25 = 1, 1, 1, 2...). Todas las naves y filas se mueven
+  lo mismo en cada frame, así que la formación sigue alineada y los rebotes
+  usan x entera. `enemyDir` y las direcciones por fila ahora solo guardan el
+  sentido (+1 / -1). Se reinicia con cada oleada.
+- El resto de la rampa escalonada de V0.4.82 no cambia (NORMAL: ráfaga en
+  la 6 y 10, bala en la 7 y 11, caída en la 8 y 12). Simulado en las
+  oleadas 1-22 de las tres dificultades: formación alineada, rebotes
+  proporcionales a la velocidad, a lo más 2 px más allá de la orilla
+  (igual que con 3 px/frame antes). Las oleadas de jefe no usan la
+  formación.
+
 ## 2026-11-23 - Rampa de dificultad escalonada, un cambio por oleada (AMH + Bimo) - V0.4.82
 
 ### Cambiado

@@ -24,8 +24,21 @@ static const EnemyRowType enemyRows[ENEMY_ROWS] = {
 
 static GameEntity enemies[MAX_ENEMIES];
 static u16 enemiesLeft = 0;
-static s16 enemyDir = 1;       // formation direction and speed: +speed right, -speed left
-static s16 enemyRowDir[ENEMY_ROWS];  // per-row dir when rowsOpposite is set
+static s16 enemyDir = 1;       // formation direction: +1 right, -1 left
+static s16 enemyRowDir[ENEMY_ROWS];  // per-row direction (+1 / -1) when rowsOpposite is set
+/* Sub-pixel speed (V0.4.83): enemySpeed is in quarter pixels per frame.
+ * Each frame adds it to the accumulator and moves the whole pixels; the
+ * remainder carries over (1.25 px/frame moves 1, 1, 1, 2, ...). Every
+ * ship and every row moves the same amount on a given frame, so the
+ * formation stays aligned and the edge checks see whole-pixel x. */
+static u16 enemySubPx = 0;
+static s16 enemyStepPx = 1;    // whole pixels to move this frame
+
+static void advanceSubPixel(void) {
+    enemySubPx += difficulty_config()->enemySpeed;
+    enemyStepPx = (s16)(enemySubPx >> 2);
+    enemySubPx &= 3;
+}
 
 /* Last volley's columns, so the next one can avoid repeating them. */
 static u16 lastShotCol[ENEMIES_PER_ROW];
@@ -209,7 +222,7 @@ static u16 positionEnemyRowsOpposite() {
     }
 
     for (row = 0; row < ENEMY_ROWS; row++) {
-        dir = enemyRowDir[row];
+        dir = (s16)(enemyRowDir[row] * enemyStepPx);
         for (col = 0; col < ENEMIES_PER_ROW; col++) {
             enemy = &enemies[row * ENEMIES_PER_ROW + col];
             if (enemy->health > 0) {
@@ -224,6 +237,7 @@ u16 enemies_update() {
     u16 exploding = player_isExploding();
 
     if (!exploding) bullets_tickShot();
+    advanceSubPixel();
 
     if (difficulty_config()->rowsOpposite) {
         if (positionEnemyRowsOpposite()) return 1;
@@ -265,7 +279,7 @@ u16 enemies_update() {
     for (i = 0; i < MAX_ENEMIES; i++) {
         enemy = &enemies[i];
         if (enemy->health > 0) {
-            enemy->x += enemyDir;
+            enemy->x += (s16)(enemyDir * enemyStepPx);
             SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
         }
     }
@@ -362,13 +376,14 @@ void enemies_setRowPalettes() {
 
 void enemies_reset(void) {
     const DifficultyConfig* cfg = difficulty_config();
-    s16 speed = (s16)cfg->enemySpeed;
     u16 row;
     lastShotCount = 0;
-    enemyDir = speed;
+    enemyDir = 1;
+    enemySubPx = 0;
+    enemyStepPx = 1;
     for (row = 0; row < ENEMY_ROWS; row++) {
         /* Even rows start right; odd rows start left when rowsOpposite. */
-        enemyRowDir[row] = (cfg->rowsOpposite && (row & 1)) ? (s16)(-speed) : speed;
+        enemyRowDir[row] = (cfg->rowsOpposite && (row & 1)) ? -1 : 1;
     }
     enemies_setRowPalettes();
     placeEnemies();

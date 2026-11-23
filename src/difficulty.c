@@ -5,24 +5,25 @@ static u16 currentWave = 1;
 static DifficultyConfig runtime;
 
 static const DifficultyConfig difficultyTable[DIFF_COUNT] = {
-    /* EASY:   no descent, 1 bullet, fires regularly every 90 frames;
+    /* enemySpeed is in quarter px/frame: 4 = 1 px, 8 = 2 px (V0.4.83).
+     * EASY:   no descent, 1 bullet, fires regularly every 90 frames;
      *         shield 5 s / recharge 10 s; 10 points per ship;
      *         RapidFire lasts 10 s;
      *         boss: 30 dmg, speed 1, 1 shot every 90 frames, 500 pts. */
-    { 0,                   1, 1, 10,  90, 1, 5, 0, 5, 10, 10, 10, 30, 1, 90, 1, 500 },
+    { 0,                   1, 1, 10,  90, 4, 5, 0, 5, 10, 10, 10, 30, 1, 90, 1, 500 },
     /* NORMAL: 8 px step, 2 shots / cap 2, every 120 frames;
      *         rowsOpposite like HARD (row 0 right, row 1 left, bounce alone);
      *         shield 3 s / recharge 20 s; 20 points per ship;
      *         RapidFire lasts 8 s;
      *         boss: 20 dmg, speed 2, 2 shots every 60 frames, 1000 pts. */
-    { ENEMY_STEP_DOWN,     2, 2, 10, SHOT_INTERVAL, 1, 5, 1, 3, 20, 20, 8, 20, 2, 60, 2, 1000 },
+    { ENEMY_STEP_DOWN,     2, 2, 10, SHOT_INTERVAL, 4, 5, 1, 3, 20, 20, 8, 20, 2, 60, 2, 1000 },
     /* HARD:   16 px step, twice as fast sideways, volley every 60 frames,
      *         slightly faster bullets; cap 4 so consecutive volleys can overlap.
      *         rowsOpposite: row 0 goes right, row 1 goes left, each bounces alone;
      *         shield 2 s / recharge 30 s; 30 points per ship;
      *         RapidFire lasts 8 s;
      *         boss: 10 dmg, speed 3, 4 shots every 40 frames, 1500 pts. */
-    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 2, 6, 1, 2, 30, 30, 8, 10, 3, 40, 4, 1500 }
+    { ENEMY_STEP_DOWN * 2, 4, 2, 10,  60, 8, 6, 1, 2, 30, 30, 8, 10, 3, 40, 4, 1500 }
 };
 
 /* Per-difficulty caps and increments applied on top of the table above.
@@ -70,20 +71,26 @@ typedef struct
  * rose at wave 5 because they shared "every 4 waves", and the step rose
  * at 6. Now each stat starts on its own wave so no wave raises more than
  * one of them (the shot interval still drops a little every wave). The
- * caps are the same; they are just reached a bit later in the cycles. */
+ * caps are the same; they are just reached a bit later in the cycles.
+ * V0.4.83 (23/11/2026): speed 1 -> 2 px at wave 5 still felt like a big
+ * jump (twice as fast, and twice the descent rate). Speed is now in
+ * quarter pixels and rises +0.25 px/frame per wave (speedEvery 1,
+ * speedMax 12 = 3.0 px), so wave 5 is 25% faster than 4, not 100%. */
 static const WaveTune waveTuneTable[DIFF_COUNT] = {
     /* EASY:   never descends; at most 2 bullets on screen.
-     *         interval 90 -5/wave -> 45; speed 1 -> 3 at 5, 9;
+     *         interval 90 -5/wave -> 45; speed 1.0 -> 3.0 px (+0.25 every
+     *         wave from 5: 2.0 at 8, 3.0 at 12);
      *         volley/cap 1 -> 2 at 6; bullet 5 -> 7 at 7, 11. */
-    {  5, 45,   5, 4, 3,   6, 4, 2,   6, 4, 2,   7, 4, 7,   0, 0, 0,  0 },
-    /* NORMAL: interval 120 -6/wave -> 40; speed 1 -> 3 at 5, 9;
+    {  5, 45,   5, 1, 12,   6, 4, 2,   6, 4, 2,   7, 4, 7,   0, 0, 0,  0 },
+    /* NORMAL: interval 120 -6/wave -> 40; speed 1.0 -> 3.0 px (+0.25
+     *         every wave from 5: 1.25 at 5, 2.0 at 8, 3.0 at 12);
      *         volley/cap 2 -> 4 at 6, 10; bullet 5 -> 7 at 7, 11;
      *         step 8 -> 16 (+4) at 8, 12. */
-    {  6, 40,   5, 4, 3,   6, 4, 4,   6, 4, 4,   7, 4, 7,   8, 4, 4, 16 },
+    {  6, 40,   5, 1, 12,   6, 4, 4,   6, 4, 4,   7, 4, 7,   8, 4, 4, 16 },
     /* HARD:   interval 60 -3/wave -> 30; volley 2 -> 4 at 4, 8 (cap
-     *         already 4); speed 2 -> 3 at 5; bullet 6 -> 7 at 6;
-     *         step 16 -> 20 at 7. */
-    {  3, 30,   5, 4, 3,   4, 4, 4,   0, 0, 4,   6, 4, 7,   7, 4, 4, 20 }
+     *         already 4); speed 2.0 -> 3.0 px (+0.25 every wave from 2,
+     *         so 3.0 still at 5); bullet 6 -> 7 at 6; step 16 -> 20 at 7. */
+    {  3, 30,   2, 1, 12,   4, 4, 4,   0, 0, 4,   6, 4, 7,   7, 4, 4, 20 }
 };
 
 /* 10-wave cycles (V0.3.69). After each boss wave the formation tuning
@@ -97,27 +104,26 @@ static const WaveTune waveTuneTable[DIFF_COUNT] = {
  * scaled. On a boss wave the effective wave still sets bulletSpeed,
  * which the fan (+1) and the bone (-BOSS_BONE_SLOWER) are based on.
  *
- * Resulting NORMAL values since V0.4.82 (speed = px/frame sideways,
- * shots = volley size = bullet cap, interval in frames, bullet =
- * px/frame, step = px). One raise per wave from wave 5 on:
+ * Resulting NORMAL values since V0.4.83 (speed = px/frame sideways,
+ * moved in whole pixels with a quarter-pixel accumulator; shots = volley
+ * size = bullet cap, interval in frames, bullet = px/frame, step = px):
  *
  *   eff  speed  shots  interval  bullet  step
- *     1    1      2      120       5      8
- *     2    1      2      114       5      8
- *     3    1      2      108       5      8
- *     4    1      2      102       5      8
- *     5    2      2       96       5      8    speed
- *     6    2      3       90       5      8    volley
- *     7    2      3       84       6      8    bullet
- *     8    2      3       78       6     12    step
- *     9    3      3       72       6     12    speed (max)
- *    10    3      4       66       6     12    volley (max; boss: La Cookie)
- *    11    3      4       60       7     12    bullet (max)
- *    12    3      4       54       7     16    step (max)
+ *     1   1.00    2      120       5      8
+ *     2   1.00    2      114       5      8
+ *     3   1.00    2      108       5      8
+ *     4   1.00    2      102       5      8
+ *     5   1.25    2       96       5      8
+ *     6   1.50    3       90       5      8    + volley
+ *     7   1.75    3       84       6      8    + bullet
+ *     8   2.00    3       78       6     12    + step
+ *     9   2.25    3       72       6     12
+ *    10   2.50    4       66       6     12    + volley (boss: La Cookie)
+ *    11   2.75    4       60       7     12    + bullet
+ *    12   3.00    4       54       7     16    + step (all at max)
  *
- * Before V0.4.82 NORMAL wave 5 raised speed, volley and bullet together
- * (2 / 3 / 96 / 6 / 8), wave 6 the step (12) and wave 9 speed, volley and
- * bullet again (3 / 4 / 72 / 7 / 12). */
+ * V0.4.82 had speed 1 / 2 / 2 / 2 / 2 / 3 on effective waves 4-9; before
+ * that wave 5 also raised volley and bullet at once (2 / 3 / 96 / 6 / 8). */
 #define EFFECTIVE_WAVE_MAX 40
 
 static u16 effectiveWave(u16 wave) {
