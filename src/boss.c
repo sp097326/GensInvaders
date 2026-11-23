@@ -272,6 +272,7 @@ void boss_beginEnter(u16 offset) {
     boss.x = (RIGHT_EDGE - kind->w) / 2;
     boss.y = homeY - (s16)offset;
     boss.velx = (s16)cfg->bossSpeed;
+    if (kind->patrolDive) boss.velx += BOSS2_PATROL_EXTRA;  /* turtle: 2/3/4 */
     if (boss.velx == 0) boss.velx = 1;
     boss.health = 1;
     boss.points = cfg->bossPoints * n;

@@ -3,6 +3,21 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Tortuga más rápida (AMH + Bimo) - V0.3.74
+
+### Cambiado
+- Alberto: la tortuga sigue siendo mucho más fácil que La Cookie.
+- Patrulla: `bossSpeed + 1` = 2/3/4 px/frame en EASY/NORMAL/HARD (antes
+  1/2/3; `BOSS2_PATROL_EXTRA`). La Cookie no cambia.
+- Picada: 5 + `bossSpeed` = 6/7/8 px/frame (antes 5/6/7).
+- Intervalo al azar entre picadas ~20% más corto: EASY 192-336 frames
+  (3.2-5.6 s), NORMAL 144-288 (2.4-4.8 s), HARD 120-216 (2-3.6 s); antes
+  240-420, 180-360 y 150-270.
+- Aviso sin cambios (20 frames). En NORMAL pasan ~36 frames (~0.6 s) desde
+  que empieza el aviso hasta que el cuerpo llega a la nave (20 de aviso +
+  110 px a 7 px/frame); la nave necesita ~11 frames para salir de la caja
+  de 28 px, así que se sigue pudiendo esquivar.
+
 ## 2026-11-23 - Tortuga en la oleada 10, picada más rápida y regreso al azar (AMH + Bimo) - V0.3.73
 
 ### Cambiado

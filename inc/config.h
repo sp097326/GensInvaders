@@ -132,13 +132,15 @@
  * back down to its home height. Body contact costs a life (player_hit); the
  * shield does NOT stop it (like the bone and the star) unless
  * BOSS2_DIVE_SHIELD_BLOCKS is 1. No stars or fan while warning/diving. */
-#define BOSS2_DIVE_MIN_EASY     240  /* frames between dives: 4-7 s */
-#define BOSS2_DIVE_MAX_EASY     420
-#define BOSS2_DIVE_MIN_NORMAL   180  /* 3-6 s */
-#define BOSS2_DIVE_MAX_NORMAL   360
-#define BOSS2_DIVE_MIN_HARD     150  /* 2.5-4.5 s */
-#define BOSS2_DIVE_MAX_HARD     270
-#define BOSS2_DIVE_SPEED_BASE     4  /* dive px/frame = base + bossSpeed: 5/6/7 (was 3/4/5) */
+/* V0.3.74: intervals ~20% shorter (were 240-420 / 180-360 / 150-270). */
+#define BOSS2_DIVE_MIN_EASY     192  /* frames between dives: 3.2-5.6 s */
+#define BOSS2_DIVE_MAX_EASY     336
+#define BOSS2_DIVE_MIN_NORMAL   144  /* 2.4-4.8 s */
+#define BOSS2_DIVE_MAX_NORMAL   288
+#define BOSS2_DIVE_MIN_HARD     120  /* 2-3.6 s */
+#define BOSS2_DIVE_MAX_HARD     216
+#define BOSS2_PATROL_EXTRA        1  /* patrol px/frame = bossSpeed + 1: 2/3/4 (was 1/2/3) */
+#define BOSS2_DIVE_SPEED_BASE     5  /* dive px/frame = base + bossSpeed: 6/7/8 (was 5/6/7, 3/4/5) */
 #define BOSS2_RETURN_SPEED        2  /* px/frame from above the screen back home */
 #define BOSS2_WARN_FRAMES        20  /* telegraph: stops, shakes 1 px, blinks yellow (was 36) */
 /* After leaving the bottom it re-enters from the top at a random x
