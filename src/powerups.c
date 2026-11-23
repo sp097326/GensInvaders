@@ -9,6 +9,7 @@
 
 static GameEntity capsule = {0, 0, 8, 8, 0, 0, 0, NULL, 0, 0, ""};
 static u16 capsuleTick = 0;
+static u16 capsuleBoss = 0;     /* 1 = boss reward, survives the warp */
 static u16 killsSinceDrop = 0;
 static u16 powerupTimer = 0;
 static u16 rapidDuration = 0;
@@ -185,9 +186,15 @@ void powerups_clearCapsule(void) {
         capsule.health = 0;
     }
     capsuleTick = 0;
+    capsuleBoss = 0;
 }
 
-void powerups_grantRapidFire(void) {
+void powerups_clearWaveCapsule(void) {
+    if (!capsuleBoss) powerups_clearCapsule();
+}
+
+/* Grant or refresh RapidFire when a capsule is caught. */
+static void grantRapidFire(void) {
     applyTimings();
     bullets_setMaxPlayer(MAX_BULLETS);
     powerupTimer = rapidDuration;
@@ -200,7 +207,36 @@ static void collectCapsule(void) {
     powerups_clearCapsule();
     /* CH4, below the 1UP jingle, never on the shield hum channel. */
     XGM_startPlayPCM(SFX_RAPID_PICK, 11, SOUND_PCM_CH4);
-    powerups_grantRapidFire();
+    grantRapidFire();
+}
+
+static void spawnCapsule(s16 x, s16 y) {
+    capsule.x = x;
+    capsule.y = y;
+    capsule.vely = CAPSULE_SPEED;
+    capsule.health = 1;
+    capsuleTick = 0;
+    SPR_setAnimAndFrame(capsule.sprite, 0, 0);
+    SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
+    SPR_setVisibility(capsule.sprite, VISIBLE);
+}
+
+void powerups_dropBossCapsule(s16 x, s16 y) {
+    s16 cx;
+    s16 cy;
+
+    if (capsule.sprite == NULL) return;
+    /* No roll and no one-on-screen limit: a capsule still falling (none
+     * can spawn during a boss wave, but be safe) is simply moved here. */
+    cx = x - 4;
+    cy = y - 4;
+    if (cx < LEFT_EDGE) cx = LEFT_EDGE;
+    if (cx > (s16)(RIGHT_EDGE - 8)) cx = (s16)(RIGHT_EDGE - 8);
+    if (cy < BOSS_CAPSULE_Y_MIN) cy = BOSS_CAPSULE_Y_MIN;
+    if (cy > BOSS_CAPSULE_Y_MAX) cy = BOSS_CAPSULE_Y_MAX;
+    killsSinceDrop = 0;
+    spawnCapsule(cx, cy);
+    capsuleBoss = 1;
 }
 
 void powerups_tryDrop(s16 x, s16 y) {
@@ -221,14 +257,8 @@ void powerups_tryDrop(s16 x, s16 y) {
     cx = x + 4;
     if (cx < LEFT_EDGE) cx = LEFT_EDGE;
     if (cx > (s16)(RIGHT_EDGE - 8)) cx = (s16)(RIGHT_EDGE - 8);
-    capsule.x = cx;
-    capsule.y = y + 4;
-    capsule.vely = CAPSULE_SPEED;
-    capsule.health = 1;
-    capsuleTick = 0;
-    SPR_setAnimAndFrame(capsule.sprite, 0, 0);
-    SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
-    SPR_setVisibility(capsule.sprite, VISIBLE);
+    spawnCapsule(cx, y + 4);
+    capsuleBoss = 0;
 }
 
 void powerups_init(void) {

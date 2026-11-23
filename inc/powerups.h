@@ -15,8 +15,12 @@ void powerups_tryDrop(s16 x, s16 y);
 /* Hide a falling capsule (warp, death, title, GAME OVER). The RapidFire
  * timer itself is not cleared. */
 void powerups_clearCapsule(void);
-/* Grant or refresh RapidFire (boss reward). Same duration as a capsule. */
-void powerups_grantRapidFire(void);
+/* Boss reward: always drop a capsule centred on (x, y), clamped to the
+ * screen; replaces a capsule already falling. It is kept by
+ * powerups_clearWaveCapsule so it falls through the warp. */
+void powerups_dropBossCapsule(s16 x, s16 y);
+/* Wave change: clear a falling enemy capsule but keep a boss capsule. */
+void powerups_clearWaveCapsule(void);
 /* Button C: start the shield if it is charged and the player is alive. */
 void powerups_tryShield(void);
 u16  powerups_shieldActive(void);

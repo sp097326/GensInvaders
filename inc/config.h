@@ -182,6 +182,14 @@
 #define RAPID_DROP_MOD     10  /* 1 in 10 */
 #define RAPID_DROP_PITY    10  /* guaranteed drop on the 10th dry kill */
 #define CAPSULE_SPEED       1  /* pixels per frame, downward */
+/* Boss reward (V0.4.78): a defeated boss always drops a capsule at its
+ * centre (no 10% roll, replaces any capsule on screen) instead of
+ * granting RapidFire on the spot. The spawn is clamped to the screen and
+ * to Y <= BOSS_CAPSULE_Y_MAX, so a turtle killed mid-dive (at ship
+ * height or off-screen) still drops it in the top half, >= 1 s of fall
+ * above the ship. It survives the warp into the next wave. */
+#define BOSS_CAPSULE_Y_MIN  BOSS_Y_MIN
+#define BOSS_CAPSULE_Y_MAX  112
 
 /* Shield (button C). Duration and recharge (wall-clock seconds) live in
  * the difficulty table. powerups converts them to frames with

@@ -543,7 +543,8 @@ u16 boss_hitShot(GameEntity* shot, u16 charged) {
         explosions_spawn(cx, cy);
         explosions_spawn(boss.x + boss.w - 24, boss.y + 4);
         XGM_startPlayPCM(SFX_BOSS_DIE, 15, SOUND_PCM_CH2);
-        powerups_grantRapidFire();
+        /* Reward: a capsule to catch, not RapidFire on the spot (V0.4.78). */
+        powerups_dropBossCapsule(boss.x + (s16)(boss.w / 2), boss.y + (s16)(boss.h / 2));
         boss_hide();
         return 3;
     }

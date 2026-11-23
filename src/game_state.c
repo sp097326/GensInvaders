@@ -304,11 +304,12 @@ static void drawWaveBanner(void) {
 static void startNextWave(void) {
     /* Enemy shots vanish; player shots, explosions, score, lives and the
      * shield / RapidFire effect are kept (the timer keeps ticking). A
-     * falling capsule is cleared so it does not sit in the empty warp.
+     * falling enemy capsule is cleared so it does not sit in the empty
+     * warp; a boss capsule is kept so it can be caught during the warp.
      * The new rows wait just above the screen and slide in during the
      * last part of the warp. */
     bullets_clearEnemy();
-    powerups_clearCapsule();
+    powerups_clearWaveCapsule();
     difficulty_nextWave();
     warpTotal  = IS_PAL_SYSTEM ? WAVE_WARP_FRAMES_PAL  : WAVE_WARP_FRAMES_NTSC;
     warpAccel  = IS_PAL_SYSTEM ? WAVE_WARP_ACCEL_PAL   : WAVE_WARP_ACCEL_NTSC;

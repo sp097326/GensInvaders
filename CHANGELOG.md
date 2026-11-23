@@ -3,6 +3,27 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - El jefe suelta la cápsula RF en vez de darla directo (AMH + Bimo) - V0.4.78
+
+### Cambiado
+- Alberto notó que al vencer a la tortuga el RapidFire se encendía solo,
+  como si hubiera agarrado una cápsula. No era un error: desde la primera
+  nave nodriza (d907f02) `boss_hitShot` llamaba `powerups_grantRapidFire()`
+  al morir cualquier jefe (La Cookie igual). Ahora el jefe suelta una
+  cápsula "R" en su centro y hay que atraparla.
+- La cápsula del jefe no depende del 10% ni del límite de una en pantalla:
+  siempre aparece y, si hubiera otra cayendo (en oleada de jefe no puede
+  haber), la reemplaza. Reinicia el contador de lástima.
+- Posición recortada a la pantalla y a Y 28-112 (`BOSS_CAPSULE_Y_MIN/MAX`):
+  si la tortuga muere en plena picada (a la altura de la nave o fuera de
+  pantalla), la cápsula sale en la mitad de arriba, con más de 1 s de caída
+  antes de llegar a la nave.
+- Sobrevive al warp hacia la siguiente oleada (`powerups_clearWaveCapsule`
+  solo borra cápsulas de enemigos) y se puede atrapar durante el warp. Si
+  pierdes una vida antes de atraparla se borra, igual que cualquier cápsula.
+- `powerups_grantRapidFire` deja de ser pública. Las dos naves jefe
+  (tortuga y La Cookie) usan la misma ruta. La tortuga no cambia en lo demás.
+
 ## 2026-11-23 - Estela del impulso más visible y salto a 0.4 (AMH + Bimo) - V0.4.77
 
 ### Cambiado
