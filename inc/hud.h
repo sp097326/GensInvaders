@@ -17,6 +17,10 @@ void hud_updateShieldBar(u16 state, u16 level, u16 blink);
  * red bar. Hidden (active == 0) clears that corner. level is 0..SHIELD_BAR_STEPS. */
 void hud_updateRapidBar(u16 active, u16 level);
 void hud_hideRapidBar(void);
+/* Boost (button A) readiness on row 27, cols 18-28: "IMP" plus an 8-tile
+ * bar, same colours as the shield bar (state: SHIELD_HUD_READY green,
+ * SHIELD_HUD_ACTIVE blue while dashing, SHIELD_HUD_RECHARGE red filling). */
+void hud_updateBoostBar(u16 state, u16 level, u16 blink);
 /* Mothership HP on row 2: "JEFE" plus a 16-tile bar. Hidden when active==0. */
 void hud_updateBossBar(u16 active, u16 hp, u16 hpMax);
 void hud_hideBossBar(void);

@@ -82,7 +82,7 @@ Los headers públicos viven en inc/; la implementación, en src/. El makefile.ge
 * RapidFire: recoge una cápsula "R" que cae de los enemigos destruidos (10% de probabilidad, garantizada tras 10 derribos sin cápsula; 10 s en EASY, 8 s en NORMAL/HARD). La nave se pone roja y una barra RF en la esquina inferior derecha muestra el tiempo restante. Recoger otra reinicia el temporizador. El botón A ya no lo activa.
 * Jefe: las oleadas 10, 20, 30... reemplazan las dos filas con una nave nodriza. 350 HP en la primera visita, el doble en cada regreso hasta 8000 (oleada 60+). Después de cada jefe la dificultad de la formación baja y vuelve a subir (ciclos de 10 oleadas: la 11 se juega como la 4). En las oleadas 11 a 19 hay una tercera fila intercalada de 4 naves. El tercio central brillante (a toda la altura del cuerpo) recibe daño (30/20/10 en EASY/NORMAL/HARD; el disparo cargado hace 3x); un golpe al núcleo tiñe la nave de rojo y suena un tic, un golpe en el ala solo saca chispas. Ataques: un hueso de 48x16 que cae recto desde la panza (zona de golpe de 40x8, para que rozarlo no te destruya; cae más lento que las balas, 2 px/frame menos; máximo 2 en pantalla; el escudo NO lo detiene, hay que esquivarlo) y un abanico de 3 balas diagonales dirigido hacia ti (este sí lo detiene el escudo). Recorre la mitad superior de la pantalla (Lissajous, la velocidad escala con la dificultad) y nunca entra a la mitad del jugador. Una barra JEFE en la fila 2 muestra los HP restantes. El sprite es provisional. Desde la V0.3.73 los jefes se alternan: la tortuga hechicera en las oleadas 10, 30, 50... y La Cookie en las 20, 40, 60... (la vida sigue el número de aparición: tortuga 350 en la 10, Cookie 700 en la 20). La tortuga (64x64): en lugar del hueso lanza una estrella de 16x16 desde la varita (zona de golpe de 10x10, mismas reglas que el hueso: cae 2 px/frame más lento que las balas, máximo 2, el escudo no la detiene), el abanico sale de su cabeza (más lento que el de La Cookie: 5 px/frame) y solo el centro del caparazón (24x36) recibe daño. Patrulla de izquierda a derecha a velocidad constante (2/3/4 px/frame) a una altura fija y, cada 2.4-4.8 s al azar (NORMAL), avisa (tiembla y parpadea en amarillo ~0.33 s) y se lanza en picada recto hacia abajo a 6/7/8 px/frame: si te toca pierdes una vida (el escudo no la detiene), sale por abajo, reaparece por arriba en una columna al azar y vuelve a su altura. No dispara mientras se lanza. 
 * Easter egg (pantalla de título): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A desbloquea OLEADA INICIAL (1-99). Ingrésalo con el cursor en INICIAR para que LEFT/RIGHT no cambien la dificultad. Empezar en la oleada 2+ es práctica y no se guarda en el TOP 5. El desbloqueo dura hasta reiniciar (no se guarda en SRAM). En BlastEm el botón B es S y A es A.
-* A: sin uso durante el juego (RapidFire sale de una cápsula que cae). Se sigue usando en el menú de título y en la captura de iniciales.
+* A + IZQUIERDA / DERECHA: impulso (dash) para esquivar: la nave recorre unas 3 naves (48 px) en ~0.13 s hacia ese lado. Se recarga en el mismo tiempo que el escudo (10 / 20 / 30 s en EASY / NORMAL / HARD); la barra IMP abajo al centro muestra la recarga (verde = lista). No da invulnerabilidad. A solo no hace nada durante el juego; en el menú de título y en la captura de iniciales A sigue funcionando como antes.
 * C: activa el escudo si está cargado. La duración y la recarga dependen de la
         dificultad: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
         Empieza listo al inicio de la partida. No se puede usar mientras explotas, estás muerto,
@@ -320,6 +320,9 @@ HISTORIAL:
 *       23/11/26 - Abanico de la tortuga al 65% de velocidad: 8 -> 5
                  px/frame en las tres dificultades (BOSS2_FAN_SPEED_PCT).
                  La Cookie no cambia. V0.3.75.
+*       23/11/26 - Impulso con A + izquierda/derecha: 48 px en 8 frames,
+                 recarga igual que el escudo (10/20/30 s), estela y barra
+                 IMP en la fila de abajo. Sin invulnerabilidad. V0.3.76.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -650,3 +653,11 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **Abanico de la tortuga más lento (23/11/2026, V0.3.75)**
 * Alberto notó que el abanico de 3 balas era por mucho el ataque que más lo mataba. El de la tortuga ahora cae al 65% de `bulletSpeed + 1` (`BOSS2_FAN_SPEED_PCT`, mínimo 1): en sus oleadas la bala ya está en el tope de 7, así que pasa de 8 a 5 px/frame en EASY, NORMAL y HARD.
 * La velocidad lateral no cambia, así que el abanico se abre un poco más y los huecos entre balas son más anchos. La Cookie sigue igual.
+
+**Impulso con A + izquierda/derecha (23/11/2026, V0.3.76)**
+* Idea de Alberto para el botón A, que no tenía uso en el juego. A + IZQUIERDA o A + DERECHA (en cualquier orden) lanza un impulso: 8 frames a 6 px/frame = 48 px, unas 3 naves, recortado a la orilla de la pantalla. Durante el impulso el control lateral no cuenta.
+* Recarga: `shieldRechargeSec` de la dificultad (10 / 20 / 30 s), con su propio temporizador; usar el escudo no la gasta ni al revés. Si te pegan a media embestida la recarga empieza igual.
+* Sin invulnerabilidad (decisión de diseño): sirve para salir del camino de una bala, del abanico o de la picada de la tortuga, no para atravesarlos.
+* Estela: un segundo sprite de la nave 16 px detrás, visible cuadro sí cuadro no mientras dura el impulso (58 de 80 sprites de hardware).
+* HUD: "IMP" + barra de 8 tiles en la fila 27, columnas 18-28, entre las vidas/"+1 NAVE" y la barra RF; mismos colores que la del escudo (verde lista, azul en uso, roja recargando, parpadeo al quedar lista). El texto "+1 NAVE" ahora solo borra las columnas 10-17.
+* No se puede usar durante el warp entre oleadas. Título, menú, código de oleada y captura de iniciales no cambian.

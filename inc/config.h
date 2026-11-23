@@ -186,6 +186,19 @@
 /* Shield (button C). Duration and recharge (wall-clock seconds) live in
  * the difficulty table. powerups converts them to frames with
  * IS_PAL_SYSTEM (x60 NTSC, x50 PAL) so the real time is the same on both. */
+/* Boost / dash (V0.3.76, button A + LEFT or RIGHT). The ship dashes
+ * BOOST_FRAMES x BOOST_SPEED = 48 px (3 ship widths) in ~0.13 s, clamped
+ * to the screen edges, then recharges for the difficulty's shield recharge
+ * time (shieldRechargeSec: 10 / 20 / 30 s on EASY / NORMAL / HARD; its own
+ * timer, independent of the shield). A alone does nothing. No
+ * invulnerability: the dash only moves you out of the way. An afterimage
+ * (a second ship sprite, every other frame) trails BOOST_GHOST_LAG px
+ * behind while dashing. Blocked during the between-wave warp. */
+#define BOOST_SPEED           6   /* px/frame while dashing (normal move is 2) */
+#define BOOST_FRAMES          8   /* 8 x 6 = 48 px */
+#define BOOST_GHOST_LAG      16   /* afterimage offset behind the ship */
+#define BOOST_READY_BLINK    32   /* HUD bar blink frames when recharged */
+
 #define SHIELD_SPRITE_SIZE   32
 #define SHIELD_OFFSET        8   /* (32-16)/2, centers the bubble on the ship */
 

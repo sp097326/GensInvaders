@@ -29,7 +29,11 @@
 #define LIVES_ICON_SLOTS   LIVES_CAP
 #define EXTRA_LIFE_TEXT_X  10
 #define EXTRA_LIFE_TEXT_Y  27
-#define EXTRA_LIFE_TEXT_W  18  /* stops short of the RF bar at col 29 */
+#define EXTRA_LIFE_TEXT_W   8  /* "+9 NAVE" fits; stops short of the IMP bar at col 18 */
+#define BOOST_LABEL_X      18
+#define BOOST_BAR_X        21
+#define BOOST_BAR_Y        27
+#define BOOST_BAR_LEN       8
 #define RAPID_LABEL_X      30
 #define RAPID_BAR_X        32
 #define RAPID_BAR_Y        27
@@ -53,6 +57,11 @@ static u16 rapidActive = 0;
 static u16 rapidLevel = 0;
 static u16 rapidBarAttr[8];
 static u16 rapidBarDrawn = 0;
+static u16 boostState = SHIELD_HUD_READY;
+static u16 boostLevel = SHIELD_BAR_STEPS;
+static u16 boostBlink = 0;
+static u16 boostBarAttr[8];
+static u16 boostBarDrawn = 0;
 static u16 bossBarActive = 0;
 static u16 bossBarLevel = 0;
 static u16 bossBarAttr[16];
@@ -137,6 +146,51 @@ static void drawShieldBar(u16 force) {
     barDrawn = 1;
 }
 
+/* Same look as the shield bar: green ready (PAL3), blue while dashing,
+ * red while recharging; a ready blink flashes it blue. */
+static void drawBoostBar(u16 force) {
+    u16 i;
+    u16 pal;
+    u16 base;
+
+    if (boostState == SHIELD_HUD_RECHARGE) {
+        pal = PAL1;
+        base = TILE_BAR_RED1;
+    } else if (boostState == SHIELD_HUD_ACTIVE) {
+        pal = PAL1;
+        base = TILE_BAR_BLUE1;
+    } else {
+        pal = boostBlink ? PAL1 : PAL3;
+        base = TILE_BAR_BLUE1;
+    }
+    if (force || !boostBarDrawn) VDP_drawText("IMP", BOOST_LABEL_X, BOOST_BAR_Y);
+    for (i = 0; i < BOOST_BAR_LEN; i++) {
+        u16 px;
+        u16 idx;
+        u16 attr;
+        u16 start = i * 8;
+        if (boostLevel >= (start + 8)) px = 8;
+        else if (boostLevel > start) px = boostLevel - start;
+        else px = 0;
+        if (px == 0) idx = TILE_BAR_EMPTY;
+        else idx = base + (px - 1);
+        attr = TILE_ATTR_FULL(pal, 1, FALSE, FALSE, idx);
+        if (force || !boostBarDrawn || (boostBarAttr[i] != attr)) {
+            VDP_setTileMapXY(BG_A, attr, BOOST_BAR_X + i, BOOST_BAR_Y);
+            boostBarAttr[i] = attr;
+        }
+    }
+    boostBarDrawn = 1;
+}
+
+void hud_updateBoostBar(u16 state, u16 level, u16 blink) {
+    if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
+    boostState = state;
+    boostLevel = level;
+    boostBlink = blink;
+    drawBoostBar(0);
+}
+
 /* Plane-A tiles, not sprites, so they never add to the 20-sprite/line
  * budget. High priority keeps them above passing bullets. During a 1UP
  * the newly awarded icon(s) blink; the rest stay solid. */
@@ -201,6 +255,7 @@ void hud_updateScore(int score, u16 enemiesLeft, u16 lives) {
     VDP_drawText(hud_string, 16, 1);
     barDrawn = 0;
     drawShieldBar(1);
+    drawBoostBar(1);
     /* Score/wave text only touches rows 0-1; force the JEFE bar on
      * row 2 so a later score refresh cannot leave it stale. */
     if (boss_isActive() && bossBarActive) {
@@ -336,6 +391,7 @@ void hud_clear(void) {
     rapidActive = 0;
     rapidLevel = 0;
     rapidBarDrawn = 0;
+    boostBarDrawn = 0;
     bossBarActive = 0;
     bossBarLevel = 0;
     bossBarDrawn = 0;

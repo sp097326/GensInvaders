@@ -276,7 +276,14 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
                 player_chargeRelease();
             }
         }
-        /* Button A is free (RapidFire is a capsule pickup, not a toggle). */
+        /* Button A + LEFT/RIGHT: boost dash (V0.3.76). Either order
+         * works (press A with a direction held, or a direction with A
+         * held). A alone does nothing. */
+        if ((state & BUTTON_A) &&
+            (changed & (BUTTON_A | BUTTON_LEFT | BUTTON_RIGHT))) {
+            if (state & BUTTON_RIGHT) player_tryBoost(1);
+            else if (state & BUTTON_LEFT) player_tryBoost(-1);
+        }
         if (state & BUTTON_C & changed) {
             powerups_tryShield();
         }

@@ -5,6 +5,7 @@
 #include "enemies.h"
 #include "powerups.h"
 #include "bullets.h"
+#include "difficulty.h"
 
 static GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, 0, 0, "PLYR" };
 static u16 lives = MAX_LIVES;
@@ -19,6 +20,17 @@ static Sprite* chargeGlowSpr = NULL;
 static u16 chargeHeld = 0;
 static u16 chargeTimer = 0;
 static u16 chargeReady = 0;
+
+/* Boost / dash (button A + direction), see BOOST_* in config.h. */
+static Sprite* ghostSpr = NULL;
+static u16 boostTimer = 0;      /* > 0 while dashing */
+static s16 boostDir = 0;
+static u16 boostCooldown = 0;   /* > 0 while recharging */
+static u16 boostCooldownMax = 0;
+static u16 boostReadyBlink = 0;
+static u16 boostHudMode = 0xFFFF;
+static u16 boostHudLevel = 0xFFFF;
+static u16 boostHudBlink = 0xFFFF;
 
 static void hideChargeGlow(void);
 static void updateChargeGlow(void);
@@ -85,10 +97,105 @@ static void updatePlayerLife(void) {
     }
 }
 
+static void hideGhost(void) {
+    if (ghostSpr != NULL) SPR_setVisibility(ghostSpr, HIDDEN);
+}
+
+static u16 boostRechargeFrames(void) {
+    u16 rate = IS_PAL_SYSTEM ? 50 : 60;
+    return (u16)(difficulty_config()->shieldRechargeSec * rate);
+}
+
+static void boostRefreshHud(u16 force) {
+    u16 mode;
+    u16 level;
+    u16 blink;
+
+    if (boostTimer > 0) {
+        mode = SHIELD_HUD_ACTIVE;
+        level = (u16)(((u32)boostTimer * SHIELD_BAR_STEPS + BOOST_FRAMES - 1) / BOOST_FRAMES);
+    } else if (boostCooldown > 0) {
+        mode = SHIELD_HUD_RECHARGE;
+        if (boostCooldownMax == 0) level = SHIELD_BAR_STEPS;
+        else level = (u16)(((u32)(boostCooldownMax - boostCooldown) * SHIELD_BAR_STEPS) / boostCooldownMax);
+    } else {
+        mode = SHIELD_HUD_READY;
+        level = SHIELD_BAR_STEPS;
+    }
+    if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
+    blink = (u16)((mode == SHIELD_HUD_READY && (boostReadyBlink & 4)) ? 1 : 0);
+    if (!force && mode == boostHudMode && level == boostHudLevel && blink == boostHudBlink) return;
+    boostHudMode = mode;
+    boostHudLevel = level;
+    boostHudBlink = blink;
+    hud_updateBoostBar(mode, level, blink);
+}
+
+/* End a dash (finished, or the ship was hit) and start the recharge. */
+static void endBoost(void) {
+    if (boostTimer == 0) return;
+    boostTimer = 0;
+    boostCooldownMax = boostRechargeFrames();
+    boostCooldown = boostCooldownMax;
+    hideGhost();
+    boostRefreshHud(1);
+}
+
+static void updateBoostTimers(void) {
+    if (boostTimer > 0) return;  /* counted down in positionPlayer */
+    if (boostCooldown > 0) {
+        boostCooldown--;
+        if (boostCooldown == 0) boostReadyBlink = BOOST_READY_BLINK;
+        boostRefreshHud(0);
+    } else if (boostReadyBlink > 0) {
+        boostReadyBlink--;
+        boostRefreshHud(0);
+    }
+}
+
+static void updateGhost(void) {
+    s16 gx;
+
+    if (ghostSpr == NULL) return;
+    if (boostTimer == 0 || player.health == 0 || explActive || (boostTimer & 1)) {
+        hideGhost();
+        return;
+    }
+    gx = player.x - boostDir * BOOST_GHOST_LAG;
+    if (gx < LEFT_EDGE) gx = LEFT_EDGE;
+    if (gx > RIGHT_EDGE - player.w) gx = RIGHT_EDGE - player.w;
+    SPR_setHFlip(ghostSpr, (boostDir > 0) ? TRUE : FALSE);
+    SPR_setPosition(ghostSpr, gx, player.y);
+    SPR_setVisibility(ghostSpr, VISIBLE);
+}
+
+u16 player_tryBoost(s16 dir) {
+    if (player.health == 0 || explActive || respawnTimer > 0) return 0;
+    if (boostTimer > 0 || boostCooldown > 0) return 0;
+    if (dir == 0) return 0;
+    boostDir = (dir > 0) ? 1 : -1;
+    boostTimer = BOOST_FRAMES;
+    boostReadyBlink = 0;
+    boostRefreshHud(1);
+    return 1;
+}
+
 static void positionPlayer(void) {
     if (player.health == 0) return;   // waiting to respawn
     //handling velocity, adding it to position
-    player.x += player.velx;
+    if (boostTimer > 0) {
+        /* Dash: fixed speed in the dash direction, ignores the d-pad. */
+        player.x += boostDir * BOOST_SPEED;
+        boostTimer--;
+        if (boostTimer == 0) {
+            boostTimer = 1;  /* let endBoost see an active dash */
+            endBoost();
+        } else {
+            boostRefreshHud(0);
+        }
+    } else {
+        player.x += player.velx;
+    }
 
     /* checking to keep the player in the boundaries of the screen */
     if (player.x < LEFT_EDGE) player.x = LEFT_EDGE;
@@ -173,6 +280,13 @@ void player_init(void) {
     chargeGlowSpr = SPR_addSprite(&chargeglow, 0, -32, TILE_ATTR(PAL1, 1, FALSE, FALSE));
     SPR_setAutoAnimation(chargeGlowSpr, FALSE);
     SPR_setVisibility(chargeGlowSpr, HIDDEN);
+
+    /* Dash afterimage: a second ship sprite (1 hardware sprite, 4 tiles),
+     * low priority so the real ship draws on top. */
+    ghostSpr = SPR_addSprite(&ship, 0, -32, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    SPR_setAutoAnimation(ghostSpr, FALSE);
+    SPR_setAnim(ghostSpr, ANIM_MOVE);
+    SPR_setVisibility(ghostSpr, HIDDEN);
 }
 
 void player_reset(void) {
@@ -187,6 +301,12 @@ void player_reset(void) {
     lives = MAX_LIVES;
     respawnTimer = 0;
     invulnTimer = 0;
+    boostTimer = 0;
+    boostCooldown = 0;
+    boostCooldownMax = 0;
+    boostReadyBlink = 0;
+    hideGhost();
+    boostRefreshHud(1);
 }
 
 void player_hide(void) {
@@ -194,6 +314,8 @@ void player_hide(void) {
     stopExplosion();
     player_setWarpFlame(0);
     player_chargeCancel();
+    boostTimer = 0;  /* no HUD redraw here: the title may be on screen */
+    hideGhost();
 }
 
 static void updateFlame(void) {
@@ -217,6 +339,8 @@ u16 player_update(void) {
     if (updateExplosion()) return 1;
     updatePlayerLife();
     positionPlayer();
+    updateBoostTimers();
+    updateGhost();
     updateFlame();
     updateChargeGlow();
     return 0;
@@ -228,6 +352,7 @@ void player_stop(void) {
 }
 
 u16 player_hit(int score) {
+    endBoost();  /* a dash cut short by a hit still costs the recharge */
     killGameEntity(&player);
     player.velx = 0;
     if (powerups_isOn()) powerups_deactivate();
@@ -245,6 +370,7 @@ u16 player_hit(int score) {
 
 void player_hitFatal(int score) {
     if (explActive || player.health == 0) return;
+    endBoost();
     killGameEntity(&player);
     player.velx = 0;
     if (powerups_isOn()) powerups_deactivate();

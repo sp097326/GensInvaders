@@ -82,7 +82,7 @@ Public headers live in inc/; implementation in src/. SGDK's makefile.gen already
 * RapidFire: collect a falling "R" capsule dropped by destroyed enemies (10% chance, pity after 10 kills; 10 s on EASY, 8 s on NORMAL/HARD). The ship turns red and an RF bar in the bottom-right corner shows the time left. Picking up another refreshes the timer. Button A no longer toggles it.
 * Boss: waves 10, 20, 30... replace the two rows with a mothership. 350 HP on the first visit, doubling each return up to 8000 (wave 60+). After each boss the formation difficulty drops and climbs again (10-wave cycles: wave 11 plays like wave 4). Waves 11 to 19 add a staggered third row of 4 ships. The glowing center third (full body height) takes damage (30/20/10 on EASY/NORMAL/HARD; the charged shot deals 3x); a core hit tints the ship red and plays a tick, a wing hit only sparks. Attacks: a 48x16 bone that falls straight down from the belly (40x8 hitbox, so a graze does not kill; falls slower than bullets, by 2 px/frame; at most 2 on screen; the shield does NOT stop it, you have to dodge) and a fan of 3 diagonal bullets aimed at you (the shield does stop these). It roams the top half of the screen (Lissajous, speed scales with difficulty) and never enters the player half. A JEFE bar on row 2 shows remaining HP. The sprite is a placeholder. Since V0.3.73 the bosses alternate: the turtle wizard on waves 10, 30, 50... and La Cookie on waves 20, 40, 60... (HP follows the appearance number: turtle 350 on wave 10, Cookie 700 on wave 20). The turtle (64x64): instead of the bone it casts a 16x16 star from its wand (10x10 hitbox, same rules as the bone: falls 2 px/frame slower than bullets, at most 2, the shield does not stop it), the fan comes from its head (slower than La Cookie's: 5 px/frame) and only the shell centre (24x36) takes damage. It patrols left-right at a constant speed (2/3/4 px/frame) at a fixed height and, every 2.4-4.8 s at random (NORMAL), warns (shakes and blinks yellow ~0.33 s) and dives straight down at 6/7/8 px/frame: touching you costs a life (the shield does not stop it), then it leaves through the bottom, re-enters from the top at a random column and returns to its height. It does not fire while diving.
 * Easter egg (title screen): UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A unlocks OLEADA INICIAL (1-99). Enter it with the cursor on INICIAR so LEFT/RIGHT do not change difficulty. Starting at wave 2+ is practice and is not saved to the TOP 5. The unlock lasts until reset (not stored in SRAM). On BlastEm the B button is S and A is A.
-* A: unused during play (RapidFire comes from a falling capsule). Still used on the title menu and the initials entry.
+* A + LEFT / RIGHT: boost (dash) to dodge: the ship moves about 3 ship widths (48 px) in ~0.13 s that way. It recharges in the same time as the shield (10 / 20 / 30 s on EASY / NORMAL / HARD); the IMP bar at the bottom centre shows the recharge (green = ready). No invulnerability. A alone does nothing during play; on the title menu and the initials entry A works as before.
 * C: activate the shield if it is charged. Duration and recharge depend on
         difficulty: EASY 5 s / 10 s, NORMAL 3 s / 20 s, HARD 2 s / 30 s.
         Starts ready at the beginning of a match. Not usable while exploding, dead,
@@ -319,6 +319,10 @@ HISTORY:
 *       23/11/26 - Turtle fan at 65% speed: 8 -> 5 px/frame on all
                  three difficulties (BOSS2_FAN_SPEED_PCT). La Cookie
                  unchanged. V0.3.75.
+*       23/11/26 - Boost with A + left/right: 48 px in 8 frames,
+                 recharge same as the shield (10/20/30 s), afterimage
+                 and IMP bar on the bottom row. No invulnerability.
+                 V0.3.76.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -649,3 +653,11 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 **Slower turtle fan (23/11/2026, V0.3.75)**
 * Alberto found the 3-bullet fan was by far the attack that killed him most. The turtle's fan now falls at 65% of `bulletSpeed + 1` (`BOSS2_FAN_SPEED_PCT`, minimum 1): on its waves the bullet speed is already at its cap of 7, so the fan goes from 8 to 5 px/frame on EASY, NORMAL and HARD.
 * Sideways speed is unchanged, so the fan opens a little wider with wider gaps between bullets. La Cookie is unchanged.
+
+**Boost with A + left/right (23/11/2026, V0.3.76)**
+* Alberto's idea for button A, which had no use during play. A + LEFT or A + RIGHT (either order) starts a boost: 8 frames at 6 px/frame = 48 px, about 3 ship widths, clamped to the screen edge. The d-pad is ignored while it lasts.
+* Recharge: the difficulty's `shieldRechargeSec` (10 / 20 / 30 s), on its own timer; using the shield does not spend it and vice versa. A hit mid-dash still starts the recharge.
+* No invulnerability (design call): it moves you out of the way of a bullet, the fan or the turtle's dive, not through them.
+* Afterimage: a second ship sprite 16 px behind, shown every other frame during the dash (58 of 80 hardware sprites).
+* HUD: "IMP" + an 8-tile bar on row 27, columns 18-28, between the lives/"+1 NAVE" and the RF bar; same colours as the shield bar (green ready, blue in use, red recharging, blink when ready). The "+1 NAVE" text now only clears columns 10-17.
+* Not available during the between-wave warp. Title, menu, wave code and initials entry are unchanged.

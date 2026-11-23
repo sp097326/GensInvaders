@@ -3,6 +3,35 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Impulso con A + izquierda/derecha (AMH + Bimo) - V0.3.76
+
+### Agregado
+- Idea de Alberto para el botón A, que no tenía uso en el juego: A +
+  IZQUIERDA o A + DERECHA hace un impulso (dash) para esquivar. La nave
+  recorre 48 px (unas 3 naves) en 8 frames a 6 px/frame (~0.13 s; el
+  movimiento normal es de 2), sin salirse de la pantalla. Funciona en
+  cualquier orden (A con la dirección ya presionada o la dirección con A
+  presionado). A solo no hace nada.
+- Recarga: la misma duración que la recarga del escudo en cada dificultad
+  (`shieldRechargeSec`): 10 s en EASY, 20 s en NORMAL y 30 s en HARD. Es un
+  temporizador propio, independiente del escudo. Si te pegan a media
+  embestida, la recarga empieza igual.
+- Sin invulnerabilidad: el impulso solo te mueve; si una bala o la tortuga
+  te tocan durante el impulso, pierdes la vida igual.
+- Estela: un segundo sprite de la nave (1 sprite de hardware, 4 tiles)
+  aparece 16 px detrás, cuadro sí cuadro no, mientras dura el impulso.
+- HUD: barra "IMP" en la fila de abajo (columnas 18-28), con los mismos
+  colores que la del escudo: verde lista, azul durante el impulso, roja
+  mientras se recarga; parpadea al quedar lista.
+- Bloqueado durante el warp entre oleadas, igual que los disparos y el
+  escudo nuevo. El título, el menú, el código de oleada (que termina en B,
+  A) y la captura de iniciales no cambian: el impulso solo se lee durante
+  el juego.
+
+### Cambiado
+- El texto "+1 NAVE" ahora borra solo 8 columnas (10-17) para no tocar la
+  barra IMP. Constantes `BOOST_*` en `inc/config.h`.
+
 ## 2026-11-23 - Abanico de la tortuga más lento (AMH + Bimo) - V0.3.75
 
 ### Cambiado
