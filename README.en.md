@@ -344,6 +344,8 @@ HISTORY:
 *       23/11/26 - Formation speed in quarter pixels: +0.25 px/frame
                  per wave (NORMAL 1.0 at 4, 1.25 at 5, 2.0 at 8, 3.0
                  at 12). V0.4.83.
+*       23/11/26 - Full third row (7 ships, 21 total) from wave 21 on
+                 every non-boss wave. V0.4.84.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -716,3 +718,8 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 **Gradual formation speed (23/11/2026, V0.4.83)**
 * Wave 5 still felt like a jump because speed went from 1 to 2 px/frame. Speed is now in quarter pixels and rises +0.25 per wave: NORMAL and EASY 1.0 up to 4, 1.25 at 5, 1.5 at 6, 1.75 at 7, 2.0 at 8 and 3.0 at 12; HARD 2.0 at 1 and 3.0 at 5.
 * `enemies.c` uses a shared sub-pixel accumulator: each frame moves the whole pixels, the same for every ship, so the formation stays aligned and bounces are unchanged. The V0.4.82 staggered ramp (volley, bullet, step) is kept.
+
+**Full third row from wave 21 (23/11/2026, V0.4.84)**
+* From wave 21, on every non-boss wave (21-29, 31-39...), the third row has all 7 ships: 21 in total. Waves 1-9 keep 2 rows and 11-19 the staggered row of 4 (`FULL_ROW3_FIRST_WAVE` in `inc/config.h`).
+* No hardware cost: all 21 ships have been allocated since V0.3.70 and each row has its own scanlines. Firing, the HUD count, wave clear and capsules use the same per-row masks.
+* Wave 21 plays like cycle level 7 (speed 1.75) but with 21 ships; the bottom row sits at the same height as the staggered one, so the invasion arrives as early as on 11-19.

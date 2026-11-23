@@ -344,6 +344,9 @@ HISTORIAL:
 *       23/11/26 - Velocidad de la formación en cuartos de pixel: +0.25
                  px/frame por oleada (NORMAL 1.0 en la 4, 1.25 en la 5,
                  2.0 en la 8, 3.0 en la 12). V0.4.83.
+*       23/11/26 - Tercera fila completa (7 naves, 21 en total) desde la
+                 oleada 21 en todas las oleadas que no son de jefe.
+                 V0.4.84.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -716,3 +719,8 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **Velocidad de la formación gradual (23/11/2026, V0.4.83)**
 * La oleada 5 seguía sintiéndose como brinco porque la velocidad pasaba de 1 a 2 px/frame. Ahora va en cuartos de pixel y sube +0.25 por oleada: NORMAL y EASY 1.0 hasta la 4, 1.25 en la 5, 1.5 en la 6, 1.75 en la 7, 2.0 en la 8 y 3.0 en la 12; HARD 2.0 en la 1 y 3.0 en la 5.
 * `enemies.c` usa un acumulador sub-pixel compartido: cada frame mueve los pixeles enteros, igual para todas las naves, así que la formación sigue alineada y los rebotes no cambian. La rampa escalonada de V0.4.82 (ráfaga, bala, caída) se mantiene.
+
+**Tercera fila completa desde la oleada 21 (23/11/2026, V0.4.84)**
+* Desde la oleada 21, en todas las oleadas que no son de jefe (21-29, 31-39...), la tercera fila trae las 7 naves: 21 en total. Las oleadas 1-9 siguen con 2 filas y las 11-19 con la fila intercalada de 4 (`FULL_ROW3_FIRST_WAVE` en `inc/config.h`).
+* Sin costo de hardware: las 21 naves ya se reservan desde V0.3.70 y cada fila va en sus propias líneas. Disparo, conteo del HUD, fin de oleada y cápsulas usan las mismas máscaras por fila.
+* La 21 se juega como la 7 del ciclo (velocidad 1.75) pero con 21 naves; la fila de abajo está a la misma altura que la intercalada, así que la invasión llega igual de pronto que en las 11-19.

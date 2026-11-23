@@ -18,7 +18,7 @@ typedef struct
 static const EnemyRowType enemyRows[ENEMY_ROWS] = {
     { &ship, PAL2, TRUE },  /* top row: original colors */
     { &ship, PAL3, TRUE },  /* second row: green/yellow tint */
-    { &ship, PAL2, TRUE }   /* third row (waves 11-19, staggered): original
+    { &ship, PAL2, TRUE }   /* third row (staggered on 11-19, full on 21+): original
                              * colors for now; a dedicated ship may come later */
 };
 
@@ -290,11 +290,11 @@ u16 enemies_update() {
 }
 /* Row layout per wave. Rows 0-1 are always full. Row 2 is a staggered
  * row (columns 0, 2, 4, 6, aligned with the rows above so the column
- * based targeting is unchanged) on waves 11-19, and empty otherwise.
- * Boss waves never place the formation. To give wave 21+ a full third
- * row later, return ENEMY_ROW_FULL for row 2 there. */
+ * based targeting is unchanged) on waves 11-19, full from wave 21 on
+ * (V0.4.84), and empty on 1-9. Boss waves never place the formation. */
 u16 enemies_rowMaskForWave(u16 wave, u16 row) {
     if (row < 2) return ENEMY_ROW_FULL;
+    if (row == 2 && wave >= FULL_ROW3_FIRST_WAVE) return ENEMY_ROW_FULL;
     if (row == 2 && wave >= STAGGER_ROW_FIRST_WAVE && wave <= STAGGER_ROW_LAST_WAVE) {
         return ENEMY_ROW_STAGGER;
     }

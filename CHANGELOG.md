@@ -3,6 +3,26 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-23 - Tercera fila completa desde la oleada 21 (AMH + Bimo) - V0.4.84
+
+### Agregado
+- Pendiente de V0.3.70: desde la oleada 21 (y en todas las siguientes que
+  no son de jefe: 21-29, 31-39...) la tercera fila trae las 7 naves, 21 en
+  total. Las oleadas 1-9 siguen con 2 filas y las 11-19 con la fila
+  intercalada de 4. `FULL_ROW3_FIRST_WAVE` (21) en `inc/config.h`;
+  `enemies_rowMaskForWave` devuelve `ENEMY_ROW_FULL` para la fila 2.
+- Sin costo de hardware: las 21 naves ya se reservan al arrancar desde
+  V0.3.70 (los sprites y tiles no cambian) y cada fila va en sus propias
+  líneas (24 px), así que el límite de sprites por línea no cambia. La
+  fila 2 se mueve como la 0 (a la derecha primero), con su propio rebote y
+  la misma regla que impide bajar encima de la fila de abajo.
+- Disparo por columna, conteo de naves en el HUD, fin de oleada y cápsulas
+  usan las mismas máscaras, así que no cambian. En el ciclo de 10 oleadas
+  la 21 se juega como la 7 (velocidad 1.75, caída 8) con 21 naves.
+- Simulado (sin derribos, NORMAL): la invasión tarda ~12.8 s en la 21
+  (antes ~16 s con 2 filas), igual que la fila intercalada porque la fila
+  de abajo está a la misma altura; en la 29 ~3.8 s, como la 19.
+
 ## 2026-11-23 - Velocidad de la formación en cuartos de pixel (AMH + Bimo) - V0.4.83
 
 ### Cambiado

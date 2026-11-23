@@ -9,8 +9,11 @@
  * Rows are spaced so they never share a scanline (20-sprite/line limit). */
 /* ENEMY_ROWS is the most rows any wave can use (all sprites are created
  * at boot). Which rows/columns a wave actually fills comes from
- * enemies_rowMaskForWave() in enemies.c: waves 11-19 add a staggered
- * third row (columns 0, 2, 4, 6); every other wave uses 2 full rows. */
+ * enemies_rowMaskForWave() in enemies.c: waves 1-9 use 2 full rows,
+ * waves 11-19 add a staggered third row (columns 0, 2, 4, 6) and from
+ * wave 21 on (V0.4.84) the third row is full: 21 ships. Boss waves place
+ * no formation. All 21 ships are allocated at boot, so the sprite budget
+ * does not change; each row has its own scanlines. */
 #define ENEMY_ROWS 3
 #define ENEMIES_PER_ROW 7
 #define MAX_ENEMIES (ENEMY_ROWS * ENEMIES_PER_ROW)
@@ -18,6 +21,7 @@
 #define ENEMY_ROW_STAGGER   0x55  /* columns 0, 2, 4, 6 */
 #define STAGGER_ROW_FIRST_WAVE 11
 #define STAGGER_ROW_LAST_WAVE  19
+#define FULL_ROW3_FIRST_WAVE   21  /* full third row from here on */
 #define ENEMY_COL_SPACING 32
 #define ENEMY_ROW_SPACING 24    /* 16 px sprite + 8 px gap; rows do not overlap */
 #define ENEMY_START_Y 32
