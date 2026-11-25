@@ -354,6 +354,9 @@ HISTORIAL:
                  reservada al arranque) y comprobación de sprites nulos.
                  Si el jefe no se puede reservar, se salta la oleada.
                  V0.4.86.
+*       25/11/26 - La entrada (menú, START, pausa, iniciales, disparo)
+                 se aplica en el loop principal, no en el VBlank.
+                 V0.4.87.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -740,3 +743,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 * Auditoría de la v0.4.85, prioridad 1: si al pasar de La Cookie a la tortuga fallaba la reserva de VRAM, SGDK 2.11 ya había liberado el bloque anterior y el reintento con Cookie no volvía a reservar tiles, pero el jefe se activaba igual.
 * El sprite del jefe se reserva desde el arranque con el tamaño de la tortuga (64x64) y ese bloque se mantiene al cambiar a La Cookie. Si aún así no hay sprite, el jefe no se activa y la oleada se salta.
 * Todos los `SPR_addSprite` se comprueban; una entidad sin sprite nunca queda viva, colisiona ni hace daño. `BOSS_FORCE_ALLOC_FAIL` (en 0) permite probar el camino de fallo.
+
+**Entrada fuera del VBlank (25/11/2026, V0.4.87)**
+* El manejador de JOY de SGDK corría en el VBlank con las interrupciones apagadas, y START podía reiniciar la partida y cambiar el jefe ahí. Ya no se instala ese manejador.
+* Cada cuadro el loop principal lee el pad y calcula los flancos (el mismo criterio que SGDK). El menú, START, la pausa, las iniciales del TOP 5 y el control de la nave se aplican ahí, con un muestreo por VBlank para no perder pulsaciones ni dispararlas dos veces.

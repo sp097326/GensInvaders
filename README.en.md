@@ -352,6 +352,8 @@ HISTORY:
 *       25/11/26 - More robust boss transition (64x64 VRAM reserved at
                  boot) and NULL sprite checks. If the boss sprite cannot
                  be reserved, the wave is skipped. V0.4.86.
+*       25/11/26 - Input (menu, START, pause, initials, shooting) is
+                 applied in the main loop, not during VBlank. V0.4.87.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -738,3 +740,7 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 * Audit of v0.4.85, priority 1: if VRAM allocation failed when switching from La Cookie to the turtle, SGDK 2.11 had already freed the old block and the Cookie fallback did not re-allocate tiles, but the boss was activated anyway.
 * The boss sprite is reserved at boot with the turtle's 64x64 size and that block is kept when switching to La Cookie. If there is still no sprite, the boss is not activated and the wave is skipped.
 * Every `SPR_addSprite` is checked; an entity without a sprite is never left alive, colliding or dealing damage. `BOSS_FORCE_ALLOC_FAIL` (left at 0) can force the failure path for testing.
+
+**Input moved out of VBlank (25/11/2026, V0.4.87)**
+* SGDK's JOY handler ran in VBlank with interrupts disabled, and START could reset the match and swap the boss sprite there. That handler is no longer installed.
+* Each frame the main loop reads the pad and computes edges (the same test SGDK used). The menu, START, pause, TOP 5 initials and ship controls are applied there, still sampled once per VBlank so presses are neither lost nor fired twice.

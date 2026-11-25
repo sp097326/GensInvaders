@@ -3,7 +3,21 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
-## 2026-11-25 - Transición del jefe más robusta y sprites nulos (AMH + Bimo) - V0.4.86
+## 2026-11-25 - Entrada fuera del VBlank (AMH + Bimo) - V0.4.87
+
+### Corregido
+- Auditoría de la v0.4.85, prioridad 2: el manejador de JOY de SGDK corre
+  al final de `SYS_doVBlankProcess`, con las interrupciones apagadas. START
+  podía llamar a `startGameFromMenu` ahí (`title_clear`, `resetGame`,
+  cambio de sprite del jefe) y el menú, la pausa y las iniciales del TOP 5
+  también dibujaban texto en el VDP en ese momento.
+- Ya no hay `JOY_setEventHandler`. Cada cuadro, en el loop principal, se
+  lee `JOY_readJoypad(JOY_1)` y se calculan los flancos (`state ^ joyPrev`),
+  igual que hacía el manejador, y luego se aplican el menú, START, la
+  pausa, las iniciales y el control de la nave. El muestreo sigue siendo
+  uno por VBlank (`JOY_update`), así que no se pierden pulsaciones ni se
+  disparan dos veces. El comportamiento se mantiene.
+
 
 ### Corregido
 - Auditoría de la v0.4.85, prioridad 1: al cambiar de La Cookie a la

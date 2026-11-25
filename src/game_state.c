@@ -150,10 +150,16 @@ static void startGameFromMenu() {
     resetGame();
 }
 
-/* Handler function for the joystick movement, Interrupts are already implemented in SGDK */
-void game_state_joy(u16 joy, u16 changed, u16 state) {
-    // Control movement for player 1 (can we just add an If for player 2?)
-    if (joy != JOY_1) return;
+/* Previous JOY_1 snapshot. Edges are state ^ joyPrev, the same test
+ * SGDK's event handler uses, applied once per frame in the main loop
+ * (after VBlank has called JOY_update) instead of inside VBlank. */
+static u16 joyPrev = 0;
+
+static void processInput(void) {
+    u16 state = JOY_readJoypad(JOY_1);
+    u16 changed = state ^ joyPrev;
+
+    joyPrev = state;
 
     if (gameState == STATE_TITLE) {
         if (title_isScoresView()) {
@@ -426,6 +432,12 @@ static void resetGame() {
 }
 
 void game_state_update(void) {
+    /* Input first, from the pad sampled in the VBlank we just left.
+     * START, menu, pause and name entry therefore never run with
+     * interrupts disabled. A title START still runs the first PLAYING
+     * tick on this same main-loop frame, as it did after the old
+     * VBlank handler returned. */
+    processInput();
     menuFrames++;
     if (gameState == STATE_TITLE) {
         title_updatePulse();
@@ -437,8 +449,8 @@ void game_state_update(void) {
         bullets_update();
         if (wavePauseTimer > 0) {
             /* Warp intermission: no formation AI or enemy fire. The player
-             * can steer; shooting and a new shield are blocked in the joy
-             * handler. Recharges (shield, boost), the 1UP banner and life
+             * can steer; shooting and a new shield are blocked in
+             * processInput. Recharges (shield, boost), the 1UP banner and life
              * icons keep going; RapidFire and an active shield are frozen
              * in powerups_update so the warp does not eat them (V0.4.81). */
             wavePauseTimer--;

@@ -48,7 +48,10 @@ void drawStarfield() {
 int main(bool hard)
 {
     JOY_init();
-    JOY_setEventHandler(&game_state_joy);
+    /* Do not install a JOY event handler: SGDK runs it at the end of
+     * SYS_doVBlankProcess with interrupts disabled. Start, pause, the
+     * menu and name entry are applied in game_state_update from the
+     * main loop, by polling JOY_readJoypad after each VBlank. */
     difficulty_init();
     scores_init();
 
