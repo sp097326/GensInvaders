@@ -25,9 +25,11 @@ void explosions_init(void) {
     /* PAL3 (green/yellow in play) so the burst stays distinct from the
      * player's orange/red PAL1 fireball. 16x16 = 1 VDP sprite each. */
     for (i = 0; i < MAX_ENEMY_EXPLOSIONS; i++) {
-        pool[i].spr = SPR_addSprite(&enemyexp, 0, -32, TILE_ATTR(PAL3, 1, FALSE, FALSE));
-        SPR_setAutoAnimation(pool[i].spr, FALSE);
-        SPR_setVisibility(pool[i].spr, HIDDEN);
+        pool[i].spr = addGameSprite(&enemyexp, 0, -32, TILE_ATTR(PAL3, 1, FALSE, FALSE));
+        if (pool[i].spr != NULL) {
+            SPR_setAutoAnimation(pool[i].spr, FALSE);
+            SPR_setVisibility(pool[i].spr, HIDDEN);
+        }
         pool[i].active = 0;
         pool[i].timer = 0;
         pool[i].x = 0;

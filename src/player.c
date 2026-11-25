@@ -79,9 +79,11 @@ static void placePlayer(void) {
     player.x = PLAYER_START_X;
     player.y = PLAYER_START_Y;
     player.velx = 0;
-    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
-    SPR_setHFlip(player.sprite, FALSE);
-    SPR_setPosition(player.sprite, player.x, player.y);
+    if (player.sprite != NULL) {
+        SPR_setAnim(player.sprite, ANIM_STRAIGHT);
+        SPR_setHFlip(player.sprite, FALSE);
+        SPR_setPosition(player.sprite, player.x, player.y);
+    }
 }
 
 static void updatePlayerLife(void) {
@@ -97,7 +99,9 @@ static void updatePlayerLife(void) {
     if (invulnTimer > 0) {
         invulnTimer--;
         // Toggle visibility every 4 frames for the blink effect.
-        SPR_setVisibility(player.sprite, ((invulnTimer & 4) && invulnTimer > 0) ? HIDDEN : VISIBLE);
+        if (player.sprite != NULL) {
+            SPR_setVisibility(player.sprite, ((invulnTimer & 4) && invulnTimer > 0) ? HIDDEN : VISIBLE);
+        }
     }
 }
 
@@ -251,7 +255,9 @@ static void positionPlayer(void) {
     if (player.x + player.w > RIGHT_EDGE) player.x = RIGHT_EDGE - player.w;
 
     //positioning the sprite using the Sprite Engine in SGDK
-    SPR_setPosition(player.sprite, player.x, player.y);
+    if (player.sprite != NULL) {
+        SPR_setPosition(player.sprite, player.x, player.y);
+    }
 }
 
 /* Returns 1 if GAME OVER should be shown now (explosion just ended, no lives). */
@@ -306,29 +312,35 @@ void player_init(void) {
     /* adding the player to the screen, can this be moved to a function?*/
     player.x = PLAYER_START_X;
     player.y = PLAYER_START_Y;
-    player.health = 1;
-    player.sprite = SPR_addSprite(&ship, player.x, player.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    player.sprite = addGameSprite(&ship, player.x, player.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    player.health = (player.sprite != NULL) ? 1 : 0;
 
     /* One 16x16 explosion sprite (4 hardware cells). The player is hidden while
      * it plays, so the hardware-sprite budget stays at 70. High priority so it
      * sits above bullets and the starfield. Animation frames are set by hand. */
-    explosionSpr = SPR_addSprite(&explosion, 0, -32, TILE_ATTR(PAL1, 1, FALSE, FALSE));
-    SPR_setAutoAnimation(explosionSpr, FALSE);
-    SPR_setVisibility(explosionSpr, HIDDEN);
+    explosionSpr = addGameSprite(&explosion, 0, -32, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    if (explosionSpr != NULL) {
+        SPR_setAutoAnimation(explosionSpr, FALSE);
+        SPR_setVisibility(explosionSpr, HIDDEN);
+    }
 
     /* 8x8 exhaust (2 frames). One hardware sprite, sits under the ship
      * at Y=208-215, just above the life icons (row 27) and below the
      * 16x16 hull, so it does not add to a busy scanline. */
-    flameSpr = SPR_addSprite(&flame, 0, -16, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-    SPR_setAutoAnimation(flameSpr, FALSE);
-    SPR_setVisibility(flameSpr, HIDDEN);
+    flameSpr = addGameSprite(&flame, 0, -16, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    if (flameSpr != NULL) {
+        SPR_setAutoAnimation(flameSpr, FALSE);
+        SPR_setVisibility(flameSpr, HIDDEN);
+    }
     flameOn = 0;
 
     /* 16x16 aura around the ship (2 frames). One hardware sprite, same
      * scanlines as the hull, so the 20-sprite/line budget only grows by 1. */
-    chargeGlowSpr = SPR_addSprite(&chargeglow, 0, -32, TILE_ATTR(PAL1, 1, FALSE, FALSE));
-    SPR_setAutoAnimation(chargeGlowSpr, FALSE);
-    SPR_setVisibility(chargeGlowSpr, HIDDEN);
+    chargeGlowSpr = addGameSprite(&chargeglow, 0, -32, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    if (chargeGlowSpr != NULL) {
+        SPR_setAutoAnimation(chargeGlowSpr, FALSE);
+        SPR_setVisibility(chargeGlowSpr, HIDDEN);
+    }
 
     /* Dash trail: 2 ghost ships (1 hardware sprite and 4 tiles each),
      * added after the ship so it draws on top. They use PAL0 colours 1-4
@@ -341,10 +353,12 @@ void player_init(void) {
         PAL_setColor(3, RGB24_TO_VDPCOLOR(0xA0E0FC));
         PAL_setColor(4, RGB24_TO_VDPCOLOR(0x002060));
         for (i = 0; i < BOOST_GHOSTS; i++) {
-            ghostSpr[i] = SPR_addSprite(&ship, 0, -32, TILE_ATTR(PAL0, 0, FALSE, FALSE));
-            SPR_setAutoAnimation(ghostSpr[i], FALSE);
-            SPR_setAnim(ghostSpr[i], ANIM_MOVE);
-            SPR_setVisibility(ghostSpr[i], HIDDEN);
+            ghostSpr[i] = addGameSprite(&ship, 0, -32, TILE_ATTR(PAL0, 0, FALSE, FALSE));
+            if (ghostSpr[i] != NULL) {
+                SPR_setAutoAnimation(ghostSpr[i], FALSE);
+                SPR_setAnim(ghostSpr[i], ANIM_MOVE);
+                SPR_setVisibility(ghostSpr[i], HIDDEN);
+            }
         }
     }
 }
@@ -411,7 +425,7 @@ u16 player_update(void) {
 
 void player_stop(void) {
     player.velx = 0;
-    SPR_setAnim(player.sprite, ANIM_STRAIGHT);
+    if (player.sprite != NULL) SPR_setAnim(player.sprite, ANIM_STRAIGHT);
 }
 
 u16 player_hit(int score) {

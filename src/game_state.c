@@ -247,20 +247,27 @@ void game_state_joy(u16 joy, u16 changed, u16 state) {
     // No control while the ship is gone (waiting to respawn).
     if (player_get()->health == 0) return;
 
-    if (state & BUTTON_RIGHT) {
-        player_get()->velx = 2;
-        SPR_setAnim(player_get()->sprite, ANIM_MOVE);
-        SPR_setHFlip(player_get()->sprite, TRUE);
-    }
-    else if (state & BUTTON_LEFT) {
-        player_get()->velx = -2;
-        SPR_setAnim(player_get()->sprite, ANIM_MOVE);
-        SPR_setHFlip(player_get()->sprite, FALSE);
-    }
-    else {
-        if ( (changed & BUTTON_RIGHT) | (changed & BUTTON_LEFT) ) {
-            player_get()->velx = 0;
-            SPR_setAnim(player_get()->sprite, ANIM_STRAIGHT);
+    {
+        GameEntity* ship = player_get();
+        if (state & BUTTON_RIGHT) {
+            ship->velx = 2;
+            if (ship->sprite != NULL) {
+                SPR_setAnim(ship->sprite, ANIM_MOVE);
+                SPR_setHFlip(ship->sprite, TRUE);
+            }
+        }
+        else if (state & BUTTON_LEFT) {
+            ship->velx = -2;
+            if (ship->sprite != NULL) {
+                SPR_setAnim(ship->sprite, ANIM_MOVE);
+                SPR_setHFlip(ship->sprite, FALSE);
+            }
+        }
+        else {
+            if ( (changed & BUTTON_RIGHT) | (changed & BUTTON_LEFT) ) {
+                ship->velx = 0;
+                if (ship->sprite != NULL) SPR_setAnim(ship->sprite, ANIM_STRAIGHT);
+            }
         }
     }
     /* During the between-wave warp the player can still steer, but
@@ -317,7 +324,12 @@ static void startNextWave(void) {
     wavePauseTimer = warpTotal;
     if (boss_isWave(difficulty_wave())) {
         enemies_hideAll();
-        boss_beginEnter(WAVE_WARP_ENTER);
+        if (!boss_beginEnter(WAVE_WARP_ENTER)) {
+            /* No mothership sprite: skip this empty boss wave so the
+             * player is not stuck (formationCleared stays 0 here). */
+            startNextWave();
+            return;
+        }
     } else {
         boss_hide();
         enemies_beginEnter(ENEMY_WARP_ENTER);
@@ -398,7 +410,9 @@ static void resetGame() {
      * start wave spawns the mothership already on screen. */
     if (boss_isWave(difficulty_wave())) {
         enemies_hideAll();
-        boss_beginEnter(0);
+        if (!boss_beginEnter(0)) {
+            startNextWave();
+        }
     } else {
         boss_reset();
         enemies_reset();

@@ -47,14 +47,36 @@ typedef enum
     STATE_WIN
 } GameState;
 
+/* Hide and deactivate. A NULL sprite is fine (allocation may have failed). */
 static inline void killGameEntity(GameEntity* e) {
+    if (e == NULL) return;
     e->health = 0;
-    SPR_setVisibility(e->sprite, HIDDEN);
+    if (e->sprite != NULL) SPR_setVisibility(e->sprite, HIDDEN);
 }
 
+/* Show and activate only when a sprite exists. Without one the entity
+ * stays dead: it must never collide or deal damage. */
 static inline void reviveGameEntity(GameEntity* e) {
+    if (e == NULL) return;
+    if (e->sprite == NULL) {
+        e->health = 0;
+        return;
+    }
     e->health = 1;
     SPR_setVisibility(e->sprite, VISIBLE);
+}
+
+/* Allocate a sprite; if VRAM is fragmented, defrag once and retry.
+ * The caller must treat a NULL return as a dead entity. */
+static inline Sprite* addGameSprite(const SpriteDefinition* def, s16 x, s16 y, u16 attr) {
+    Sprite* s;
+
+    s = SPR_addSprite(def, x, y, attr);
+    if (s == NULL) {
+        SPR_defragVRAM();
+        s = SPR_addSprite(def, x, y, attr);
+    }
+    return s;
 }
 
 #endif

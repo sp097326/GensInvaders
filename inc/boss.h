@@ -9,8 +9,11 @@ void boss_hide(void);
 /* Wave 10, 20, 30... */
 u16  boss_isWave(u16 wave);
 u16  boss_isActive(void);
-/* Like the formation enter: start `offset` pixels above home, then slide in. */
-void boss_beginEnter(u16 offset);
+/* Like the formation enter: start `offset` pixels above home, then slide in.
+ * Returns 1 if the mothership is active. Returns 0 if its sprite could
+ * not be reserved; the caller should skip/advance the wave so the
+ * player is not stuck on an empty boss wave. */
+u16  boss_beginEnter(u16 offset);
 void boss_advanceEnter(u16 remain, u16 total, u16 offset);
 void boss_update(void);
 /* Player shot vs mothership. charged != 0 is the piercing bolt (3x damage,

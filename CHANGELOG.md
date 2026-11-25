@@ -3,6 +3,25 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-25 - Transición del jefe más robusta y sprites nulos (AMH + Bimo) - V0.4.86
+
+### Corregido
+- Auditoría de la v0.4.85, prioridad 1: al cambiar de La Cookie a la
+  tortuga, si `SPR_setDefinition` fallaba al reservar VRAM, SGDK 2.11 ya
+  había liberado el bloque anterior y el reintento con Cookie salía al
+  momento (`same definition -> TRUE`) sin volver a reservar tiles. El
+  jefe se activaba igual (health=1, active=1) con un sprite sin VRAM.
+- El sprite del jefe se reserva desde el arranque con el tamaño de la
+  tortuga (64x64) y ese bloque se mantiene al cambiar a La Cookie
+  (64x56), con `SPR_defragVRAM` antes del cambio. Si aún así no hay
+  sprite, el jefe no se activa y la oleada se salta para no dejar al
+  jugador atrapado.
+- Todos los `SPR_addSprite` se comprueban (con un reintento tras defrag).
+  `killGameEntity` y `reviveGameEntity` toleran un sprite NULL; una
+  entidad sin sprite nunca queda viva, colisiona ni hace daño.
+- Bandera de compilación `BOSS_FORCE_ALLOC_FAIL` (en 0) para forzar y
+  verificar el camino de fallo; no queda activada.
+
 ## 2026-11-23 - Segunda subida de velocidad de bala más tarde (AMH + Bimo) - V0.4.85
 
 ### Cambiado

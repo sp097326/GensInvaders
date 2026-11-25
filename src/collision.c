@@ -15,6 +15,12 @@ int collideEntities(GameEntity* a, GameEntity* b) {
     a->y + a->h >= b->y);
 }
 
+/* A live entity must have both health and a sprite. Without a sprite it
+ * must never collide or deal damage. */
+static u16 isLive(GameEntity* e) {
+    return (e != NULL && e->health > 0 && e->sprite != NULL) ? 1 : 0;
+}
+
 /* Formation waves end when the last ship dies. A boss wave hides the
  * rows, so enemiesLeft is already 0 for the whole fight: that count
  * must not clear the wave. Only a mothership whose HP has reached 0
@@ -35,11 +41,11 @@ u16 collision_update(int* score) {
     for (i = 0; i < MAX_BULLETS; i++)
     {
         b = bullets_playerAt(i);
-        if (b->health > 0) {
+        if (isLive(b)) {
             for (j = 0; j < MAX_ENEMIES; j++)
             {
                 e = enemies_at(j);
-                if (e->health > 0) {
+                if (isLive(e)) {
                     if (collideEntities(b,e)) {
                         explosions_spawn(e->x, e->y);
                         killGameEntity(e);
@@ -68,10 +74,10 @@ u16 collision_update(int* score) {
      * Points are the usual per-ship value. */
     {
         GameEntity* c = bullets_charged();
-        if (c->health > 0) {
+        if (isLive(c)) {
             for (j = 0; j < MAX_ENEMIES; j++) {
                 e = enemies_at(j);
-                if (e->health > 0 && collideEntities(c, e)) {
+                if (isLive(e) && collideEntities(c, e)) {
                     explosions_spawn(e->x, e->y);
                     killGameEntity(e);
                     enemies_decLeft();
@@ -102,7 +108,7 @@ u16 collision_update(int* score) {
     if (boss_isActive()) {
         for (i = 0; i < MAX_BULLETS; i++) {
             b = bullets_playerAt(i);
-            if (b->health == 0) continue;
+            if (!isLive(b)) continue;
             {
                 u16 r = boss_hitShot(b, 0);
                 if (r == 0) continue;
@@ -123,7 +129,7 @@ u16 collision_update(int* score) {
         }
         {
             GameEntity* c = bullets_charged();
-            if (c->health > 0) {
+            if (isLive(c)) {
                 u16 r = boss_hitShot(c, 1);
                 if (r == 3) {
                     *score += boss_points();
@@ -154,7 +160,7 @@ u16 collision_update(int* score) {
         for (i = 0; i < MAX_ENEMY_BULLETS; i++)
         {
             b = bullets_enemyAt(i);
-            if (b->health > 0 && p->health > 0) {
+            if (isLive(b) && p->health > 0) {
                 if (powerups_shieldActive() && collideEntities(b, &shieldBox)) {
                     bullets_despawnEnemy(b);
                     continue;
@@ -177,7 +183,7 @@ u16 collision_update(int* score) {
             GameEntity hit;
 
             b = bullets_boneAt(i);
-            if (b->health == 0 || p->health == 0) continue;
+            if (!isLive(b) || p->health == 0) continue;
             bullets_boneHitbox(b, &hit);
             if (player_invulnTimer() == 0 && collideEntities(&hit, p)) {
                 bullets_despawnBone(b);
@@ -207,7 +213,7 @@ u16 collision_update(int* score) {
             GameEntity hit;
 
             b = bullets_starAt(i);
-            if (b->health == 0 || p->health == 0) continue;
+            if (!isLive(b) || p->health == 0) continue;
             bullets_starHitbox(b, &hit);
             if (player_invulnTimer() == 0 && collideEntities(&hit, p)) {
                 bullets_despawnStar(b);
@@ -229,7 +235,7 @@ u16 collision_update(int* score) {
         if (p->health > 0 && !player_isExploding()) {
             for (j = 0; j < MAX_ENEMIES; j++) {
                 e = enemies_at(j);
-                if (e->health > 0 && collideEntities(e, p)) {
+                if (isLive(e) && collideEntities(e, p)) {
                     explosions_spawn(e->x, e->y);
                     killGameEntity(e);
                     enemies_decLeft();
@@ -241,7 +247,7 @@ u16 collision_update(int* score) {
             if (!crashed) {
                 for (j = 0; j < MAX_ENEMIES; j++) {
                     e = enemies_at(j);
-                    if (e->health > 0 && (e->y + e->h >= BOTTOM_EDGE)) {
+                    if (isLive(e) && (e->y + e->h >= BOTTOM_EDGE)) {
                         explosions_spawn(e->x, e->y);
                         killGameEntity(e);
                         enemies_decLeft();

@@ -222,40 +222,127 @@ void boss_reset(void) {
     hpMax = 0;
 }
 
+/* Set to 1 to compile (and test) the "sprite alloc failed" path: the
+ * boss is not activated and the wave is skipped. Leave at 0. */
+#ifndef BOSS_FORCE_ALLOC_FAIL
+#define BOSS_FORCE_ALLOC_FAIL 0
+#endif
+
+#define BOSS_SPR_ATTR   TILE_ATTR(PAL2, 1, FALSE, FALSE)
+#define BOSS_SPR_FLAGS  (SPR_FLAG_AUTO_VRAM_ALLOC | SPR_FLAG_AUTO_TILE_UPLOAD)
+
+/* Keep the 64x64 turtle VRAM block across definition swaps. Clearing
+ * AUTO_VRAM_ALLOC stops SPR_setDefinition from freeing that block when
+ * switching to the smaller Cookie and then failing to re-allocate the
+ * turtle. SPR_setVRAMTileIndex cannot be used: it frees first. */
+static void pinBossVram(void) {
+    if (boss.sprite != NULL) {
+        boss.sprite->status &= ~SPR_FLAG_AUTO_VRAM_ALLOC;
+    }
+}
+
+static void setupBossSprite(void) {
+    if (boss.sprite == NULL) return;
+    SPR_setAutoAnimation(boss.sprite, FALSE);
+    SPR_setVisibility(boss.sprite, HIDDEN);
+    pinBossVram();
+}
+
+/* Drop the pooled sprite. vramAlreadyFreed is 1 when SPR_setDefinition
+ * already released the block (AUTO still on, index stale): do not
+ * VRAM_free again. Otherwise re-enable AUTO so a pinned block is
+ * returned to the pool. */
+static void releaseBossSprite(u16 vramAlreadyFreed) {
+    if (boss.sprite == NULL) return;
+    if (vramAlreadyFreed) {
+        boss.sprite->status &= ~SPR_FLAG_AUTO_VRAM_ALLOC;
+    } else {
+        boss.sprite->status |= SPR_FLAG_AUTO_VRAM_ALLOC;
+    }
+    SPR_releaseSprite(boss.sprite);
+    boss.sprite = NULL;
+}
+
+/* Reserve (or re-reserve) the boss sprite with `def`. Prefers the
+ * 64x64 turtle so the VRAM block is large enough for both bosses. */
+static u16 allocBossSprite(const SpriteDefinition* def) {
+    releaseBossSprite(0);
+#if BOSS_FORCE_ALLOC_FAIL
+    (void)def;
+    setupBossSprite();  /* no-op when sprite is NULL; keeps the helper used */
+    return 0;
+#else
+    SPR_defragVRAM();
+    boss.sprite = SPR_addSpriteExSafe(def, 0, -40, BOSS_SPR_ATTR, BOSS_SPR_FLAGS);
+    if (boss.sprite == NULL) return 0;
+    setupBossSprite();
+    return 1;
+#endif
+}
+
+/* Switch the pooled sprite to `def`. Tries setDefinition on the pinned
+ * 64x64 block first; on failure, defrag and recreate (needed because
+ * a failed setDefinition may have already freed VRAM while leaving the
+ * old definition pointer, so a same-def retry would early-out TRUE). */
+static u16 adoptBossDef(const SpriteDefinition* def) {
+#if BOSS_FORCE_ALLOC_FAIL
+    return allocBossSprite(def);
+#else
+    if (boss.sprite != NULL) {
+        u16 autoOn;
+
+        SPR_defragVRAM();
+        if (SPR_setDefinition(boss.sprite, def)) {
+            setupBossSprite();
+            return 1;
+        }
+        autoOn = (boss.sprite->status & SPR_FLAG_AUTO_VRAM_ALLOC) ? 1 : 0;
+        releaseBossSprite(autoOn);
+    }
+    return allocBossSprite(def);
+#endif
+}
+
 void boss_init(void) {
-    /* 64x56 boss (temporary art from Alberto, 2 frames: flame flicker).
-     * Odd boss appearances (waves 10, 30...) swap this same sprite to the
-     * 64x64 turtle wizard (boss_beginEnter); even ones put La Cookie back.
+    /* Reserve VRAM for the largest boss up front (64x64 turtle, 2
+     * frames). Odd appearances (waves 10, 30...) keep that art; even
+     * ones (20, 40...) swap to 64x56 La Cookie on the same sprite, with
+     * the 64x64 tile block pinned so SGDK does not shrink it.
      * Uses its own palette in PAL2 during the boss wave; boss_hide puts
      * the background palette back for the formation. PAL2 so the hit
      * tint does not touch the player (PAL1). High priority so it sits
      * above the starfield. */
     boss.w = BOSS_W;
     boss.h = BOSS_H;
-    boss.sprite = SPR_addSprite(&mothership, 0, -40, TILE_ATTR(PAL2, 1, FALSE, FALSE));
-    SPR_setAutoAnimation(boss.sprite, FALSE);
-    SPR_setVisibility(boss.sprite, HIDDEN);
+    (void)allocBossSprite(kindTurtle.def);
     boss.health = 0;
     active = 0;
     captureBossPal();
 }
 
-void boss_beginEnter(u16 offset) {
+u16 boss_beginEnter(u16 offset) {
     const DifficultyConfig* cfg = difficulty_config();
     u16 wave = difficulty_wave();
     u16 n = appearanceOf(wave);
 
     boss_hide();
-    if (n == 0) return;
+    if (n == 0) return 0;
 
     /* Pick the boss for this appearance and swap the sprite definition
-     * (same Sprite, VRAM re-allocated by SGDK). If the swap fails, fall
-     * back to La Cookie so the wave is still playable. */
+     * on the reserved 64x64 block. If that still fails, try La Cookie;
+     * if there is no sprite at all, do not activate the hitbox. */
     kind = kindForAppearance(n);
-    if (!SPR_setDefinition(boss.sprite, kind->def)) {
-        kind = &kindCookie;
-        SPR_setDefinition(boss.sprite, kind->def);
+    if (!adoptBossDef(kind->def)) {
+        if (kind != &kindCookie) {
+            kind = &kindCookie;
+            if (!adoptBossDef(kind->def)) {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
     }
+    if (boss.sprite == NULL) return 0;
     SPR_setVisibility(boss.sprite, HIDDEN);
     boss.w = kind->w;
     boss.h = kind->h;
@@ -286,6 +373,7 @@ void boss_beginEnter(u16 offset) {
     animTick = 0;
     placeSprite();
     refreshBar();
+    return 1;
 }
 
 void boss_advanceEnter(u16 remain, u16 total, u16 offset) {

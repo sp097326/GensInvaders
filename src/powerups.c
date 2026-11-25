@@ -329,17 +329,21 @@ void powerups_init(void) {
     setShipRapidTint(0);
     /* One 32x32 bubble (1 hardware sprite, 16 tiles). High priority so the
      * ring sits above the ship and incoming bullets. PAL1 matches space.bmp. */
-    shieldSpr = SPR_addSprite(&shield, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
-    SPR_setAutoAnimation(shieldSpr, FALSE);
-    SPR_setVisibility(shieldSpr, HIDDEN);
+    shieldSpr = addGameSprite(&shield, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    if (shieldSpr != NULL) {
+        SPR_setAutoAnimation(shieldSpr, FALSE);
+        SPR_setVisibility(shieldSpr, HIDDEN);
+    }
 
     /* 8x8 capsule, one hardware sprite: 3 animation rows (R / E / I),
      * 2 blink frames each. Low priority
      * so the bottom-row life icons and RF bar stay readable if it falls
      * through that corner. */
-    capsule.sprite = SPR_addSprite(&capsuleSpr, 0, -16, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-    SPR_setAutoAnimation(capsule.sprite, FALSE);
-    SPR_setVisibility(capsule.sprite, HIDDEN);
+    capsule.sprite = addGameSprite(&capsuleSpr, 0, -16, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    if (capsule.sprite != NULL) {
+        SPR_setAutoAnimation(capsule.sprite, FALSE);
+        SPR_setVisibility(capsule.sprite, HIDDEN);
+    }
     capsule.health = 0;
 }
 
@@ -366,16 +370,20 @@ void powerups_update(u16 frozen) {
     if (capsule.health > 0) {
         GameEntity* p;
 
-        capsule.y += capsule.vely;
-        if (capsule.y + capsule.h >= BOTTOM_EDGE) {
-            powerups_clearCapsule();
+        if (capsule.sprite == NULL) {
+            capsule.health = 0;
         } else {
-            capsuleTick++;
-            SPR_setAnimAndFrame(capsule.sprite, capsuleType, (capsuleTick >> 3) & 1);
-            SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
-            p = player_get();
-            if (p->health && !player_isExploding() && collideEntities(&capsule, p)) {
-                collectCapsule();
+            capsule.y += capsule.vely;
+            if (capsule.y + capsule.h >= BOTTOM_EDGE) {
+                powerups_clearCapsule();
+            } else {
+                capsuleTick++;
+                SPR_setAnimAndFrame(capsule.sprite, capsuleType, (capsuleTick >> 3) & 1);
+                SPR_setPosition(capsule.sprite, capsule.x, capsule.y);
+                p = player_get();
+                if (p->health && !player_isExploding() && collideEntities(&capsule, p)) {
+                    collectCapsule();
+                }
             }
         }
     }

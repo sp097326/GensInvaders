@@ -225,7 +225,7 @@ static u16 positionEnemyRowsOpposite() {
         dir = (s16)(enemyRowDir[row] * enemyStepPx);
         for (col = 0; col < ENEMIES_PER_ROW; col++) {
             enemy = &enemies[row * ENEMIES_PER_ROW + col];
-            if (enemy->health > 0) {
+            if (enemy->health > 0 && enemy->sprite != NULL) {
                 enemy->x += dir;
                 SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
             }
@@ -278,7 +278,7 @@ u16 enemies_update() {
 
     for (i = 0; i < MAX_ENEMIES; i++) {
         enemy = &enemies[i];
-        if (enemy->health > 0) {
+        if (enemy->health > 0 && enemy->sprite != NULL) {
             enemy->x += (s16)(enemyDir * enemyStepPx);
             SPR_setPosition(enemy->sprite, enemy->x, enemy->y);
         }
@@ -324,10 +324,12 @@ static void placeEnemies() {
             if ((*difficulty_config()).rowsOpposite && (row & 1)) {
                 enem->x += (RIGHT_EDGE - ((ENEMIES_PER_ROW - 1) * ENEMY_COL_SPACING + enem->w));
             }
-            SPR_setPosition(enem->sprite, enem->x, enem->y);
+            if (enem->sprite != NULL) {
+                SPR_setPosition(enem->sprite, enem->x, enem->y);
+            }
             if (mask & (1 << col)) {
                 reviveGameEntity(enem);
-                enemiesLeft++;
+                if (enem->health > 0) enemiesLeft++;
             } else {
                 killGameEntity(enem);
             }
@@ -351,17 +353,19 @@ void enemies_init() {
             enem->w = 16;
             enem->h = 16;
             enem->velx = 1;
-            enem->health = 1;
             enem->points = difficulty_config()->enemyPoints;
             enem->row = row;
-            enem->sprite = SPR_addSprite(type->spriteDef, enem->x, enem->y,
+            enem->sprite = addGameSprite(type->spriteDef, enem->x, enem->y,
                 TILE_ATTR(type->palette, 0, type->vFlip, FALSE));
             sprintf(enem->name, "En%d", i);
-            /* Slots outside the wave-1 layout (the third row) start hidden. */
-            if (enemies_rowMaskForWave(1, row) & (1 << col)) {
+            /* Slots outside the wave-1 layout (the third row) start hidden.
+             * A slot without a sprite stays dead and is never counted. */
+            if (enem->sprite != NULL && (enemies_rowMaskForWave(1, row) & (1 << col))) {
+                enem->health = 1;
                 enemiesLeft++;
             } else {
-                killGameEntity(enem);
+                enem->health = 0;
+                if (enem->sprite != NULL) SPR_setVisibility(enem->sprite, HIDDEN);
             }
         }
     }
@@ -395,7 +399,9 @@ void enemies_beginEnter(u16 offset) {
     if (offset == 0) return;
     for (i = 0; i < MAX_ENEMIES; i++) {
         enemies[i].y -= (s16)offset;
-        SPR_setPosition(enemies[i].sprite, enemies[i].x, enemies[i].y);
+        if (enemies[i].sprite != NULL) {
+            SPR_setPosition(enemies[i].sprite, enemies[i].x, enemies[i].y);
+        }
     }
 }
 
@@ -414,7 +420,9 @@ void enemies_advanceEnter(u16 remain, u16 total, u16 offset) {
         enem = &enemies[i];
         dest = (s16)(ENEMY_START_Y + enem->row * ENEMY_ROW_SPACING);
         enem->y = dest - shift;
-        SPR_setPosition(enem->sprite, enem->x, enem->y);
+        if (enem->sprite != NULL) {
+            SPR_setPosition(enem->sprite, enem->x, enem->y);
+        }
     }
 }
 

@@ -30,6 +30,16 @@ static void loadStarPal(TransferMethod tm) {
                   BOSS_STAR_PAL_COUNT, tm);
 }
 
+/* Activate a pooled shot only when it has a sprite. Returns 0 if the
+ * slot cannot be shown, so the caller must not bump on-screen counts. */
+static u16 armShot(GameEntity* e) {
+    if (e->sprite == NULL) return 0;
+    reviveGameEntity(e);
+    if (e->health == 0) return 0;
+    SPR_setPosition(e->sprite, e->x, e->y);
+    return 1;
+}
+
 /* Bones and stars (both boss attacks) are always cleared together. */
 static void killBones(void) {
     u16 i;
@@ -51,8 +61,8 @@ void bullets_init(void) {
         bullt->w = 8;
         bullt->h = 8;
         bullt->health = 0;
-        bullt->sprite = SPR_addSprite(&bullet, 0, -10, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-        SPR_setVisibility(bullt->sprite, HIDDEN);
+        bullt->sprite = addGameSprite(&bullet, 0, -10, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+        if (bullt->sprite != NULL) SPR_setVisibility(bullt->sprite, HIDDEN);
         sprintf(bullt->name, "Bu%d",i);
         bullt++;
     }
@@ -64,8 +74,8 @@ void bullets_init(void) {
         bullt->w = 8;
         bullt->h = 8;
         bullt->health = 0;
-        bullt->sprite = SPR_addSprite(&bullet, 0, -10, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-        SPR_setVisibility(bullt->sprite, HIDDEN);
+        bullt->sprite = addGameSprite(&bullet, 0, -10, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+        if (bullt->sprite != NULL) SPR_setVisibility(bullt->sprite, HIDDEN);
         sprintf(bullt->name, "EB%d", i);
         bullt++;
     }
@@ -77,8 +87,8 @@ void bullets_init(void) {
     chargedBullet.h = CHARGED_BULLET_SIZE;
     chargedBullet.health = 0;
     chargedBullet.vely = CHARGED_BULLET_SPEED;
-    chargedBullet.sprite = SPR_addSprite(&bulletc, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
-    SPR_setVisibility(chargedBullet.sprite, HIDDEN);
+    chargedBullet.sprite = addGameSprite(&bulletc, 0, -40, TILE_ATTR(PAL1, 1, FALSE, FALSE));
+    if (chargedBullet.sprite != NULL) SPR_setVisibility(chargedBullet.sprite, HIDDEN);
     sprintf(chargedBullet.name, "ChB");
     /* Boss bones: 48x16 = 6x2 tiles, 2 hardware sprites each (32+16 wide),
      * 12 VRAM tiles each. PAL1 so the boss hit tint (PAL2) never reaches it. */
@@ -90,8 +100,8 @@ void bullets_init(void) {
         bones[i].velx = 0;
         bones[i].vely = 1;
         bones[i].health = 0;
-        bones[i].sprite = SPR_addSprite(&bossbone, 0, -BOSS_BONE_H, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-        SPR_setVisibility(bones[i].sprite, HIDDEN);
+        bones[i].sprite = addGameSprite(&bossbone, 0, -BOSS_BONE_H, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+        if (bones[i].sprite != NULL) SPR_setVisibility(bones[i].sprite, HIDDEN);
         sprintf(bones[i].name, "Bn%d", i);
     }
     loadBonePal(DMA);
@@ -105,8 +115,8 @@ void bullets_init(void) {
         stars[i].velx = 0;
         stars[i].vely = 1;
         stars[i].health = 0;
-        stars[i].sprite = SPR_addSprite(&bossstar, 0, -BOSS_STAR_H, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-        SPR_setVisibility(stars[i].sprite, HIDDEN);
+        stars[i].sprite = addGameSprite(&bossstar, 0, -BOSS_STAR_H, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+        if (stars[i].sprite != NULL) SPR_setVisibility(stars[i].sprite, HIDDEN);
         sprintf(stars[i].name, "St%d", i);
     }
     loadStarPal(DMA);
@@ -160,13 +170,19 @@ void bullets_update(void) {
     {
         bllt = &bullets[i];
         if (bllt->health > 0) {
-            bllt->y += bllt->vely;
-            if (bllt->y + bllt->h < 0) {
-                killGameEntity(bllt);
+            if (bllt->sprite == NULL) {
+                bllt->health = 0;
                 bulletsOnScreen--;
                 shotByPlayer--;
             } else {
-                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                bllt->y += bllt->vely;
+                if (bllt->y + bllt->h < 0) {
+                    killGameEntity(bllt);
+                    bulletsOnScreen--;
+                    shotByPlayer--;
+                } else {
+                    SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                }
             }
         }
     }
@@ -174,13 +190,18 @@ void bullets_update(void) {
     {
         bllt = &enemyBullets[i];
         if (bllt->health > 0) {
-            bllt->x += bllt->velx;
-            bllt->y += bllt->vely;
-            if (bllt->y > BOTTOM_EDGE || bllt->x < LEFT_EDGE - 8 || bllt->x > RIGHT_EDGE) {
-                killGameEntity(bllt);
+            if (bllt->sprite == NULL) {
+                bllt->health = 0;
                 enemyBulletsOnScreen--;
             } else {
-                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                bllt->x += bllt->velx;
+                bllt->y += bllt->vely;
+                if (bllt->y > BOTTOM_EDGE || bllt->x < LEFT_EDGE - 8 || bllt->x > RIGHT_EDGE) {
+                    killGameEntity(bllt);
+                    enemyBulletsOnScreen--;
+                } else {
+                    SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                }
             }
         }
     }
@@ -188,11 +209,15 @@ void bullets_update(void) {
     {
         bllt = &bones[i];
         if (bllt->health > 0) {
-            bllt->y += bllt->vely;
-            if (bllt->y > BOTTOM_EDGE) {
-                killGameEntity(bllt);
+            if (bllt->sprite == NULL) {
+                bllt->health = 0;
             } else {
-                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                bllt->y += bllt->vely;
+                if (bllt->y > BOTTOM_EDGE) {
+                    killGameEntity(bllt);
+                } else {
+                    SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                }
             }
         }
     }
@@ -200,20 +225,28 @@ void bullets_update(void) {
     {
         bllt = &stars[i];
         if (bllt->health > 0) {
-            bllt->y += bllt->vely;
-            if (bllt->y > BOTTOM_EDGE) {
-                killGameEntity(bllt);
+            if (bllt->sprite == NULL) {
+                bllt->health = 0;
             } else {
-                SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                bllt->y += bllt->vely;
+                if (bllt->y > BOTTOM_EDGE) {
+                    killGameEntity(bllt);
+                } else {
+                    SPR_setPosition(bllt->sprite, bllt->x, bllt->y);
+                }
             }
         }
     }
     if (chargedBullet.health > 0) {
-        chargedBullet.y += chargedBullet.vely;
-        if (chargedBullet.y + chargedBullet.h < 0) {
-            killGameEntity(&chargedBullet);
+        if (chargedBullet.sprite == NULL) {
+            chargedBullet.health = 0;
         } else {
-            SPR_setPosition(chargedBullet.sprite, chargedBullet.x, chargedBullet.y);
+            chargedBullet.y += chargedBullet.vely;
+            if (chargedBullet.y + chargedBullet.h < 0) {
+                killGameEntity(&chargedBullet);
+            } else {
+                SPR_setPosition(chargedBullet.sprite, chargedBullet.x, chargedBullet.y);
+            }
         }
     }
 }
@@ -234,9 +267,8 @@ void bullets_shootPlayer(GameEntity shooter) {
             bullet->x = shooter.x + 4;
             bullet->y = shooter.y;
             bullet->vely = -3;
-            reviveGameEntity(bullet);
+            if (!armShot(bullet)) break;
             XGM_startPlayPCM(SFX_LASER, 9, SOUND_PCM_CH3);
-            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
             bulletsOnScreen++;
             shotByPlayer++;
             break;
@@ -252,9 +284,8 @@ u16 bullets_shootCharged(GameEntity shooter) {
     chargedBullet.x = shooter.x - 4;
     chargedBullet.y = shooter.y - 4;
     chargedBullet.vely = CHARGED_BULLET_SPEED;
-    reviveGameEntity(&chargedBullet);
+    if (!armShot(&chargedBullet)) return 0;
     XGM_startPlayPCM(SFX_CHARGE_SHOT, 11, SOUND_PCM_CH3);
-    SPR_setPosition(chargedBullet.sprite, chargedBullet.x, chargedBullet.y);
     return 1;
 }
 
@@ -281,8 +312,7 @@ void bullets_shootEnemy(GameEntity* shooter) {
             bullet->y = shooter->y;
             bullet->velx = 0;
             bullet->vely = cfg->bulletSpeed;
-            reviveGameEntity(bullet);
-            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
+            if (!armShot(bullet)) break;
             enemyBulletsOnScreen++;
             break;
         }
@@ -304,8 +334,7 @@ void bullets_shootEnemyXY(s16 x, s16 y) {
             bullet->y = y;
             bullet->velx = 0;
             bullet->vely = cfg->bulletSpeed;
-            reviveGameEntity(bullet);
-            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
+            if (!armShot(bullet)) break;
             enemyBulletsOnScreen++;
             break;
         }
@@ -328,8 +357,7 @@ u16 bullets_shootEnemyXYV(s16 x, s16 y, s16 vx, s16 vy) {
             bullet->y = y;
             bullet->velx = vx;
             bullet->vely = vy;
-            reviveGameEntity(bullet);
-            SPR_setPosition(bullet->sprite, bullet->x, bullet->y);
+            if (!armShot(bullet)) return 0;
             enemyBulletsOnScreen++;
             return 1;
         }
@@ -351,8 +379,7 @@ u16 bullets_shootBone(s16 x, s16 y) {
             b->velx = 0;
             b->vely = vy;
             loadBonePal(DMA);
-            reviveGameEntity(b);
-            SPR_setPosition(b->sprite, b->x, b->y);
+            if (!armShot(b)) return 0;
             return 1;
         }
     }
@@ -388,8 +415,7 @@ u16 bullets_shootStar(s16 x, s16 y) {
             st->velx = 0;
             st->vely = vy;
             loadStarPal(DMA);
-            reviveGameEntity(st);
-            SPR_setPosition(st->sprite, st->x, st->y);
+            if (!armShot(st)) return 0;
             return 1;
         }
     }

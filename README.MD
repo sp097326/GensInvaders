@@ -350,6 +350,10 @@ HISTORIAL:
 *       23/11/26 - EASY/NORMAL: la bala llega a 7 en el nivel 13 (antes
                  11); la 25 ya no sube la bala justo tras la ráfaga de 4.
                  V0.4.85.
+*       25/11/26 - Transición del jefe más robusta (VRAM de 64x64
+                 reservada al arranque) y comprobación de sprites nulos.
+                 Si el jefe no se puede reservar, se salta la oleada.
+                 V0.4.86.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -731,3 +735,8 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **Segunda subida de velocidad de bala más tarde (23/11/2026, V0.4.85)**
 * Alberto sintió un brinco de la oleada 24 a la 25: la 25 subía la bala de 6 a 7 justo después de la ráfaga de 4 (24) y antes de la caída de 16 (26), con la tercera fila disparando más cerca.
 * En EASY y NORMAL la bala sube en los niveles 7 y 13 (antes 7 y 11). NORMAL: 24 ráfaga 4, 25 solo velocidad de formación, 26 caída 16, 27 bala 7. Las oleadas 1-10 y HARD no cambian; las 18-19 quedan con bala 6.
+
+**Transición del jefe más robusta y sprites nulos (25/11/2026, V0.4.86)**
+* Auditoría de la v0.4.85, prioridad 1: si al pasar de La Cookie a la tortuga fallaba la reserva de VRAM, SGDK 2.11 ya había liberado el bloque anterior y el reintento con Cookie no volvía a reservar tiles, pero el jefe se activaba igual.
+* El sprite del jefe se reserva desde el arranque con el tamaño de la tortuga (64x64) y ese bloque se mantiene al cambiar a La Cookie. Si aún así no hay sprite, el jefe no se activa y la oleada se salta.
+* Todos los `SPR_addSprite` se comprueban; una entidad sin sprite nunca queda viva, colisiona ni hace daño. `BOSS_FORCE_ALLOC_FAIL` (en 0) permite probar el camino de fallo.
