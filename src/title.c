@@ -142,6 +142,7 @@ void title_clear() {
     for (row = 0; row < 28; row++) {
         VDP_clearText(0, row, 40);
     }
+    hud_invalidate();
 }
 
 void title_drawMenu() {

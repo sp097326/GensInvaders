@@ -357,6 +357,9 @@ HISTORIAL:
 *       25/11/26 - La entrada (menú, START, pausa, iniciales, disparo)
                  se aplica en el loop principal, no en el VBlank.
                  V0.4.87.
+*       25/11/26 - El HUD se actualiza una sola vez por cuadro: campos
+                 sucios y vaciado en el loop, sin borrar filas enteras.
+                 V0.4.88.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -747,3 +750,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **Entrada fuera del VBlank (25/11/2026, V0.4.87)**
 * El manejador de JOY de SGDK corría en el VBlank con las interrupciones apagadas, y START podía reiniciar la partida y cambiar el jefe ahí. Ya no se instala ese manejador.
 * Cada cuadro el loop principal lee el pad y calcula los flancos (el mismo criterio que SGDK). El menú, START, la pausa, las iniciales del TOP 5 y el control de la nave se aplican ahí, con un muestreo por VBlank para no perder pulsaciones ni dispararlas dos veces.
+
+**HUD sucio, un vaciado por cuadro (25/11/2026, V0.4.88)**
+* Cada baja redibujaba todo el HUD (filas 0-1 y las barras). Un disparo cargado con varias naves lo repetía en el mismo cuadro, y la barra del jefe no usaba su caché por tile.
+* Ahora los eventos solo marcan campos sucios y `hud_flush` pinta una vez por cuadro lo que cambió, con campos de ancho fijo. El aspecto (puntaje, LEFT, 1UP, oleada, barras) se mantiene; un redibujado completo solo ocurre al iniciar, al resetear o al volver del título.

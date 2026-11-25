@@ -67,7 +67,42 @@ static u16 bossBarLevel = 0;
 static u16 bossBarAttr[16];
 static u16 bossBarDrawn = 0;
 
+static int hudScore = 0;
+static u16 hudEnemiesLeft = 0;
+static u16 hudBossLine = 0;
+static u16 hudWave = 0;
+static char hudDiff[12] = "";
+static u16 dirtyScore = 0;
+static u16 dirtyLives = 0;
+static u16 dirtyWave = 0;
+static u16 dirtyDiff = 0;
+static u16 dirtyShield = 0;
+static u16 dirtyBoost = 0;
+static u16 dirtyRapid = 0;
+static u16 dirtyBoss = 0;
+static u16 dirtyFull = 0;
+
+/* Set to 1 to count field draws per flush (worst-case of a multi-kill
+ * charged shot should stay at 1 score line, plus lives only if a 1UP
+ * happened). Leave at 0. */
+#ifndef HUD_DEBUG_COUNTS
+#define HUD_DEBUG_COUNTS 0
+#endif
+#if HUD_DEBUG_COUNTS
+static u16 hudDebugFields = 0;
+static u16 hudDebugFieldsMax = 0;
+#endif
+
+#define HUD_SCORE_W     40  /* whole of row 0; trailing spaces erase leftovers */
+#define HUD_DIFF_X       0
+#define HUD_DIFF_W      16  /* cols 0-15, before OLEADA */
+#define HUD_WAVE_X      16
+#define HUD_WAVE_W      13  /* cols 16-28, before ESC at 29 */
+
 static void drawBossBar(u16 force);
+static void drawScoreLine(void);
+static void drawDiffField(void);
+static void drawWaveField(void);
 
 /* 8x8 silhouette of the player ship (PAL1: 1 blue, 2 orange, 3 white,
  * 4 black). Side columns stay empty so adjacent icons do not touch. */
@@ -183,12 +218,54 @@ static void drawBoostBar(u16 force) {
     boostBarDrawn = 1;
 }
 
+static void padAndDraw(u16 x, u16 y, const char* text, u16 width) {
+    char buf[41];
+    u16 i;
+
+    if (width > 40) width = 40;
+    for (i = 0; i < width; i++) {
+        if (text[i] != 0) {
+            buf[i] = text[i];
+        } else {
+            break;
+        }
+    }
+    for (; i < width; i++) buf[i] = ' ';
+    buf[width] = 0;
+    VDP_drawText(buf, x, y);
+#if HUD_DEBUG_COUNTS
+    hudDebugFields++;
+#endif
+}
+
+static void drawScoreLine(void) {
+    if (hudBossLine) {
+        sprintf(hud_string, "SCORE: %d  JEFE", hudScore);
+    } else {
+        sprintf(hud_string, "SCORE: %d  LEFT: %d", hudScore, hudEnemiesLeft);
+    }
+    padAndDraw(0, 0, hud_string, HUD_SCORE_W);
+}
+
+static void drawDiffField(void) {
+    sprintf(hud_string, "DIFF: %s", hudDiff);
+    padAndDraw(HUD_DIFF_X, 1, hud_string, HUD_DIFF_W);
+}
+
+static void drawWaveField(void) {
+    sprintf(hud_string, "OLEADA %d", hudWave);
+    padAndDraw(HUD_WAVE_X, 1, hud_string, HUD_WAVE_W);
+}
+
 void hud_updateBoostBar(u16 state, u16 level, u16 blink) {
     if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
+    if (boostState == state && boostLevel == level && boostBlink == blink && boostBarDrawn) {
+        return;
+    }
     boostState = state;
     boostLevel = level;
     boostBlink = blink;
-    drawBoostBar(0);
+    dirtyBoost = 1;
 }
 
 /* Plane-A tiles, not sprites, so they never add to the 20-sprite/line
@@ -236,39 +313,55 @@ void hud_init(void) {
 }
 
 void hud_updateScore(int score, u16 enemiesLeft, u16 lives) {
-    hudLives = (lives > LIVES_CAP) ? LIVES_CAP : lives;
+    u16 livesCap;
+    u16 wave;
+    const char* diff;
+    u16 bossLine;
 
-    if (boss_isActive()) {
-        sprintf(hud_string, "SCORE: %d  JEFE", score);
-    } else {
-        sprintf(hud_string, "SCORE: %d  LEFT: %d", score, enemiesLeft);
+    livesCap = (lives > LIVES_CAP) ? LIVES_CAP : lives;
+    if (livesCap != hudLives) {
+        hudLives = livesCap;
+        dirtyLives = 1;
     }
-    VDP_clearText(0, 0, 40);
-    VDP_drawText(hud_string, 0, 0);
-    drawLivesIcons();
-    VDP_clearText(0, 1, SHIELD_BAR_X);
-    sprintf(hud_string, "DIFF: %s", difficulty_name());
-    VDP_drawText(hud_string, 0, 1);
-    /* Col 16 leaves a gap after "DIFF: NORMAL" (12 chars) and stays
-     * clear of the ESC bar at col 29, even with "OLEADA 999". */
-    sprintf(hud_string, "OLEADA %d", difficulty_wave());
-    VDP_drawText(hud_string, 16, 1);
-    barDrawn = 0;
-    drawShieldBar(1);
-    drawBoostBar(1);
-    /* Score/wave text only touches rows 0-1; force the JEFE bar on
-     * row 2 so a later score refresh cannot leave it stale. */
-    if (boss_isActive() && bossBarActive) {
-        drawBossBar(1);
+
+    bossLine = boss_isActive() ? 1 : 0;
+    hudScore = score;
+    hudEnemiesLeft = enemiesLeft;
+    hudBossLine = bossLine;
+    dirtyScore = 1;
+
+    wave = difficulty_wave();
+    if (wave != hudWave) {
+        hudWave = wave;
+        dirtyWave = 1;
+    }
+    diff = difficulty_name();
+    if (diff[0] == 0 || strcmp(hudDiff, diff) != 0) {
+        u16 i;
+        for (i = 0; i < 11; i++) {
+            hudDiff[i] = diff[i];
+            if (diff[i] == 0) break;
+        }
+        hudDiff[11] = 0;
+        dirtyDiff = 1;
+    }
+
+    /* After the title wipes plane A the bar caches are empty: request a
+     * full paint so ESC / IMP / RF / JEFE come back with the score. */
+    if (!barDrawn || !boostBarDrawn) {
+        dirtyFull = 1;
     }
 }
 
 void hud_updateShieldBar(u16 state, u16 level, u16 blink) {
     if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
+    if (shieldState == state && shieldLevel == level && shieldBlink == blink && barDrawn) {
+        return;
+    }
     shieldState = state;
     shieldLevel = level;
     shieldBlink = blink;
-    drawShieldBar(0);
+    dirtyShield = 1;
 }
 
 static void drawRapidBar(u16 force) {
@@ -307,16 +400,23 @@ static void drawRapidBar(u16 force) {
 }
 
 void hud_updateRapidBar(u16 active, u16 level) {
+    u16 on;
+
     if (level > SHIELD_BAR_STEPS) level = SHIELD_BAR_STEPS;
-    rapidActive = (active && level > 0) ? 1 : 0;
+    on = (active && level > 0) ? 1 : 0;
+    if (rapidActive == on && rapidLevel == level && (on == 0 || rapidBarDrawn)) {
+        return;
+    }
+    rapidActive = on;
     rapidLevel = level;
-    drawRapidBar(0);
+    dirtyRapid = 1;
 }
 
 void hud_hideRapidBar(void) {
+    if (!rapidActive && !rapidBarDrawn) return;
     rapidActive = 0;
     rapidLevel = 0;
-    drawRapidBar(1);
+    dirtyRapid = 1;
 }
 
 static void drawBossBar(u16 force) {
@@ -364,23 +464,84 @@ void hud_updateBossBar(u16 active, u16 hp, u16 hpMax) {
         if (bossBarActive || bossBarDrawn) {
             bossBarActive = 0;
             bossBarLevel = 0;
-            drawBossBar(1);
+            dirtyBoss = 1;
         }
         return;
     }
     level = (u16)(((u32)hp * BOSS_BAR_STEPS + (u32)hpMax - 1) / (u32)hpMax);
     if (level > BOSS_BAR_STEPS) level = BOSS_BAR_STEPS;
     if (level < 1) level = 1;
-    if (bossBarActive && bossBarDrawn && bossBarLevel == level) return;
+    if (bossBarActive && bossBarDrawn && bossBarLevel == level && !dirtyBoss) return;
     bossBarActive = 1;
     bossBarLevel = level;
-    drawBossBar(1);
+    dirtyBoss = 1;
 }
 
 void hud_hideBossBar(void) {
+    if (!bossBarActive && !bossBarDrawn && !dirtyBoss) return;
     bossBarActive = 0;
     bossBarLevel = 0;
-    drawBossBar(1);
+    dirtyBoss = 1;
+}
+
+static void clearDirty(void) {
+    dirtyScore = 0;
+    dirtyLives = 0;
+    dirtyWave = 0;
+    dirtyDiff = 0;
+    dirtyShield = 0;
+    dirtyBoost = 0;
+    dirtyRapid = 0;
+    dirtyBoss = 0;
+    dirtyFull = 0;
+}
+
+void hud_invalidate(void) {
+    /* Plane A was wiped (title_clear). Keep logical bar levels so the
+     * next match can repaint them, but drop "already drawn" so we do
+     * not skip the first in-game flush, and do not paint on the title. */
+    barDrawn = 0;
+    boostBarDrawn = 0;
+    rapidBarDrawn = 0;
+    bossBarDrawn = 0;
+    clearDirty();
+}
+
+void hud_flush(void) {
+    u16 force;
+
+#if HUD_DEBUG_COUNTS
+    hudDebugFields = 0;
+#endif
+    if (dirtyFull) {
+        force = 1;
+        drawScoreLine();
+        drawDiffField();
+        drawWaveField();
+        drawLivesIcons();
+        drawShieldBar(force);
+        drawBoostBar(force);
+        drawRapidBar(force);
+        drawBossBar(force);
+        clearDirty();
+#if HUD_DEBUG_COUNTS
+        if (hudDebugFields > hudDebugFieldsMax) hudDebugFieldsMax = hudDebugFields;
+#endif
+        return;
+    }
+    force = 0;
+    if (dirtyScore) drawScoreLine();
+    if (dirtyDiff) drawDiffField();
+    if (dirtyWave) drawWaveField();
+    if (dirtyLives) drawLivesIcons();
+    if (dirtyShield) drawShieldBar(force);
+    if (dirtyBoost) drawBoostBar(force);
+    if (dirtyRapid) drawRapidBar(force);
+    if (dirtyBoss) drawBossBar(force);
+    clearDirty();
+#if HUD_DEBUG_COUNTS
+    if (hudDebugFields > hudDebugFieldsMax) hudDebugFieldsMax = hudDebugFields;
+#endif
 }
 
 void hud_clear(void) {
@@ -388,18 +549,21 @@ void hud_clear(void) {
     extraLifeGranted = 0;
     extraLifeIconOn = 1;
     hudLives = 0;
+    hudScore = 0;
+    hudEnemiesLeft = 0;
+    hudBossLine = 0;
+    hudWave = 0;
+    hudDiff[0] = 0;
     rapidActive = 0;
     rapidLevel = 0;
-    rapidBarDrawn = 0;
     boostBarDrawn = 0;
     bossBarActive = 0;
     bossBarLevel = 0;
-    bossBarDrawn = 0;
     VDP_clearText(0, 0, 40);
     VDP_clearText(0, 1, 40);
     VDP_clearText(0, BOSS_BAR_Y, 40);
     VDP_clearText(0, LIVES_ICON_Y, 40);
-    barDrawn = 0;
+    hud_invalidate();
 }
 
 void hud_drawCentered(const char* text, u16 y) {

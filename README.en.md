@@ -354,6 +354,8 @@ HISTORY:
                  be reserved, the wave is skipped. V0.4.86.
 *       25/11/26 - Input (menu, START, pause, initials, shooting) is
                  applied in the main loop, not during VBlank. V0.4.87.
+*       25/11/26 - The HUD updates once per frame: dirty fields and a
+                 main-loop flush, without clearing whole rows. V0.4.88.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -744,3 +746,7 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 **Input moved out of VBlank (25/11/2026, V0.4.87)**
 * SGDK's JOY handler ran in VBlank with interrupts disabled, and START could reset the match and swap the boss sprite there. That handler is no longer installed.
 * Each frame the main loop reads the pad and computes edges (the same test SGDK used). The menu, START, pause, TOP 5 initials and ship controls are applied there, still sampled once per VBlank so presses are neither lost nor fired twice.
+
+**Dirty HUD, one flush per frame (25/11/2026, V0.4.88)**
+* Every kill redrew the whole HUD (rows 0-1 and the bars). A charged shot that hit several ships repeated that work in the same frame, and the boss bar ignored its per-tile cache.
+* Events now only mark dirty fields and `hud_flush` paints once per frame, only what changed, overwriting fixed-width fields. The look (score, LEFT, 1UP, wave, bars) is unchanged; a full redraw is kept for start, reset and returning from the title.

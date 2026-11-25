@@ -3,7 +3,26 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
-## 2026-11-25 - Entrada fuera del VBlank (AMH + Bimo) - V0.4.87
+## 2026-11-25 - HUD sucio, un vaciado por cuadro (AMH + Bimo) - V0.4.88
+
+### Corregido
+- Auditoría de la v0.4.85, prioridad 3: cada baja llamaba a
+  `hud_updateScore`, que borraba las filas 0-1 y redibujaba puntaje,
+  dificultad, oleada, vidas y forzaba las barras de escudo, impulso y
+  jefe. Un disparo cargado que derribaba varias naves repetía ese
+  trabajo completo en el mismo cuadro. `hud_updateBossBar` usaba
+  `drawBossBar(1)`, así que el caché por tile no servía aunque solo
+  cambiara el nivel de HP.
+- Los eventos solo marcan campos sucios (puntaje, vidas, oleada,
+  dificultad, barras). `hud_flush` en el loop principal pinta una sola
+  vez por cuadro, y solo lo que cambió, sobreescribiendo campos de
+  ancho fijo (sin borrar la fila entera). La barra JEFE usa
+  `drawBossBar(0)` en actualizaciones normales; el redibujado completo
+  queda para el arranque, el reset y el regreso desde el título
+  (`hud_invalidate` tras `title_clear`). El aspecto no cambia. Un tiro
+  cargado que limpia una fila completa queda en una sola línea de
+  puntaje (más las vidas si hay 1UP).
+
 
 ### Corregido
 - Auditoría de la v0.4.85, prioridad 2: el manejador de JOY de SGDK corre

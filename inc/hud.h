@@ -9,7 +9,15 @@
 #define SHIELD_BAR_STEPS     64  /* 8 tiles x 8 pixels */
 
 void hud_init(void);
+/* Record score / LEFT / lives / wave / difficulty. The VDP write happens
+ * once per frame in hud_flush, and only for the fields that changed. */
 void hud_updateScore(int score, u16 enemiesLeft, u16 lives);
+/* Apply pending HUD changes. Call once per frame from the main loop,
+ * after game_state_update and before SPR_update. */
+void hud_flush(void);
+/* The tilemap was wiped (title screen). Drop cached tiles so the next
+ * in-game flush redraws from scratch; do not paint over the title. */
+void hud_invalidate(void);
 /* level is 0..SHIELD_BAR_STEPS (0 = empty, 64 = full). blink != 0 flashes the
  * ready bar (used for a short pulse when the recharge finishes). */
 void hud_updateShieldBar(u16 state, u16 level, u16 blink);

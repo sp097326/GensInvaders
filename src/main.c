@@ -110,6 +110,7 @@ int main(bool hard)
         // pregenerating the values once would be the way to bring it back.
 
         game_state_update();
+        hud_flush();
         SPR_update();
         SYS_doVBlankProcess();
     }
