@@ -11,6 +11,8 @@ typedef struct {
 } EnemyExplosion;
 
 static EnemyExplosion pool[MAX_ENEMY_EXPLOSIONS];
+/* Set when at least one burst spawned this frame; consumed in explosions_update. */
+static u16 sfxQueued = 0;
 
 static void hideSlot(u16 i) {
     pool[i].active = 0;
@@ -35,11 +37,13 @@ void explosions_init(void) {
         pool[i].x = 0;
         pool[i].y = 0;
     }
+    sfxQueued = 0;
 }
 
 void explosions_reset(void) {
     u16 i;
     for (i = 0; i < MAX_ENEMY_EXPLOSIONS; i++) hideSlot(i);
+    sfxQueued = 0;
 }
 
 void explosions_hide(void) {
@@ -74,7 +78,9 @@ void explosions_spawn(s16 x, s16 y) {
         SPR_setPosition(pool[slot].spr, x, y);
         SPR_setVisibility(pool[slot].spr, VISIBLE);
     }
-    XGM_startPlayPCM(SFX_ENEMY_EXP, 11, SOUND_PCM_CH3);
+    /* Queue the pop; do not play here so a multi-kill (charged shot,
+     * boss death bursts, invasion crash) only hits CH3 once. */
+    sfxQueued = 1;
 }
 
 void explosions_update(void) {
@@ -82,6 +88,12 @@ void explosions_update(void) {
     u16 elapsed;
     u16 frame;
     u16 ticks;
+
+    /* At most one enemy-explosion PCM per frame, then drop the request. */
+    if (sfxQueued) {
+        XGM_startPlayPCM(SFX_ENEMY_EXP, 11, SOUND_PCM_CH3);
+    }
+    sfxQueued = 0;
 
     ticks = EXPLOSION_ENEMY_DURATION / EXPLOSION_ENEMY_ANIM_FRAMES;
     if (ticks == 0) ticks = 1;

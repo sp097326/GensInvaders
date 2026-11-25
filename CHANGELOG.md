@@ -3,6 +3,18 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-25 - Un PCM de explosión por cuadro (AMH + Bimo) - V0.4.89
+
+### Corregido
+- Auditoría de la v0.4.85, prioridad 4: cada `explosions_spawn` mandaba
+  `SFX_ENEMY_EXP` a CH3 al momento. Un disparo cargado (o la muerte del
+  jefe, que abre tres destellos) podía empujar varios eventos PCM al
+  mismo canal en un solo cuadro.
+- El destello visual no cambia: cada baja sigue reservando su sprite.
+  El sonido se marca con una bandera y `explosions_update` lo reproduce
+  una sola vez por cuadro, y luego la limpia. `SFX_BOSS_DIE` sigue en
+  CH2 con prioridad 15; los demás canales no se tocan.
+
 ## 2026-11-25 - HUD sucio, un vaciado por cuadro (AMH + Bimo) - V0.4.88
 
 ### Corregido

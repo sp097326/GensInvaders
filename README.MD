@@ -360,6 +360,8 @@ HISTORIAL:
 *       25/11/26 - El HUD se actualiza una sola vez por cuadro: campos
                  sucios y vaciado en el loop, sin borrar filas enteras.
                  V0.4.88.
+*       25/11/26 - Las explosiones enemigas suenan una sola vez por
+                 cuadro (el destello visual no cambia). V0.4.89.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -754,3 +756,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **HUD sucio, un vaciado por cuadro (25/11/2026, V0.4.88)**
 * Cada baja redibujaba todo el HUD (filas 0-1 y las barras). Un disparo cargado con varias naves lo repetía en el mismo cuadro, y la barra del jefe no usaba su caché por tile.
 * Ahora los eventos solo marcan campos sucios y `hud_flush` pinta una vez por cuadro lo que cambió, con campos de ancho fijo. El aspecto (puntaje, LEFT, 1UP, oleada, barras) se mantiene; un redibujado completo solo ocurre al iniciar, al resetear o al volver del título.
+
+**Un PCM de explosión por cuadro (25/11/2026, V0.4.89)**
+* Auditoría de la v0.4.85, prioridad 4: varias explosiones en el mismo cuadro (un disparo cargado, o los tres destellos al morir el jefe) enviaban varios PCM a CH3.
+* El destello visual no cambia. El sonido se pide con una bandera y se reproduce una sola vez por cuadro en `explosions_update`. `SFX_BOSS_DIE` sigue en CH2 con prioridad 15; los demás canales no se tocan.

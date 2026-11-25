@@ -356,6 +356,8 @@ HISTORY:
                  applied in the main loop, not during VBlank. V0.4.87.
 *       25/11/26 - The HUD updates once per frame: dirty fields and a
                  main-loop flush, without clearing whole rows. V0.4.88.
+*       25/11/26 - Enemy explosions play their SFX at most once per
+                 frame (the visual bursts are unchanged). V0.4.89.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -750,3 +752,7 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 **Dirty HUD, one flush per frame (25/11/2026, V0.4.88)**
 * Every kill redrew the whole HUD (rows 0-1 and the bars). A charged shot that hit several ships repeated that work in the same frame, and the boss bar ignored its per-tile cache.
 * Events now only mark dirty fields and `hud_flush` paints once per frame, only what changed, overwriting fixed-width fields. The look (score, LEFT, 1UP, wave, bars) is unchanged; a full redraw is kept for start, reset and returning from the title.
+
+**One explosion PCM per frame (25/11/2026, V0.4.89)**
+* Audit of v0.4.85, priority 4: several explosions in the same frame (a charged shot, or the three bursts on boss death) sent multiple PCM events to CH3.
+* The visual bursts are unchanged. The pop is requested with a flag and played once per frame in `explosions_update`. `SFX_BOSS_DIE` stays on CH2 at priority 15; the other SFX channels are untouched.
