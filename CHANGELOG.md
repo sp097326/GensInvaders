@@ -3,6 +3,24 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-25 - VRAM del jefe y defrag (AMH + Bimo) - V0.4.90
+
+### Corregido
+- Regresión de la V0.4.86 (punto 1 de la auditoría): al pinchar el bloque
+  de 64 tiles del jefe se apagaba `SPR_FLAG_AUTO_VRAM_ALLOC`, y luego
+  `adoptBossDef` llamaba a `SPR_defragVRAM`. En SGDK 2.11 ese defrag
+  suelta toda la región de sprites y solo vuelve a reservar los que
+  siguen en AUTO. El jefe se quedaba apuntando a un índice viejo, y
+  otros sprites (las explosiones se inician después del jefe) reusaban
+  esos tiles. En la oleada 10 la tortuga mezclaba su caparazón con
+  fragmentos ajenos (destellos, estela, varita) y un tile suelto sobre
+  la pausa. El HUD (V0.4.88) y el PCM (V0.4.89) no tocan la VRAM de
+  sprites; el PNG de la tortuga sigue siendo 64x64, un frame.
+- `game_defragVRAM` reactiva AUTO, declara el presupuesto de 64 tiles
+  aunque el arte actual sea La Cookie (56) y vuelve a pinchar el
+  bloque. Lo usan `adoptBossDef`, `allocBossSprite` y `addGameSprite`.
+  Si el cambio de definición falla, la oleada se sigue saltando.
+
 ## 2026-11-25 - Un PCM de explosión por cuadro (AMH + Bimo) - V0.4.89
 
 ### Corregido

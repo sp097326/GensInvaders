@@ -358,6 +358,8 @@ HISTORY:
                  main-loop flush, without clearing whole rows. V0.4.88.
 *       25/11/26 - Enemy explosions play their SFX at most once per
                  frame (the visual bursts are unchanged). V0.4.89.
+*       25/11/26 - Defrag no longer drops the pinned boss VRAM block;
+                 the turtle and La Cookie keep their tiles. V0.4.90.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -756,3 +758,7 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 **One explosion PCM per frame (25/11/2026, V0.4.89)**
 * Audit of v0.4.85, priority 4: several explosions in the same frame (a charged shot, or the three bursts on boss death) sent multiple PCM events to CH3.
 * The visual bursts are unchanged. The pop is requested with a flag and played once per frame in `explosions_update`. `SFX_BOSS_DIE` stays on CH2 at priority 15; the other SFX channels are untouched.
+
+**Boss VRAM and defrag (25/11/2026, V0.4.90)**
+* Regression from V0.4.86: `SPR_defragVRAM` during the definition swap, with the boss block already pinned (AUTO off), dropped that reservation. Other sprites reused the tiles and the turtle looked corrupted on wave 10.
+* `game_defragVRAM` re-reserves the 64-tile budget and pins the block again. A failed swap still skips the wave, and the NULL sprite checks stay in place.

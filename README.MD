@@ -362,6 +362,9 @@ HISTORIAL:
                  V0.4.88.
 *       25/11/26 - Las explosiones enemigas suenan una sola vez por
                  cuadro (el destello visual no cambia). V0.4.89.
+*       25/11/26 - El defrag ya no suelta el bloque de VRAM pinchado del
+                 jefe; la tortuga y La Cookie conservan sus tiles.
+                 V0.4.90.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -760,3 +763,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **Un PCM de explosión por cuadro (25/11/2026, V0.4.89)**
 * Auditoría de la v0.4.85, prioridad 4: varias explosiones en el mismo cuadro (un disparo cargado, o los tres destellos al morir el jefe) enviaban varios PCM a CH3.
 * El destello visual no cambia. El sonido se pide con una bandera y se reproduce una sola vez por cuadro en `explosions_update`. `SFX_BOSS_DIE` sigue en CH2 con prioridad 15; los demás canales no se tocan.
+
+**VRAM del jefe y defrag (25/11/2026, V0.4.90)**
+* Regresión de la V0.4.86: `SPR_defragVRAM` en el cambio de definición, con el bloque del jefe ya pinchado (AUTO apagado), soltaba esa reserva. Otros sprites reusaban los tiles y la tortuga se veía corrupta en la oleada 10.
+* `game_defragVRAM` rehace la reserva de 64 tiles y vuelve a pinchar el bloque. El recorte de un swap fallido y los comprobadores de sprite nulo se mantienen.

@@ -234,10 +234,32 @@ void boss_reset(void) {
 /* Keep the 64x64 turtle VRAM block across definition swaps. Clearing
  * AUTO_VRAM_ALLOC stops SPR_setDefinition from freeing that block when
  * switching to the smaller Cookie and then failing to re-allocate the
- * turtle. SPR_setVRAMTileIndex cannot be used: it frees first. */
+ * turtle. SPR_setVRAMTileIndex cannot be used: it frees first.
+ * Never call SPR_defragVRAM while the sprite is pinned: defrag releases
+ * the whole region and only re-reserves sprites that still have AUTO
+ * on, so other sprites can reuse this index. Use game_defragVRAM. */
 static void pinBossVram(void) {
     if (boss.sprite != NULL) {
         boss.sprite->status &= ~SPR_FLAG_AUTO_VRAM_ALLOC;
+    }
+}
+
+void game_defragVRAM(void) {
+    const SpriteDefinition* def = NULL;
+
+    if (boss.sprite != NULL) {
+        /* Temporarily restore AUTO so defrag re-homes this sprite, and
+         * report the turtle's 64-tile budget even if the current art is
+         * the 56-tile Cookie. The definition pointer is restored before
+         * any tile upload (defrag only sets NEED_TILES_UPLOAD). */
+        def = boss.sprite->definition;
+        boss.sprite->definition = kindTurtle.def;
+        boss.sprite->status |= SPR_FLAG_AUTO_VRAM_ALLOC;
+    }
+    SPR_defragVRAM();
+    if (boss.sprite != NULL) {
+        boss.sprite->definition = def;
+        pinBossVram();
     }
 }
 
@@ -272,7 +294,7 @@ static u16 allocBossSprite(const SpriteDefinition* def) {
     setupBossSprite();  /* no-op when sprite is NULL; keeps the helper used */
     return 0;
 #else
-    SPR_defragVRAM();
+    game_defragVRAM();
     boss.sprite = SPR_addSpriteExSafe(def, 0, -40, BOSS_SPR_ATTR, BOSS_SPR_FLAGS);
     if (boss.sprite == NULL) return 0;
     setupBossSprite();
@@ -291,7 +313,7 @@ static u16 adoptBossDef(const SpriteDefinition* def) {
     if (boss.sprite != NULL) {
         u16 autoOn;
 
-        SPR_defragVRAM();
+        game_defragVRAM();
         if (SPR_setDefinition(boss.sprite, def)) {
             setupBossSprite();
             return 1;

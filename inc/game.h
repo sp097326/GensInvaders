@@ -66,6 +66,11 @@ static inline void reviveGameEntity(GameEntity* e) {
     SPR_setVisibility(e->sprite, VISIBLE);
 }
 
+/* Pack sprite VRAM safely. Implemented in boss.c: if the mothership is
+ * pinned (AUTO off), a raw SPR_defragVRAM would drop its reservation
+ * and let other sprites reuse those tiles. */
+void game_defragVRAM(void);
+
 /* Allocate a sprite; if VRAM is fragmented, defrag once and retry.
  * The caller must treat a NULL return as a dead entity. */
 static inline Sprite* addGameSprite(const SpriteDefinition* def, s16 x, s16 y, u16 attr) {
@@ -73,7 +78,7 @@ static inline Sprite* addGameSprite(const SpriteDefinition* def, s16 x, s16 y, u
 
     s = SPR_addSprite(def, x, y, attr);
     if (s == NULL) {
-        SPR_defragVRAM();
+        game_defragVRAM();
         s = SPR_addSprite(def, x, y, attr);
     }
     return s;
