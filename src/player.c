@@ -11,6 +11,10 @@ static GameEntity player = {0, 0, 16, 16, 0, 0, 0, NULL, 0, 0, "PLYR" };
 static u16 lives = MAX_LIVES;
 static u16 respawnTimer = 0;   // > 0 while the player is waiting to come back
 static u16 invulnTimer = 0;    // > 0 while the player is blinking and can't be hit
+/* 1 for every frame of an active dash, including the last movement
+ * frame when positionPlayer has already cleared boostTimer. Collision
+ * runs after player_update, so this keeps the last dash frame safe. */
+static u16 boostInvuln = 0;
 
 static Sprite* explosionSpr = NULL;
 static Sprite* flameSpr = NULL;
@@ -375,6 +379,7 @@ void player_reset(void) {
     lives = MAX_LIVES;
     respawnTimer = 0;
     invulnTimer = 0;
+    boostInvuln = 0;
     boostTimer = 0;
     boostCooldown = 0;
     boostCooldownMax = 0;
@@ -391,6 +396,7 @@ void player_hide(void) {
     player_setWarpFlame(0);
     player_chargeCancel();
     boostTimer = 0;  /* no HUD redraw here: the title may be on screen */
+    boostInvuln = 0;
     trailTimer = 0;
     hideGhost();
 }
@@ -414,6 +420,9 @@ static void updateFlame(void) {
 
 u16 player_update(void) {
     if (updateExplosion()) return 1;
+    /* Latch before positionPlayer: the last dash frame decrements
+     * boostTimer to 0, but the ship still moved this frame. */
+    boostInvuln = (boostTimer > 0) ? 1 : 0;
     updatePlayerLife();
     positionPlayer();
     updateBoostTimers();
@@ -470,6 +479,10 @@ u16 player_lives(void) {
 
 u16 player_invulnTimer(void) {
     return invulnTimer;
+}
+
+u16 player_isInvulnerable(void) {
+    return (invulnTimer > 0 || boostTimer > 0 || boostInvuln) ? 1 : 0;
 }
 
 u16 player_isExploding(void) {

@@ -3,6 +3,20 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-27 - Invulnerabilidad durante el impulso (AMH + Bimo) - V0.4.91
+
+### Cambiado
+- El impulso (A + izquierda/derecha) ahora da invulnerabilidad mientras
+  dura, igual que el parpadeo al reaparecer: las balas enemigas, los
+  huesos, las estrellas y el cuerpo de la tortuga no hacen daño. Alberto
+  lo pedía porque su reflejo era escapar de la picada y aun así lo
+  tocaba. La velocidad, la duración y la recarga no cambian. La estela
+  ya marca el dash; no se añadió otro efecto visual.
+- `player_isInvulnerable` cubre `invulnTimer` y el dash, incluido el
+  último cuadro (cuando `boostTimer` ya llegó a 0). La invasión (tocar
+  una nave de la formación, o que una llegue al fondo) sigue siendo
+  GAME OVER: ni el escudo, ni el parpadeo, ni el dash protegen.
+
 ## 2026-11-25 - VRAM del jefe y defrag (AMH + Bimo) - V0.4.90
 
 ### Corregido

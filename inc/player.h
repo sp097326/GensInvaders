@@ -18,6 +18,9 @@ void player_hitFatal(int score);
 GameEntity* player_get(void);
 u16 player_lives(void);
 u16 player_invulnTimer(void);
+/* 1 during the post-respawn blink or a dash (including its last frame).
+ * Does not protect against invasion (formation body contact). */
+u16 player_isInvulnerable(void);
 u16 player_isExploding(void);
 /* After the score increases: grant a life for every EXTRA_LIFE_SCORE crossed,
  * up to LIVES_CAP. Thresholds still advance when the cap is hit. Returns how

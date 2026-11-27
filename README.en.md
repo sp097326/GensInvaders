@@ -360,6 +360,9 @@ HISTORY:
                  frame (the visual bursts are unchanged). V0.4.89.
 *       25/11/26 - Defrag no longer drops the pinned boss VRAM block;
                  the turtle and La Cookie keep their tiles. V0.4.90.
+*       27/11/26 - The dash grants invulnerability while it lasts
+                 (bullets, bones, stars and the turtle's body).
+                 Invasion is still fatal. V0.4.91.
 
 TODO:
 *       Compose a real intro (XGM track or a proper short jingle); the current one is a trimmed placeholder
@@ -762,3 +765,7 @@ Everything below was done on Nov 19, 2026 (V0.3.67). Details are in `CHANGELOG.m
 **Boss VRAM and defrag (25/11/2026, V0.4.90)**
 * Regression from V0.4.86: `SPR_defragVRAM` during the definition swap, with the boss block already pinned (AUTO off), dropped that reservation. Other sprites reused the tiles and the turtle looked corrupted on wave 10.
 * `game_defragVRAM` re-reserves the 64-tile budget and pins the block again. A failed swap still skips the wave, and the NULL sprite checks stay in place.
+
+**Dash invulnerability (27/11/2026, V0.4.91)**
+* The dash (A + left/right) now protects while it lasts, like the post-respawn blink: bullets, bones, stars and the turtle's body deal no damage. Speed, duration and recharge are unchanged.
+* Invasion (overlapping a living formation ship, or one reaching the bottom) is still GAME OVER: the shield, the blink and the dash do not protect against it.

@@ -165,7 +165,7 @@ u16 collision_update(int* score) {
                     bullets_despawnEnemy(b);
                     continue;
                 }
-                if (player_invulnTimer() == 0 && collideEntities(b, p)) {
+                if (player_isInvulnerable() == 0 && collideEntities(b, p)) {
                     bullets_despawnEnemy(b);
                     if (player_hit(*score)) {
                         return COLLISION_GAME_OVER;
@@ -185,7 +185,7 @@ u16 collision_update(int* score) {
             b = bullets_boneAt(i);
             if (!isLive(b) || p->health == 0) continue;
             bullets_boneHitbox(b, &hit);
-            if (player_invulnTimer() == 0 && collideEntities(&hit, p)) {
+            if (player_isInvulnerable() == 0 && collideEntities(&hit, p)) {
                 bullets_despawnBone(b);
                 if (player_hit(*score)) {
                     return COLLISION_GAME_OVER;
@@ -196,8 +196,8 @@ u16 collision_update(int* score) {
 
         /* Turtle dive (waves 10, 30...): body contact costs a life. The shield
          * does not stop it (BOSS2_DIVE_SHIELD_BLOCKS 0), like the bone and
-         * the star; respawn invulnerability does. The turtle keeps going. */
-        if (p->health > 0 && player_invulnTimer() == 0 && boss_bodyHits(p)) {
+         * the star; respawn blink and the dash do. The turtle keeps going. */
+        if (p->health > 0 && player_isInvulnerable() == 0 && boss_bodyHits(p)) {
             if (!(BOSS2_DIVE_SHIELD_BLOCKS && powerups_shieldActive())) {
                 if (player_hit(*score)) {
                     return COLLISION_GAME_OVER;
@@ -215,7 +215,7 @@ u16 collision_update(int* score) {
             b = bullets_starAt(i);
             if (!isLive(b) || p->health == 0) continue;
             bullets_starHitbox(b, &hit);
-            if (player_invulnTimer() == 0 && collideEntities(&hit, p)) {
+            if (player_isInvulnerable() == 0 && collideEntities(&hit, p)) {
                 bullets_despawnStar(b);
                 if (player_hit(*score)) {
                     return COLLISION_GAME_OVER;
@@ -225,9 +225,9 @@ u16 collision_update(int* score) {
         }
     }
 
-    /* Invasion: overlapping a living enemy is always GAME OVER (shield and
-     * invulnerability do not protect). The explosion plays first; the caller
-     * shows GAME OVER when player_update returns 1. */
+    /* Invasion: overlapping a living enemy is always GAME OVER (shield,
+     * respawn blink and the dash do not protect). The explosion plays first;
+     * the caller shows GAME OVER when player_update returns 1. */
     {
         GameEntity* p = player_get();
         u16 crashed = 0;

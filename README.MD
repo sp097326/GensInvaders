@@ -365,6 +365,9 @@ HISTORIAL:
 *       25/11/26 - El defrag ya no suelta el bloque de VRAM pinchado del
                  jefe; la tortuga y La Cookie conservan sus tiles.
                  V0.4.90.
+*       27/11/26 - El impulso da invulnerabilidad mientras dura (balas,
+                 huesos, estrellas y el cuerpo de la tortuga). La
+                 invasión sigue siendo letal. V0.4.91.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -767,3 +770,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **VRAM del jefe y defrag (25/11/2026, V0.4.90)**
 * Regresión de la V0.4.86: `SPR_defragVRAM` en el cambio de definición, con el bloque del jefe ya pinchado (AUTO apagado), soltaba esa reserva. Otros sprites reusaban los tiles y la tortuga se veía corrupta en la oleada 10.
 * `game_defragVRAM` rehace la reserva de 64 tiles y vuelve a pinchar el bloque. El recorte de un swap fallido y los comprobadores de sprite nulo se mantienen.
+
+**Invulnerabilidad durante el impulso (27/11/2026, V0.4.91)**
+* El impulso (A + izquierda/derecha) ahora protege mientras dura, como el parpadeo al reaparecer: balas, huesos, estrellas y el cuerpo de la tortuga no hacen daño. Velocidad, duración y recarga no cambian.
+* La invasión (tocar una nave de la formación o que una llegue al fondo) sigue siendo GAME OVER: ni el escudo, ni el parpadeo, ni el dash lo evitan.

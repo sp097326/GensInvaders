@@ -220,8 +220,10 @@
  * BOOST_FRAMES x BOOST_SPEED = 48 px (3 ship widths) in ~0.13 s, clamped
  * to the screen edges, then recharges for the difficulty's shield recharge
  * time (shieldRechargeSec: 10 / 20 / 30 s on EASY / NORMAL / HARD; its own
- * timer, independent of the shield). A alone does nothing. No
- * invulnerability: the dash only moves you out of the way. Blocked during
+ * timer, independent of the shield). A alone does nothing. While the
+ * dash lasts the ship is invulnerable to bullets, bones, stars and the
+ * turtle's body, like the post-respawn blink (V0.4.91). Invasion
+ * (overlapping a living formation ship) still kills. Blocked during
  * the between-wave warp.
  * Trail (V0.4.77, Alberto found the single flickering afterimage hard to
  * see): 2 ghost ships drawn every frame where the ship was 2 and 4 frames
