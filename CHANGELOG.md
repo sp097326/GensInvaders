@@ -3,6 +3,25 @@
 Registro de cambios del proyecto. Lo más reciente va arriba.
 Detalle de la sesión de junio 2026 en `gensinvaders-session-log.html`.
 
+## 2026-11-27 - Columna de la cabeza de la tortuga (AMH + Bimo) - V0.4.92
+
+### Corregido
+- La bala normal no dañaba a la tortuga: el núcleo era un recuadro
+  24x36 (x 20-43, y 8-43) dentro del caparazón, y el disparo choca
+  primero con la parte baja (y 44-63: cabeza y patas), que contaba
+  como blindaje, hacía chispa y bloqueaba la bala. El disparo cargado
+  sí llegaba porque atraviesa. Alberto lo notó en la V0.4.91.
+- Ahora cuenta una columna del ancho de la cabeza, medida en
+  `imgboss2.png`: x 27-36 (`BOSS2_HEAD_OX` 27, `BOSS2_HEAD_W` 10;
+  ojos en 29 y 34, centrada cerca de x 32). Va desde la parte alta
+  del núcleo hasta el borde inferior del sprite, así que un tiro que
+  entra por debajo de la cabeza sí daña. El resto del caparazón,
+  las patas y la varita siguen siendo blindaje. El tope de un solo
+  golpe del disparo cargado (`chargedHit`) no cambia.
+- La Cookie tiene el mismo tipo de problema (el núcleo termina en
+  y 47 y la bala de 8 px choca primero con y 48-55), pero no se
+  tocó hasta que Alberto lo autorice.
+
 ## 2026-11-27 - Invulnerabilidad durante el impulso (AMH + Bimo) - V0.4.91
 
 ### Cambiado

@@ -119,10 +119,17 @@
 #define BOSS2_ON_ODD          1   /* 1 = turtle on odd appearances */
 #define BOSS2_W              64
 #define BOSS2_H              64
-#define BOSS2_CORE_OX        20  /* shell centre: x 20-43 */
-#define BOSS2_CORE_OY         8  /* y 8-43, inside the shell */
+#define BOSS2_CORE_OX        20  /* old shell-centre box (flash / death burst) */
+#define BOSS2_CORE_OY         8  /* top of the weak column, inside the shell */
 #define BOSS2_CORE_W         24
 #define BOSS2_CORE_H         36
+/* Head-width weak column (V0.4.92). Measured on imgboss2.png: the head
+ * is x 27-36 (10 px), with eyes at 29 and 34 on row 49, centred near
+ * x 32 (same as the fan). A shot that enters this column counts as a
+ * core hit down to the bottom of the sprite; the rest of the shell
+ * stays armour. */
+#define BOSS2_HEAD_OX        27
+#define BOSS2_HEAD_W         10
 #define BOSS2_Y_MAX          (112 - BOSS2_H)  /* 48: unused by the patrol, kept for the kind table */
 #define BOSS2_HOME_Y         32  /* fixed patrol height (just below the JEFE bar) */
 #define BOSS2_FAN_OX         28  /* fan from the head (bullet centred at x 32) */

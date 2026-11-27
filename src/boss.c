@@ -44,7 +44,8 @@ static s16 drawOX = 0;  /* telegraph shake, sprite only */
 typedef struct {
     const SpriteDefinition* def;
     s16 w, h;
-    s16 coreOX, coreOY, coreW, coreH;  /* damage zone */
+    s16 coreOX, coreOY, coreW, coreH;  /* damage zone (Cookie); flash origin */
+    s16 headOX, headW;                 /* 0 = none; turtle: head-width column */
     s16 yMax;                          /* lowest roam y (top half) */
     s16 fanOX, fanOY;                  /* 3-bullet fan muzzle */
     u16 shot;                          /* main attack: bone or star */
@@ -59,6 +60,7 @@ typedef struct {
 static const BossKind kindCookie = {
     &mothership, BOSS_W, BOSS_H,
     BOSS_CORE_OX, BOSS_CORE_OY, BOSS_CORE_W, BOSS_CORE_H,
+    0, 0,
     BOSS_Y_MAX,
     (BOSS_W / 2) - 4, BOSS_H - 4,
     BOSS_SHOT_BONE, (BOSS_W - BOSS_BONE_W) / 2, BOSS_H - 4,
@@ -68,6 +70,7 @@ static const BossKind kindCookie = {
 static const BossKind kindTurtle = {
     &boss2turtle, BOSS2_W, BOSS2_H,
     BOSS2_CORE_OX, BOSS2_CORE_OY, BOSS2_CORE_W, BOSS2_CORE_H,
+    BOSS2_HEAD_OX, BOSS2_HEAD_W,
     BOSS2_Y_MAX,
     BOSS2_FAN_OX, BOSS2_FAN_OY,
     BOSS_SHOT_STAR, BOSS2_STAR_OX, BOSS2_STAR_OY,
@@ -623,11 +626,26 @@ u16 boss_hitShot(GameEntity* shot, u16 charged) {
 
     cx = boss.x + kind->coreOX;
     cy = boss.y + kind->coreOY;
-    if (!overlaps(shot->x, shot->y, shot->w, shot->h, cx, cy, kind->coreW, kind->coreH)) {
-        /* Wing / hull: spark, no damage. A normal shot is blocked;
-         * the charged bolt flies through, still without damaging. */
-        explosions_spawn(shot->x, shot->y);
-        return 1;
+    {
+        u16 inCore;
+
+        if (kind->headW > 0) {
+            /* Turtle: a head-width column from the core top down to the
+             * sprite bottom, so a shot that first hits under the head
+             * still counts. The rest of the shell is armour. */
+            inCore = overlaps(shot->x, shot->y, shot->w, shot->h,
+                              boss.x + kind->headOX, boss.y + kind->coreOY,
+                              kind->headW, kind->h - kind->coreOY);
+        } else {
+            inCore = overlaps(shot->x, shot->y, shot->w, shot->h,
+                              cx, cy, kind->coreW, kind->coreH);
+        }
+        if (!inCore) {
+            /* Wing / hull: spark, no damage. A normal shot is blocked;
+             * the charged bolt flies through, still without damaging. */
+            explosions_spawn(shot->x, shot->y);
+            return 1;
+        }
     }
 
     if (charged && chargedHit) {

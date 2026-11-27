@@ -368,6 +368,10 @@ HISTORIAL:
 *       27/11/26 - El impulso da invulnerabilidad mientras dura (balas,
                  huesos, estrellas y el cuerpo de la tortuga). La
                  invasión sigue siendo letal. V0.4.91.
+*       27/11/26 - La tortuga recibe daño en una columna del ancho de
+                 la cabeza (x 27-36), de modo que la bala normal que
+                 entra por abajo sí cuenta. El resto del caparazón
+                 sigue siendo blindaje. V0.4.92.
 
 PENDIENTES:
 *       Componer una intro real (pista XGM o un jingle corto bien hecho); la actual es un placeholder recortado
@@ -675,7 +679,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **Segundo jefe: la tortuga hechicera en la oleada 20 (23/11/2026, V0.3.71)**
 * Sprite de Alberto: una tortuga hechicera vista desde arriba (caparazón verde, túnica azul con estrellas, varita). Llegó como PNG RGBA de 64x64 con 8 colores y se convirtió a `res/tiles/imgboss2.png` indexado de 16 colores (color 0 transparente) sin tocar el dibujo. Es el jefe de la oleada 20, equivalente a La Cookie: misma lógica de HP y dificultad que la segunda aparición (700 HP, mismo daño, velocidad, intervalo y puntos).
 * `boss.c` ahora describe cada jefe con una estructura `BossKind` (sprite, tamaño, zona de daño, límite del recorrido, bocas de los ataques, destello y flotación). La Cookie conserva sus valores de antes; la tortuga usa las constantes `BOSS2_*` de `inc/config.h`. Al iniciar la oleada se cambia la definición del mismo sprite (`SPR_setDefinition`), así que no se reserva VRAM extra fuera de la pelea.
-* Zona de daño: 24x36 en el centro del caparazón (desplazamiento 20,8). Varita, patas y cabeza solo sacan chispas. El destello rojo tiñe los colores 1-3 de su paleta (verdes del caparazón y las patas).
+* Zona de daño (V0.4.92): una columna del ancho de la cabeza (x 27-36, `BOSS2_HEAD_OX`/`BOSS2_HEAD_W`, medida en el PNG; los ojos están en 29 y 34) desde la parte alta del núcleo hasta el borde inferior del sprite. Así la bala normal que entra por debajo de la cabeza sí daña. Varita, patas y el resto del caparazón solo sacan chispas. El destello rojo tiñe los colores 1-3 de su paleta (verdes del caparazón y las patas).
 * Disparo principal: una estrella de 16x16 (`res/tiles/imgstar.png`, con los dos amarillos de la tortuga) que sale de la punta de la varita (x + 50, y + 20). Mismas reglas que el hueso: cae `bulletSpeed - 2` px/frame (mínimo 1), máximo 2 en pantalla, el escudo no la detiene. Zona de golpe de 10x10 centrada. Usa PAL1 colores 10-11, después de los del hueso (7-9). El abanico de 3 balas sale de la cabeza (x + 28, y + 48).
 * Animación: por ahora un solo cuadro, con una flotación de ±2 px (ciclo de 64 frames) encima del recorrido Lissajous, que baja hasta y = 48 para que el sprite de 64 px siga en la mitad superior. Si se agrega un segundo cuadro al PNG (128x64, dos cuadros de 8x8 tiles), se anima solo cada 16 frames.
 * Para probarla: código del título (UP, UP, DOWN, DOWN, LEFT, RIGHT, B, A) y OLEADA INICIAL 20.
@@ -774,3 +778,7 @@ Todo lo siguiente se hizo el 19 de noviembre de 2026 (V0.3.67). Los detalles est
 **Invulnerabilidad durante el impulso (27/11/2026, V0.4.91)**
 * El impulso (A + izquierda/derecha) ahora protege mientras dura, como el parpadeo al reaparecer: balas, huesos, estrellas y el cuerpo de la tortuga no hacen daño. Velocidad, duración y recarga no cambian.
 * La invasión (tocar una nave de la formación o que una llegue al fondo) sigue siendo GAME OVER: ni el escudo, ni el parpadeo, ni el dash lo evitan.
+
+**Columna de la cabeza de la tortuga (27/11/2026, V0.4.92)**
+* La bala normal no dañaba a la tortuga: chocaba primero con la cabeza y las patas (y 44-63), fuera del núcleo 24x36 del caparazón, y eso contaba como blindaje. El disparo cargado sí llegaba porque atraviesa.
+* Ahora daña una columna del ancho de la cabeza (x 27-36, 10 px). El resto del caparazón sigue siendo blindaje. La Cookie tiene un problema parecido en los pies (y 48-55) y no se tocó.
